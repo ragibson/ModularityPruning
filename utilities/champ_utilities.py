@@ -57,7 +57,7 @@ def get_interior_point(halfspaces, singlelayer=True):
         interior_hs, boundaries = np.split(halfspaces, [-6], axis=0)
 
     # randomly sample up to 50 of the halfspaces
-    sample_len = len(interior_hs)  # min(50, len(interior_hs))
+    sample_len = min(50, len(interior_hs))  # len(interior_hs)
     sampled_hs = np.vstack((interior_hs[choice(interior_hs.shape[0], sample_len, replace=False)], boundaries))
 
     # compute the Chebyshev center of the sampled halfspaces' intersection
@@ -185,8 +185,17 @@ def partition_coefficients_2D(G, partitions):
         A_hats = np.array([2 * sum([membership[u] == membership[v] for u, v in all_edges])
                            for membership in partitions])
 
-    P_hats = np.array([sum(sum(degree[v] for v in vs) ** 2 for vs in membership_to_communities(membership).values())
-                       for membership in partitions]) / twom
+    if G.is_directed():
+        P_hats = np.array([sum(sum(degree[v] for v in vs) ** 2 for vs in membership_to_communities(membership).values())
+                           for membership in partitions]) / (2 * twom)
+    else:
+        P_hats = np.array([sum(sum(degree[v] for v in vs) ** 2 for vs in membership_to_communities(membership).values())
+                           for membership in partitions]) / twom
+
+    # P_hats = np.array([
+    #     louvain_part_with_membership(G, part).quality(resolution_parameter=0.0) -
+    #     louvain_part_with_membership(G, part).quality(resolution_parameter=1.0) for part in partitions
+    # ])
 
     return A_hats, P_hats
 

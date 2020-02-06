@@ -29,6 +29,7 @@ def iterative_monolayer_resolution_parameter_estimation(G, gamma=1.0, tol=1e-2, 
                                       weights='weight')
 
     def estimate_SBM_parameters(partition):
+        # TODO: should this be removed in favor of the parameter_estimation_utilities function?
         community = partition.membership
         m_in = sum(e['weight'] * (community[e.source] == community[e.target]) for e in G.es)
         kappa_r_list = [0] * len(partition)
@@ -211,6 +212,7 @@ def iterative_multilayer_resolution_parameter_estimation(G_intralayer, G_interla
         return intralayer_part
 
     def estimate_SBM_parameters(partition):
+        # TODO: should this be removed in favor of the parameter_estimation_utilities function?
         K = len(partition)
 
         community = partition.membership
