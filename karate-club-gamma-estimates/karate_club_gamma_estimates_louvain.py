@@ -1,3 +1,5 @@
+# Generates figure 2.1 (left side)
+
 import igraph as ig
 import matplotlib.pyplot as plt
 from utilities import iterative_monolayer_resolution_parameter_estimation, Progress

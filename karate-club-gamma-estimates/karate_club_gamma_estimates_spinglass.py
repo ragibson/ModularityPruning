@@ -1,3 +1,5 @@
+# Generates figure 2.1 (right side)
+
 import igraph as ig
 import matplotlib.pyplot as plt
 from utilities import iterative_monolayer_resolution_parameter_estimation, Progress
@@ -7,7 +9,7 @@ import numpy as np
 def one_step(G, gamma):
     # Assumes resolution parameter estimation is using spinglass community detection with 2 spins
     # e.g. return G.community_spinglass(spins=2, gamma=resolution_param)
-    return iterative_monolayer_resolution_parameter_estimation(G, gamma=gamma, max_iter=1)[0]
+    return iterative_monolayer_resolution_parameter_estimation(G, gamma=gamma, max_iter=1, method="2-spinglass")[0]
 
 
 G = ig.Graph.Famous("Zachary")
@@ -20,7 +22,8 @@ progress = Progress(300, name="Estimation Until Convergence")
 for gamma in np.linspace(0.3, 3.0, 300):
     for _ in range(1):
         try:
-            final_gamma, part = iterative_monolayer_resolution_parameter_estimation(G, gamma=gamma, verbose=False)
+            final_gamma, part = iterative_monolayer_resolution_parameter_estimation(G, gamma=gamma, verbose=False,
+                                                                                    method="2-spinglass")
             gamma_0s.append(gamma)
             gamma_fs.append(final_gamma)
             parts.append(parts)

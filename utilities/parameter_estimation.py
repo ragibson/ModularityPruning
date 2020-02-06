@@ -5,7 +5,8 @@ from scipy.optimize import fsolve
 import warnings
 
 
-def iterative_monolayer_resolution_parameter_estimation(G, gamma=1.0, tol=1e-2, max_iter=25, verbose=False):
+def iterative_monolayer_resolution_parameter_estimation(G, gamma=1.0, tol=1e-2, max_iter=25, verbose=False,
+                                                        method="louvain"):
     """
     Monolayer variant of ALG. 1 from "Relating modularity maximization and stochastic block models in multilayer
     networks." The nested functions here are just used to match the pseudocode in the paper.
@@ -15,6 +16,7 @@ def iterative_monolayer_resolution_parameter_estimation(G, gamma=1.0, tol=1e-2, 
     :param tol: convergence tolerance
     :param max_iter: maximum number of iterations
     :param verbose: whether or not to print verbose output
+    :param method: community detection method to use
     :return: gamma to which the iteration converged and the resulting partition
     """
 
@@ -22,11 +24,17 @@ def iterative_monolayer_resolution_parameter_estimation(G, gamma=1.0, tol=1e-2, 
         G.es['weight'] = [1.0] * G.ecount()
     m = sum(G.es['weight'])
 
-    def maximize_modularity(resolution_param):
-        # RBConfigurationVertexPartition implements sum (A_ij - gamma (k_ik_j)/(2m)) delta(sigma_i, sigma_j)
-        # i.e. "standard" modularity with resolution parameter
-        return louvain.find_partition(G, louvain.RBConfigurationVertexPartition, resolution_parameter=resolution_param,
-                                      weights='weight')
+    if method == "louvain":
+        def maximize_modularity(resolution_param):
+            # RBConfigurationVertexPartition implements sum (A_ij - gamma (k_ik_j)/(2m)) delta(sigma_i, sigma_j)
+            # i.e. "standard" modularity with resolution parameter
+            return louvain.find_partition(G, louvain.RBConfigurationVertexPartition,
+                                          resolution_parameter=resolution_param, weights='weight')
+    elif method == "2-spinglass":
+        def maximize_modularity(resolution_param):
+            return G.community_spinglass(spins=2, gamma=resolution_param)
+    else:
+        raise ValueError(f"Community detection method {method} not supported")
 
     def estimate_SBM_parameters(partition):
         # TODO: should this be removed in favor of the parameter_estimation_utilities function?
