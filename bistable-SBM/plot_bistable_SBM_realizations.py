@@ -1,4 +1,4 @@
-# TODO: generalize this (varying delta) for figure B.3
+# Generates figure B.3
 
 import igraph as ig
 from utilities import *
@@ -9,7 +9,7 @@ p_in1 = 10 / 99
 p_in2 = p_in1 * 0.75  # 5/66
 p_out1 = 0.25 / 40  # 1/160
 
-for i, p_out2 in enumerate([0.035]):  # delta
+for i, p_out2 in enumerate([0.02, 0.035, 0.05]):  # delta
     filename = ("{:.4f}_" * 4).format(p_in1, p_in2, p_out1, p_out2)
     print(filename)
 

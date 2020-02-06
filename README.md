@@ -18,9 +18,9 @@
 - [X] Figure 6.1
 - [X] Figure 6.2
 - [X] Figure 6.3
-- [ ] Figure 6.4
+- [X] Figure 6.4 (needs a lot of work and complete verification re-run)
 - [X] Figure A.1
 - [X] Figure A.2
 - [X] Figure B.1
 - [ ] Figure B.2
-- [ ] Figure B.3
+- [X] Figure B.3
