@@ -1,3 +1,5 @@
+# TODO: combine this with SNAP_louvain.py for figure 6.4
+
 import pickle
 from utilities import *
 from social_networks import read_graphs

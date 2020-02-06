@@ -1,3 +1,5 @@
+# TODO: combine this with boxplot.py for figure 6.4
+
 import louvain
 import numpy as np
 import pickle

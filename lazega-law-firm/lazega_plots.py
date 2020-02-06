@@ -1,3 +1,5 @@
+# TODO: combine this with other lazega-law-firm scripts for figures 5.7 through 5.10
+
 import igraph as ig
 from utilities import domains_to_gamma_omega_estimates
 from utilities import plot_2d_domains_with_estimates, plot_2d_domains_with_num_communities

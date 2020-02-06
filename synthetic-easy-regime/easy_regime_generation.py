@@ -1,3 +1,6 @@
+# TODO: combine this with easy_regime_louvain.py and plot_easy_regime_generation.py for figure 5.3
+# TODO: this requires the RBConfigurationVertexPartitionWeightedLayers version of louvain
+
 from random import random, randint
 from collections import Counter
 import igraph as ig
@@ -5,6 +8,7 @@ from champ.parameter_estimation import iterative_multilayer_resolution_parameter
 import numpy as np
 import pickle
 from utilities import Progress
+import os
 
 
 def generate_synthetic_network():
@@ -103,4 +107,8 @@ def run_pamfil_iteration():
     print(values)
 
 
-run_pamfil_iteration()
+if not os.path.exists("easy_regime_multilayer.p"):
+    generate_synthetic_network()
+
+if not os.path.exists("easy_regime_test_results.p"):
+    run_pamfil_iteration()

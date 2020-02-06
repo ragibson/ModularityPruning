@@ -1,3 +1,5 @@
+# Generates figure 6.1
+
 import matplotlib.pyplot as plt
 from math import log
 import numpy as np
@@ -6,23 +8,23 @@ import numpy as np
 def f(K, x): return K * (1 / x - 1) / (1 / x + K - 1) / log(1 / x)
 
 
-# xs = np.linspace(1e-9, 1 - 1e-9, 1000)
-#
-# plt.rc('text', usetex=True)
-# plt.rc('font', family='serif')
-# plt.xlabel(r"$p_{out}/p_{in}$", fontsize=14)
-# plt.ylabel(r"$\gamma$", fontsize=14)
-#
-# plt.plot(xs, [f(2, x) for x in xs], label=r"$K=2$")
-# plt.plot(xs, [f(3, x) for x in xs], label=r"$K=3$")
-# plt.plot(xs, [f(4, x) for x in xs], label=r"$K=4$")
-# plt.plot(xs, [f(5, x) for x in xs], label=r"$K=5$")
-# plt.plot(xs, [f(6, x) for x in xs], label=r"$K=6$")
-# plt.plot(xs, [f(7, x) for x in xs], label=r"$K=7$")
-# plt.plot(xs, [f(8, x) for x in xs], label=r"$K=8$")
-# plt.title(r"Expected $\gamma$ Estimates for Various $K$", fontsize=14)
-# plt.legend()
-# plt.savefig("maximum_gamma_estimates.pdf")
+xs = np.linspace(1e-9, 1 - 1e-9, 1000)
+
+plt.rc('text', usetex=True)
+plt.rc('font', family='serif')
+plt.xlabel(r"$p_{out}/p_{in}$", fontsize=14)
+plt.ylabel(r"$\gamma$", fontsize=14)
+
+plt.plot(xs, [f(2, x) for x in xs], label=r"$K=2$")
+plt.plot(xs, [f(3, x) for x in xs], label=r"$K=3$")
+plt.plot(xs, [f(4, x) for x in xs], label=r"$K=4$")
+plt.plot(xs, [f(5, x) for x in xs], label=r"$K=5$")
+plt.plot(xs, [f(6, x) for x in xs], label=r"$K=6$")
+plt.plot(xs, [f(7, x) for x in xs], label=r"$K=7$")
+plt.plot(xs, [f(8, x) for x in xs], label=r"$K=8$")
+plt.title(r"Expected $\gamma$ Estimates for Various $K$", fontsize=14)
+plt.legend()
+plt.savefig("maximum_gamma_estimates.pdf")
 
 last_vals = [0] * 20
 current_vals = [0] * 20

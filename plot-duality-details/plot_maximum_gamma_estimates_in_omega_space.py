@@ -1,3 +1,5 @@
+# Generates figure 6.2
+
 from math import exp, log
 import matplotlib.pyplot as plt
 import numpy as np

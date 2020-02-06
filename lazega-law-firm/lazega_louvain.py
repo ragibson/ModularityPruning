@@ -1,3 +1,5 @@
+# TODO: combine this with other lazega-law-firm scripts for figures 5.7 through 5.10
+
 import igraph as ig
 import numpy as np
 from utilities import iterative_multilayer_resolution_parameter_estimation, repeated_parallel_louvain_from_gammas_omegas

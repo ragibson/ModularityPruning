@@ -1,3 +1,5 @@
+# TODO: combine this with other synthetic-easy-regime scripts for figures 5.5 and 5.6
+
 import pickle
 import matplotlib
 from matplotlib.patches import Polygon

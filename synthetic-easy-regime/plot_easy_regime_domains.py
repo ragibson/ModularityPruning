@@ -1,3 +1,5 @@
+# TODO: combine this with easy_regime_generation.py and easy_regime_louvain.py for figure 5.4
+
 from utilities import CHAMP_3D, domains_to_gamma_omega_estimates, plot_2d_domains_with_estimates
 import pickle
 import matplotlib.pyplot as plt

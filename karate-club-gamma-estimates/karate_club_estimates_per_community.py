@@ -1,11 +1,10 @@
+# Generates figure 2.2
+
 import igraph as ig
 import matplotlib.pyplot as plt
 from utilities import iterative_monolayer_resolution_parameter_estimation, Progress, num_communities
 from multiprocessing import Pool, cpu_count
-from utilities import CHAMP_2D
-import louvain
 import numpy as np
-from time import time
 
 G = ig.Graph.Famous("Zachary")
 

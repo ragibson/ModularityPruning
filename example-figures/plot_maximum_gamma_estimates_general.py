@@ -1,3 +1,5 @@
+# Generates figure 6.3
+
 from math import exp, log
 from random import random
 import matplotlib.pyplot as plt

@@ -1,3 +1,5 @@
+# Generates figures 5.1 and 5.2
+
 import igraph as ig
 import louvain
 import matplotlib.pyplot as plt

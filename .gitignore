@@ -1,9 +1,10 @@
 # Temporary/saved files from Python scripts
 *.p
 *.out
+*.txt
+*.csv
 
 # Example networks
-social_networks/
 datasets
 *.zip
 *.mat

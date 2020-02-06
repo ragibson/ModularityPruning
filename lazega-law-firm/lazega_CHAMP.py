@@ -1,3 +1,5 @@
+# TODO: combine this with other lazega-law-firm scripts for figures 5.7 through 5.10
+
 import igraph as ig
 import pickle
 import matplotlib

@@ -1,3 +1,5 @@
+# Generates figure 3.1
+
 import igraph as ig
 import louvain
 import numpy as np
