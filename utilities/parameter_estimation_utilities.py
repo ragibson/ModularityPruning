@@ -30,18 +30,15 @@ def gamma_estimate(G, partition):
     return (omega_in - omega_out) / (np.log(omega_in) - np.log(omega_out))
 
 
-def gamma_omega_estimate(G_intralayer, G_interlayer, layer_vec, membership, omega_centroid=1.0, omega_max=1000,
-                         model='temporal'):
+def gamma_omega_estimate(G_intralayer, G_interlayer, layer_vec, membership, omega_max=1000, model='temporal'):
     """Returns the (gamma, omega) estimate for a temporal network
 
-    Relevant code copied from our parameter_estimation toolkit.
-
-    TODO: can remove omega_centroid"""
+    Relevant code copied from our parameter_estimation toolkit."""
 
     if 'weight' not in G_intralayer.es:
-        G_intralayer.es['weight'] = [omega_centroid] * G_intralayer.ecount()
-    else:
-        G_intralayer.es['weight'] = [omega_centroid] * G_intralayer.ecount()
+        G_intralayer.es['weight'] = [1.0] * G_intralayer.ecount()
+    # else:
+    #     G_intralayer.es['weight'] = [1.0] * G_intralayer.ecount()
 
     # TODO: non-uniform cases
     # model affects SBM parameter estimation and the updating of omega
@@ -82,7 +79,7 @@ def gamma_omega_estimate(G_intralayer, G_interlayer, layer_vec, membership, omeg
     else:
         def update_omega(theta_in, theta_out, p, K):
             if theta_out == 0:
-                return log(1 + p * K / (1 - p)) / (2 * log(theta_in)) if p < 1.0 else omega_max
+                return log(1 + p * K / (1 - p)) / (2 * log(theta_in)) if p < 1.0 and theta_in != 1 else omega_max
             # if p is 1, the optimal omega is infinite (here, omega_max)
             return log(1 + p * K / (1 - p)) / (2 * (log(theta_in) - log(theta_out))) if p < 1.0 else omega_max
 
