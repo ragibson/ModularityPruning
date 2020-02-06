@@ -1,3 +1,5 @@
+# Generates figure A.1
+
 from math import exp, log
 import matplotlib.pyplot as plt
 import matplotlib

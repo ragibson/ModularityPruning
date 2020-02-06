@@ -1,3 +1,5 @@
+# TODO: generalize this (varying delta) for figure B.3
+
 import igraph as ig
 from utilities import *
 

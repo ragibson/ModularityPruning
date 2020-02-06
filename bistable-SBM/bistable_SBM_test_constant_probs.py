@@ -1,3 +1,5 @@
+# TODO: fix this and combine with plot_bistable_SBM_empirical.py for figure B.2
+
 import igraph as ig
 from utilities import *
 import pickle

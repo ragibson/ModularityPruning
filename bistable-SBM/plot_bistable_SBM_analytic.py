@@ -1,3 +1,5 @@
+# Generates figure B.1
+
 from math import log
 import matplotlib.pyplot as plt
 import numpy as np
