@@ -1,3 +1,18 @@
+# Temporary/saved files from Python scripts
+*.p
+*.out
+
+# Example networks
+social_networks/
+datasets
+*.zip
+*.mat
+*.dat
+
+# Generated figures
+*.png
+*.pdf
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
