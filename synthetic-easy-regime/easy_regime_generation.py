@@ -1,4 +1,4 @@
-# This generates figures 5.3, 5.4, 5.5, and 5.6
+# Generates figures 5.3, 5.4, 5.5, and 5.6
 
 from random import random, randint
 from collections import Counter

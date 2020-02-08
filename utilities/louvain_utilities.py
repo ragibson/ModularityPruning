@@ -129,6 +129,7 @@ def repeated_parallel_louvain_from_gammas_omegas(G_intralayer, G_interlayer, lay
     if show_progress:
         progress.done()
 
+    pool.close()
     return total
 
 # def repeated_parallel_louvain(G, gamma_0, gamma_f, gamma_iters=10000, repeat=10, show_progress=True):
