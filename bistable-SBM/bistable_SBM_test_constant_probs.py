@@ -110,7 +110,7 @@ def plot_bistable_SBM_empirical_results():
 
     run = output.split("\n\n")[0]
     lines = run.split("\n")
-    N = float(lines[0])
+    N = int(float(lines[0]))
     p2s = eval(lines[1])
     c2s = eval(lines[2])
     c3s = eval(lines[3])
