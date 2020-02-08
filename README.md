@@ -22,5 +22,5 @@
 - [X] Figure A.1
 - [X] Figure A.2
 - [X] Figure B.1
-- [ ] Figure B.2
+- [X] Figure B.2
 - [X] Figure B.3

@@ -90,6 +90,7 @@ def repeated_parallel_louvain_from_gammas(G, gammas, show_progress=True):
     if show_progress:
         progress.done()
 
+    pool.close()
     return total
 
 
