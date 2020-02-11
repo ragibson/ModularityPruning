@@ -15,11 +15,10 @@ from matplotlib.collections import PatchCollection
 import matplotlib.pyplot as plt
 import numpy as np
 from utilities import CHAMP_3D, domains_to_gamma_omega_estimates, plot_2d_domains_with_estimates
-from utilities import ami, num_communities, gamma_omega_estimates_to_stable_partitions
+from utilities import ami, num_communities, gamma_omega_estimates_to_stable_partitions, gamma_omega_estimate
 
 
 def generate_synthetic_network():
-    # TODO: this needs some checks to ensure later steps don't fail -- need to investigate more
     eta = 0.7  # copying probability
     epsilon = 0.4  # p_in/p_out ratio
     p_in = 20 / 75
@@ -29,42 +28,51 @@ def generate_synthetic_network():
     num_layers = 15
     K = 2
 
-    comm_per_layer = [[0] * n_per_layer for _ in range(num_layers)]
-    comm_per_layer[0] = [i // (n_per_layer // K) for i in range(n_per_layer)]
-
     layer_vec = [i // n_per_layer for i in range(n_per_layer * num_layers)]
 
-    comm_counts = Counter(comm_per_layer[0])
-    assert all(v == comm_counts[0] for v in comm_counts.values())
+    while True:
+        comm_per_layer = [[0] * n_per_layer for _ in range(num_layers)]
+        comm_per_layer[0] = [i // (n_per_layer // K) for i in range(n_per_layer)]
 
-    for layer in range(1, num_layers):
-        for v in range(n_per_layer):
-            p = random()
-            if p < eta:  # copy community from last layer
-                comm_per_layer[layer][v] = comm_per_layer[layer - 1][v]
-            else:  # assign random community
-                comm_per_layer[layer][v] = randint(0, K - 1)
+        comm_counts = Counter(comm_per_layer[0])
+        assert all(v == comm_counts[0] for v in comm_counts.values())
 
-    comm_vec = [item for sublist in comm_per_layer for item in sublist]
-
-    intralayer_edges = []
-    interlayer_edges = [(n_per_layer * l + v, n_per_layer * l + v + n_per_layer)
-                        for l in range(num_layers - 1)
-                        for v in range(n_per_layer)]
-
-    for v in range(len(comm_vec)):
-        for u in range(v + 1, len(comm_vec)):
-            if layer_vec[v] == layer_vec[u]:
+        for layer in range(1, num_layers):
+            for v in range(n_per_layer):
                 p = random()
-                if comm_vec[v] == comm_vec[u]:
-                    if p < p_in:
-                        intralayer_edges.append((u, v))
-                else:
-                    if p < p_out:
-                        intralayer_edges.append((u, v))
+                if p < eta:  # copy community from last layer
+                    comm_per_layer[layer][v] = comm_per_layer[layer - 1][v]
+                else:  # assign random community
+                    comm_per_layer[layer][v] = randint(0, K - 1)
 
-    G_intralayer = ig.Graph(intralayer_edges)
-    G_interlayer = ig.Graph(interlayer_edges, directed=True)
+        comm_vec = [item for sublist in comm_per_layer for item in sublist]
+
+        intralayer_edges = []
+        interlayer_edges = [(n_per_layer * l + v, n_per_layer * l + v + n_per_layer)
+                            for l in range(num_layers - 1)
+                            for v in range(n_per_layer)]
+
+        for v in range(len(comm_vec)):
+            for u in range(v + 1, len(comm_vec)):
+                if layer_vec[v] == layer_vec[u]:
+                    p = random()
+                    if comm_vec[v] == comm_vec[u]:
+                        if p < p_in:
+                            intralayer_edges.append((u, v))
+                    else:
+                        if p < p_out:
+                            intralayer_edges.append((u, v))
+
+        G_intralayer = ig.Graph(intralayer_edges)
+        G_interlayer = ig.Graph(interlayer_edges, directed=True)
+
+        ground_truth_gamma, ground_truth_omega = gamma_omega_estimate(G_intralayer, G_interlayer, layer_vec, comm_vec)
+
+        if abs(ground_truth_gamma - 0.94) < 5e-3 and abs(ground_truth_omega - 0.98) < 5e-3:
+            print(f"Accepted graph generation with ground truth (omega, gamma) = "
+                  f"({ground_truth_omega:.3f}, {ground_truth_gamma:.3f})")
+            break
+
     pickle.dump((G_intralayer, G_interlayer, comm_vec), open("easy_regime_multilayer.p", "wb"))
 
 
@@ -128,6 +136,12 @@ def run_easy_regime_louvain():
 
 
 def plot_easy_regime_iteration():
+    G_intralayer, G_interlayer, ground_truth_comms = pickle.load(open("easy_regime_multilayer.p", "rb"))
+
+    n_per_layer = 150
+    num_layers = 15
+    layer_vec = [i // n_per_layer for i in range(n_per_layer * num_layers)]
+
     values = pickle.load(open("easy_regime_test_results.p", "rb"))
     values.sort(key=lambda x: 1000 * x[0] + x[1])
 
@@ -143,9 +157,11 @@ def plot_easy_regime_iteration():
         plt.arrow(o0, g0, SCALE * odiff, SCALE * gdiff, width=1e-3, head_length=10e-3, head_width=15e-3,
                   color="black", **{"overhang": 0.5}, alpha=0.75, length_includes_head=True)
 
-    # TODO: this shouldn't be hardcoded here (this must assume the specific graph we were using before?)
-    ground_truth_gamma = 0.9357510425040243
-    ground_truth_omega = 0.984333998485813
+    # Old hardcoded parameter estimates (this must assume the specific graph we were using before?)
+    # ground_truth_gamma = 0.9357510425040243
+    # ground_truth_omega = 0.984333998485813
+    ground_truth_gamma, ground_truth_omega = gamma_omega_estimate(G_intralayer, G_interlayer,
+                                                                  layer_vec, ground_truth_comms)
     plt.scatter([ground_truth_omega], [ground_truth_gamma], s=50, color='blue', edgecolor='black', linewidths=1,
                 marker='o')
 

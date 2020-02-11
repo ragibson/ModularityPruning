@@ -101,7 +101,7 @@ def repeated_parallel_louvain_from_gammas_omegas(G_intralayer, G_interlayer, lay
     if show_progress:
         progress = Progress(100)
 
-    pool = Pool(processes=cpu_count())
+    # pool = Pool(processes=cpu_count())
     total = set()
 
     chunk_size = len(resolution_parameter_points) // 99
@@ -116,8 +116,11 @@ def repeated_parallel_louvain_from_gammas_omegas(G_intralayer, G_interlayer, lay
     # chunk_idx = 0
 
     for chunk in chunk_params:
+        # Reinitialize pool every chunk in order to get around an apparent memory leak in multiprocessing
+        pool = Pool(processes=cpu_count())
         for partition in pool.starmap(multilayer_louvain, chunk):
             total.add(sorted_tuple(partition))
+        pool.close()
 
         # import pickle
         # chunk_idx += 1
@@ -129,7 +132,7 @@ def repeated_parallel_louvain_from_gammas_omegas(G_intralayer, G_interlayer, lay
     if show_progress:
         progress.done()
 
-    pool.close()
+    # pool.close()
     return total
 
 # def repeated_parallel_louvain(G, gamma_0, gamma_f, gamma_iters=10000, repeat=10, show_progress=True):
