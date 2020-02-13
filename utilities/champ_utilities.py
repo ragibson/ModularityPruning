@@ -1,4 +1,4 @@
-from .louvain_utilities import louvain_part_with_membership, part_modularity
+from .louvain_utilities import louvain_part_with_membership
 from .partition_utilities import all_degrees, membership_to_communities
 from .progress import Progress
 from collections import defaultdict

@@ -9,7 +9,7 @@
 - [X] utilities/bench.py
 - [ ] utilities/champ_utilities.py
 - [X] utilities/\_\_init\_\_.py
-- [ ] utilities/louvain_utilities.py
+- [X] utilities/louvain_utilities.py
 - [ ] utilities/parameter_estimation.py
 - [ ] utilities/parameter_estimation_utilities.py
 - [ ] utilities/partition_utilities.py
