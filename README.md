@@ -12,7 +12,7 @@
 - [X] utilities/louvain_utilities.py
 - [X] utilities/parameter_estimation.py
 - [ ] utilities/parameter_estimation_utilities.py
-- [ ] utilities/partition_utilities.py
+- [X] utilities/partition_utilities.py
 - [ ] utilities/plotting.py
 - [X] utilities/progress.py
 - [X] utilities/test_gamma_estimation.py

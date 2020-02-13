@@ -1,7 +1,6 @@
-from .louvain_utilities import num_communities
+from .partition_utilities import num_communities
 from random import shuffle
 import numpy as np
-import math
 import matplotlib
 from matplotlib.patches import Polygon
 from matplotlib.collections import PatchCollection

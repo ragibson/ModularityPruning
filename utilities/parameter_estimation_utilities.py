@@ -1,4 +1,5 @@
-from .louvain_utilities import num_communities, louvain_part_with_membership
+from .louvain_utilities import louvain_part_with_membership
+from .partition_utilities import num_communities
 import louvain
 from math import log
 import numpy as np

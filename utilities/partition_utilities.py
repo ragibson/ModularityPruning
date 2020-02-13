@@ -19,3 +19,9 @@ def membership_to_communities(membership):
     for v, c in enumerate(membership):
         communities[c].append(v)
     return communities
+
+
+def num_communities(membership):
+    n = len(set(membership))
+    assert n == max(membership) + 1
+    return n

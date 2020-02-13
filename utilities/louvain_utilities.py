@@ -60,12 +60,6 @@ def louvain_part_with_membership(G, membership):
     return part
 
 
-def num_communities(membership):
-    n = len(set(membership))
-    assert n == max(membership) + 1
-    return n
-
-
 def repeated_parallel_louvain_from_gammas(G, gammas, show_progress=True):
     """
     Runs louvain at each gamma in :gammas:, using all CPU cores available.
