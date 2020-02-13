@@ -389,17 +389,18 @@ def plot_figure1_restricted_K():
     pickle.dump(all_stable, open("lazega_stable_K_2-4.p", "wb"))
 
 
-if not os.path.exists("lazega_1M_louvain.p"):
-    run_lazega_louvain()
+if __name__ == "__main__":
+    if not os.path.exists("lazega_1M_louvain.p"):
+        run_lazega_louvain()
 
-if not os.path.exists("lazega_CHAMP.p"):
-    run_champ_on_lazega_partitions()
+    if not os.path.exists("lazega_CHAMP.p"):
+        run_champ_on_lazega_partitions()
 
-for k in range(2, 8):
-    if not os.path.exists(f"lazega_CHAMP{k}.p"):
-        run_champ_on_lazega_partitions_restricted_K(k)
+    for k in range(2, 8):
+        if not os.path.exists(f"lazega_CHAMP{k}.p"):
+            run_champ_on_lazega_partitions_restricted_K(k)
 
-plot_figure1()
-plot_figure2()
-plot_figure3()
-plot_figure1_restricted_K()
+    plot_figure1()
+    plot_figure2()
+    plot_figure3()
+    plot_figure1_restricted_K()

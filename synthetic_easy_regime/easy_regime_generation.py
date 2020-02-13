@@ -73,7 +73,7 @@ def generate_synthetic_network():
                   f"({ground_truth_omega:.3f}, {ground_truth_gamma:.3f})")
             break
 
-    pickle.dump((G_intralayer, G_interlayer, comm_vec), open("easy_regime_multilayer.p", "wb"))
+    return G_intralayer, G_interlayer, comm_vec
 
 
 def run_pamfil_iteration():
@@ -119,8 +119,7 @@ def run_pamfil_iteration():
             progress.increment()
 
     progress.done()
-    pickle.dump(values, open("easy_regime_test_results.p", "wb"))
-    print(values)
+    return values
 
 
 def run_easy_regime_louvain():
@@ -132,7 +131,7 @@ def run_easy_regime_louvain():
     all_g0s = np.linspace(0.0, 2.0, 225)
     all_o0s = np.linspace(0.0, 2.0, 225)
     all_parts = repeated_parallel_louvain_from_gammas_omegas(G_intralayer, G_interlayer, layer_vec, all_g0s, all_o0s)
-    pickle.dump(all_parts, open("easy_regime_50K_louvain.p", "wb"))
+    return all_parts
 
 
 def plot_easy_regime_iteration():
@@ -292,7 +291,8 @@ def generate_domains_with_estimates():
     start = time()
     domains_with_estimates = domains_to_gamma_omega_estimates(G_intralayer, G_interlayer, layer_vec, domains)
     print("Took {:.2f} s".format(time() - start))
-    pickle.dump(domains_with_estimates, open("synthetic_champ_2-community_domains_with_estimates.p", "wb"))
+
+    return domains_with_estimates
 
 
 def plot_easy_regime_domains_restricted_communities():
@@ -324,23 +324,28 @@ def num_stable_stables_restricted_communities():
     print(len(gamma_omega_estimates_to_stable_partitions(domains_with_estimates)))
 
 
-if not os.path.exists("easy_regime_multilayer.p"):
-    print("Generating synthetic network...")
-    generate_synthetic_network()
+if __name__ == "__main__":
+    if not os.path.exists("easy_regime_multilayer.p"):
+        print("Generating synthetic network...")
+        G_intralayer, G_interlayer, comm_vec = generate_synthetic_network()
+        pickle.dump((G_intralayer, G_interlayer, comm_vec), open("easy_regime_multilayer.p", "wb"))
 
-if not os.path.exists("easy_regime_test_results.p"):
-    print("Running pamfil iteration...")
-    run_pamfil_iteration()
+    if not os.path.exists("easy_regime_test_results.p"):
+        print("Running pamfil iteration...")
+        values = run_pamfil_iteration()
+        pickle.dump(values, open("easy_regime_test_results.p", "wb"))
 
-if not os.path.exists("easy_regime_50K_louvain.p"):
-    print("Running easy regime Louvain...")
-    run_easy_regime_louvain()
+    if not os.path.exists("easy_regime_50K_louvain.p"):
+        print("Running easy regime Louvain...")
+        all_parts = run_easy_regime_louvain()
+        pickle.dump(all_parts, open("easy_regime_50K_louvain.p", "wb"))
 
-if not os.path.exists("synthetic_champ_2-community_domains_with_estimates.p"):
-    print("Generating CHAMP domains with estimates...")
-    generate_domains_with_estimates()
+    if not os.path.exists("synthetic_champ_2-community_domains_with_estimates.p"):
+        print("Generating CHAMP domains with estimates...")
+        domains_with_estimates = generate_domains_with_estimates()
+        pickle.dump(domains_with_estimates, open("synthetic_champ_2-community_domains_with_estimates.p", "wb"))
 
-plot_easy_regime_iteration()
-plot_easy_regime_domains()
-plot_easy_regime_domains_with_ami_and_Ks()
-plot_easy_regime_domains_restricted_communities()
+    plot_easy_regime_iteration()
+    plot_easy_regime_domains()
+    plot_easy_regime_domains_with_ami_and_Ks()
+    plot_easy_regime_domains_restricted_communities()
