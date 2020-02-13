@@ -2,7 +2,7 @@ from .louvain_utilities import louvain_part_with_membership, part_modularity
 from .partition_utilities import all_degrees, membership_to_communities
 from .progress import Progress
 from collections import defaultdict
-from champ import get_intersection
+from champ import get_intersection, champ_functions
 import math
 import numpy as np
 from numpy.random import choice
@@ -10,34 +10,6 @@ from scipy.spatial import HalfspaceIntersection
 from scipy.optimize import linprog
 from utilities.louvain_utilities import louvain_part_with_membership
 import igraph as ig
-
-
-def manual_CHAMP(G, all_parts, gamma_0, gamma_f, gamma_iters=5000, show_progress=True):
-    """
-    Inefficiently calculates the CHAMP set at :gamma_iters: gamma points in [:gamma_0:, :gamma_f:].
-
-    Returns a list of optimal [(gamma, quality, membership), ...] from :all_parts:.
-    """
-
-    all_parts = sorted(all_parts)
-    optimal_parts = [(g, -math.inf, None) for g in np.linspace(gamma_0, gamma_f, gamma_iters)]
-    if show_progress:
-        progress = Progress(len(all_parts))
-
-    for i, p in enumerate(all_parts):
-        part = louvain_part_with_membership(G, p)
-        for j in range(len(optimal_parts)):
-            g, best_Q, best_part = optimal_parts[j]
-            if part.quality(g) > best_Q + 1e-10:
-                optimal_parts[j] = (g, part_modularity(G, p, g), p)
-
-        if show_progress:
-            progress.update(i)
-
-    if show_progress:
-        progress.done()
-
-    return optimal_parts
 
 
 def get_interior_point(halfspaces, singlelayer=True):
@@ -89,13 +61,12 @@ def CHAMP_2D(G, all_parts, gamma_0, gamma_f, show_progress=True):
     partition_coefficients = partition_coefficients_2D(G, all_parts)
     A_hats, P_hats = partition_coefficients
 
-    # TODO: optimize
-    top = max(A_hats - P_hats * gamma_0)
-    right = gamma_f  # TODO: max intersection x?
+    top = max(A_hats - P_hats * gamma_0)  # Could potentially be optimized
+    right = gamma_f  # Could potentially use the max intersection x value
     halfspaces = np.vstack((halfspaces_from_coefficients_2D(*partition_coefficients),
                             np.array([[0, 1, -top], [1, 0, -right]])))
 
-    # TODO: scale axes so Chebyshev center is better for problem?
+    # Could potentially scale axes so Chebyshev center is better for problem
     interior_point = get_interior_point(halfspaces)
     hs = HalfspaceIntersection(halfspaces, interior_point)
 

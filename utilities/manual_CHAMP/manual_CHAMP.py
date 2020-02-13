@@ -6,9 +6,14 @@ from multiprocessing import Pool, cpu_count
 import numpy as np
 import pickle
 from time import time
+from champ import create_coefarray_from_partitions
+from champ import get_intersection as champ_get_intersection
+from champ import plot_2d_domains as champ_plot_2d_domains
+import igraph as ig
+from synthetic_easy_regime.easy_regime_generation import generate_synthetic_network
 
-GAMMA_END = 2.0
-OMEGA_END = 2.0
+GAMMA_END = 1.0
+OMEGA_END = 1.0
 NGAMMA = 10
 NOMEGA = 10
 PROGRESS_LENGTH = 50
@@ -115,10 +120,12 @@ def plot_alternate(G_intralayer, G_interlayer, layer_vec, partitions):
     plt.scatter(gammas, omegas, color=colors, s=1, marker='s')
     plt.xlabel("gamma")
     plt.ylabel("omega")
-    plt.show()
+    # plt.show()
 
 
 G_intralayer, G_interlayer = pickle.load(open("iter1.p", "rb"))
+
+# G_intralayer, G_interlayer, layer_vec = generate_synthetic_network()
 
 n_per_layer = 150
 num_layers = 15
@@ -127,9 +134,33 @@ layer_vec = [i // n_per_layer for i in range(n_per_layer * num_layers)]
 print("\n'manual' louvain:")
 partitions = run_alternate(G_intralayer, G_interlayer, layer_vec)
 
-domains = CHAMP_3D(G_intralayer, G_interlayer, layer_vec, partitions, 0.0, GAMMA_END, 0.0, OMEGA_END)
+layer_vec = np.array(layer_vec)
+nlayers = max(layer_vec) + 1
+champ_parts = np.array(partitions)
+
+A = np.array(G_intralayer.get_adjacency().data)
+C = np.array(G_interlayer.get_adjacency().data)
+P = np.zeros((G_intralayer.vcount(), G_intralayer.vcount()))
+for i in range(nlayers):
+    c_inds = np.where(layer_vec == i)[0]
+    c_degrees = np.array(G_intralayer.degree(c_inds))
+    P[np.ix_(c_inds, c_inds)] = np.outer(c_degrees, c_degrees.T) / (1.0 * np.sum(c_degrees))
+
+start = time()
+coefarray = create_coefarray_from_partitions(champ_parts, A, P, C)
+# A_hats, P_hats, C_hats = partition_coefficients_3D(G_intralayer, G_interlayer, layer_vec, champ_parts)
+# our_coefarray = np.vstack((A_hats, P_hats, C_hats)).T
+domains = champ_get_intersection(coefarray, max_pt=(1.0, 1.0))
+print("CHAMP's implementation took {:.2f} s".format(time() - start))
+champ_plot_2d_domains(domains)
+plt.savefig("CHAMP_test.png", dpi=300)
+
+start = time()
+domains = CHAMP_3D(G_intralayer, G_interlayer, layer_vec, champ_parts, 0.0, GAMMA_END, 0.0, OMEGA_END)
+print("Our implementation took {:.2f} s".format(time() - start))
 plot_2d_domains(domains, [0, GAMMA_END], [0, OMEGA_END])
-plt.show()
+plt.savefig("our_CHAMP_test.png", dpi=300)
 
 print("\n'manual' CHAMP (with manual louvain):")
-plot_alternate(G_intralayer, G_interlayer, layer_vec, partitions)
+plot_alternate(G_intralayer, G_interlayer, layer_vec, champ_parts)
+plt.savefig("manual_CHAMP_test.png")

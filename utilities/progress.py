@@ -3,7 +3,7 @@ from time import time
 
 
 class Progress:
-    """Progress bar with :length: and :total: number of iterations."""
+    """Progress bar with length :length: and :total: number of iterations."""
 
     def __init__(self, total, length=80, name="Progress:"):
         self.total = total
@@ -14,9 +14,11 @@ class Progress:
         self.name = name
 
     def update(self, i):
-        print("\r{} [{}{}] Time: {:.1f} / {:.1f} s"
-              "".format(self.name, "#" * int(i // self.ipc), "." * int(self.length - i // self.ipc - 1),
-                        time() - self.start, (time() - self.start) * (self.total / i) if i > 0 else math.inf),
+        filled_portion = "#" * int(i // self.ipc)
+        remaining_portion = "." * int(self.length - i // self.ipc)
+        time_elapsed = time() - self.start
+        time_estimate = time_elapsed * (self.total / i) if i > 0 else math.inf
+        print(f"\r{self.name} [{filled_portion}{remaining_portion}] Time: {time_elapsed:.1f} / {time_estimate:.1f} s",
               end='', flush=True)
         self.i = i
 
@@ -24,6 +26,5 @@ class Progress:
         self.update(self.i + 1)
 
     def done(self):
-        print("\r{} [{}] Time: {:.1f} / {:.1f} s\n"
-              "".format(self.name, "#" * (self.length - 1), time() - self.start, time() - self.start),
-              end='', flush=True)
+        self.update(self.total)
+        print()
