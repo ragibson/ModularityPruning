@@ -14,7 +14,7 @@ def sorted_tuple(t):
 
 
 def singlelayer_louvain(G, gamma):
-    return tuple(louvain.find_partition(G, louvain.RBConfigurationVertexPartition,
+    return tuple(louvain.find_partition(G, louvain.RBConfigurationVertexPartition, weights='weight',
                                         resolution_parameter=gamma).membership)
 
 
