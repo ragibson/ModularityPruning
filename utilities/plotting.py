@@ -22,8 +22,8 @@ def plot_estimates(gamma_estimates):
     for i in range(num_parts):
         g_0, g_f, part, g_est = gamma_estimates[i]
         k = num_communities(part)
-        plt.plot([g_0, g_f], [k, k], zorder=1, linewidth=2)  # , color=cm.tab20(i / (num_parts - 1)))
-        plt.scatter([g_0, g_f], [k, k], s=30, marker='x', zorder=1)  # , color=cm.tab20(i / (num_parts - 1)))
+        plt.plot([g_0, g_f], [k, k], zorder=1, linewidth=2)
+        plt.scatter([g_0, g_f], [k, k], s=30, marker='x', zorder=1)
 
     x_low, x_high = ax.get_xlim()
     y_low, y_high = ax.get_ylim()
@@ -62,10 +62,6 @@ def plot_estimates(gamma_estimates):
                 #           width=0.005, head_length=0.1, head_width=0.1, color="black",
                 #           length_includes_head=True, alpha=0.5, zorder=2, **{"overhang": 0.5})
 
-    # plt.title("Gamma estimates for optimal partitions")
-    # plt.xlabel("gamma")
-    # plt.ylabel("Number of communities")
-
 
 def plot_2d_domains(domains, xlim, ylim):
     """Plot partition dominance ranges in the (gamma, omega) plane, using the domains from CHAMP_3D.
@@ -87,7 +83,7 @@ def plot_2d_domains(domains, xlim, ylim):
     plt.ylim(ylim)
 
 
-def plot_2d_domains_with_estimates(domains_with_estimates, xlim, ylim, flip_axes=False):
+def plot_2d_domains_with_estimates(domains_with_estimates, xlim, ylim, flip_axes=True):
     """Plot partition dominance ranges in the (gamma, omega) plane, using the domains from CHAMP_3D with their gamma
     and omega estimates overlaid.
 
@@ -133,7 +129,12 @@ def plot_2d_domains_with_estimates(domains_with_estimates, xlim, ylim, flip_axes
     plt.ylim(ylim)
 
 
-def plot_2d_domains_with_num_communities(domains_with_estimates, xlim, ylim, flip_axes=False, tick_step=2):
+def plot_2d_domains_with_num_communities(domains_with_estimates, xlim, ylim, flip_axes=True, tick_step=2):
+    """Plot partition dominance ranges in the (gamma, omega) plane, using the domains from CHAMP_3D and coloring by the
+    number of communities.
+
+    Limits output to xlim and ylim dimensions. Note that the plotting here has x=omega and y=gamma."""
+    assert flip_axes
     fig, ax = plt.subplots()
     patches = []
     cm = matplotlib.cm.viridis
@@ -160,6 +161,7 @@ def plot_2d_domains_with_num_communities(domains_with_estimates, xlim, ylim, fli
 
 
 def plot_multiplex_community(membership, layer_vec):
+    """Plot multiplex community membership"""
     T = max(layer_vec) + 1
     N = len(membership) // T
     communities_per_layer = np.zeros((N, T))

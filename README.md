@@ -13,7 +13,7 @@
 - [X] utilities/parameter_estimation.py
 - [ ] utilities/parameter_estimation_utilities.py
 - [X] utilities/partition_utilities.py
-- [ ] utilities/plotting.py
+- [X] utilities/plotting.py
 - [X] utilities/progress.py
 - [X] utilities/test_gamma_estimation.py
 - [ ] utilities/manual_CHAMP/\_\_init\_\_.py
