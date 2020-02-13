@@ -1,4 +1,5 @@
-from .louvain_utilities import num_communities
+from .louvain_utilities import num_communities, louvain_part_with_membership
+import louvain
 from math import log
 import numpy as np
 from scipy.optimize import fsolve
@@ -16,7 +17,9 @@ def estimate_singlelayer_SBM_parameters(G, partition, m=None):
     if m is None:
         m = sum(G.es['weight'])
 
+    assert isinstance(partition, louvain.RBConfigurationVertexPartition)
     community = partition.membership
+
     m_in = sum(e['weight'] * (community[e.source] == community[e.target]) for e in G.es)
     kappa_r_list = [0] * len(partition)
     for e in G.es:
@@ -32,8 +35,19 @@ def estimate_singlelayer_SBM_parameters(G, partition, m=None):
     return omega_in, omega_out
 
 
-def estimate_multilayer_SBM_parameters(G_intralayer, layer_vec, partition):
+def estimate_multilayer_SBM_parameters(G_intralayer, layer_vec, partition, model, calculate_persistence, T=None,
+                                       m_t=None):
     """TODO"""
+
+    # TODO: check if this helps performance
+    if T is None:
+        T = max(layer_vec) + 1
+
+    # TODO: check if this helps performance
+    if m_t is None:
+        m_t = [0] * T
+        for e in G_intralayer.es:
+            m_t[layer_vec[e.source]] += e['weight']
 
     K = len(partition)
 
@@ -78,6 +92,9 @@ def gamma_estimate(G, partition):
 
     if 'weight' not in G.es:
         G.es['weight'] = [1.0] * G.vcount()
+
+    if not isinstance(partition, louvain.RBConfigurationVertexPartition):
+        partition = louvain_part_with_membership(G, partition)
 
     omega_in, omega_out = estimate_singlelayer_SBM_parameters(G, partition)
     return gamma_estimate_from_parameters(omega_in, omega_out)

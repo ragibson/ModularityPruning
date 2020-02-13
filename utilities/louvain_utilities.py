@@ -14,8 +14,12 @@ def sorted_tuple(t):
 
 
 def singlelayer_louvain(G, gamma, return_partition=False):
+    if 'weight' not in G.es:
+        G.es['weight'] = [1.0] * G.ecount()
+
     partition = louvain.find_partition(G, louvain.RBConfigurationVertexPartition, weights='weight',
                                        resolution_parameter=gamma)
+
     if return_partition:
         return partition
     else:

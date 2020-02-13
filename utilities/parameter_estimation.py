@@ -1,11 +1,6 @@
 from .louvain_utilities import singlelayer_louvain, multilayer_louvain
-from .parameter_estimation_utilities import estimate_singlelayer_SBM_parameters, gamma_estimate_from_parameters
-from .parameter_estimation_utilities import multiplex_omega_estimate_from_parameters, \
-    temporal_multilevel_omega_estimate_from_parameters, ordinal_persistence, multilevel_persistence, \
-    categorical_persistence
+from .parameter_estimation_utilities import *
 import louvain
-import numpy as np
-from scipy.optimize import fsolve
 import warnings
 
 
@@ -147,10 +142,13 @@ def iterative_multilayer_resolution_parameter_estimation(G_intralayer, G_interla
     G_interlayer.es['weight'] = [omega] * G_interlayer.ecount()
     T = max(layer_vec) + 1  # layer count
     optimiser = louvain.Optimiser()
+
+    # compute total edge weights per layer
     m_t = [0] * T
     for e in G_intralayer.es:
         m_t[layer_vec[e.source]] += e['weight']
 
+    # compute total node counts per layer
     N = G_intralayer.vcount() // T
     Nt = [0] * T
     for l in layer_vec:
@@ -165,7 +163,7 @@ def iterative_multilayer_resolution_parameter_estimation(G_intralayer, G_interla
         def update_omega(theta_in, theta_out, p, K):
             return temporal_multilevel_omega_estimate_from_parameters(theta_in, theta_out, p, K, omega_max=omega_max)
 
-    # TODO: non-uniform cases
+    # Note: non-uniform cases are not implemented
     # model affects SBM parameter estimation and the updating of omega
     if model is 'temporal':
         def calculate_persistence(community):
@@ -184,43 +182,8 @@ def iterative_multilayer_resolution_parameter_estimation(G_intralayer, G_interla
                                   optimiser=optimiser, return_partition=True)
 
     def estimate_SBM_parameters(partition):
-        # TODO: should this be removed in favor of the parameter_estimation_utilities function?
-        K = len(partition)
-
-        community = partition.membership
-        m_t_in = [0] * T
-        for e in G_intralayer.es:
-            if community[e.source] == community[e.target] and layer_vec[e.source] == layer_vec[e.target]:
-                m_t_in[layer_vec[e.source]] += e['weight']
-
-        kappa_t_r_list = [[0] * K for _ in range(T)]
-        for e in G_intralayer.es:
-            layer = layer_vec[e.source]
-            kappa_t_r_list[layer][community[e.source]] += e['weight']
-            kappa_t_r_list[layer][community[e.target]] += e['weight']
-        sum_kappa_t_sqr = [sum(x ** 2 for x in kappa_t_r_list[t]) for t in range(T)]
-
-        theta_in = sum(2 * m_t_in[t] for t in range(T)) / sum(sum_kappa_t_sqr[t] / (2 * m_t[t]) for t in range(T))
-        # guard for div by zero with single community partition
-        theta_out = sum(2 * m_t[t] - 2 * m_t_in[t] for t in range(T)) / \
-                    sum(2 * m_t[t] - sum_kappa_t_sqr[t] / (2 * m_t[t]) for t in range(T)) if K > 1 else 0
-
-        pers = calculate_persistence(community)
-        if model is 'multiplex':
-            # estimate p by solving polynomial root-finding problem with starting estimate p=0.5
-            def f(x):
-                coeff = 2 * (1 - 1 / K) / (T * (T - 1))
-                return coeff * sum((T - n) * x ** n for n in range(1, T)) + 1 / K - pers
-
-            # guard for div by zero with single community partition
-            # (in this case, all community assignments persist across layers)
-            p = fsolve(f, np.array([0.5]))[0] if pers < 1.0 and K > 1 else 1.0
-        else:
-            # guard for div by zero with single community partition
-            # (in this case, all community assignments persist across layers)
-            p = max((K * pers - 1) / (K - 1), 0) if pers < 1.0 and K > 1 else 1.0
-
-        return theta_in, theta_out, p, K
+        return estimate_multilayer_SBM_parameters(G_intralayer, layer_vec, partition, model, calculate_persistence,
+                                                  T=T, m_t=m_t)
 
     def update_gamma(theta_in, theta_out):
         return gamma_estimate_from_parameters(theta_in, theta_out)
@@ -242,19 +205,18 @@ def iterative_multilayer_resolution_parameter_estimation(G_intralayer, G_interla
         omega = update_omega(theta_in, theta_out, p, K)
 
         if verbose:
-            print("Iter {:>2}: {} communities with Q={:.3f}, gamma={:.3f}->{:.3f}, omega={:.3f}->{:.3f}, and p={:.3f}"
-                  "".format(iteration, K, part.q, last_gamma, gamma, last_omega, omega, p))
+            print(f"Iter {iteration:>2}: {K} communities with Q={part.q:.3f}, gamma={last_gamma:.3f}->{gamma:.3f}, "
+                  f"omega={last_omega:.3f}->{omega:.3f}, and p={p:.3f}")
 
         if abs(gamma - last_gamma) < gamma_tol and abs(omega - last_omega) < omega_tol:
             break  # gamma and omega converged
     else:
         if verbose:
-            print("Parameters failed to converge within {} iterations. "
-                  "Final move of ({:.3f}, {:.3f}) was not within tolerance ({}, {})"
-                  "".format(max_iter, abs(gamma - last_gamma), abs(omega - last_omega), gamma_tol, omega_tol))
+            print(f"Parameters failed to converge within {max_iter} iterations. "
+                  f"Final move of ({abs(gamma - last_gamma):.3f}, {abs(omega - last_omega):.3f}) "
+                  f"was not within tolerance ({gamma_tol}, {omega_tol})")
 
     if verbose:
-        print("Returned {} communities with Q={:.3f}, gamma={:.3f}, "
-              "and omega={:.3f}".format(K, part.q, gamma, omega))
+        print(f"Returned {K} communities with Q={part.q:.3f}, gamma={gamma:.3f}, and omega={omega:.3f}")
 
     return gamma, omega, part

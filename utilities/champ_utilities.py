@@ -55,6 +55,9 @@ def get_interior_point(halfspaces, singlelayer=True):
 def CHAMP_2D(G, all_parts, gamma_0, gamma_f, show_progress=True):
     """Calculates the CHAMP set at :gamma_0: <= gamma <= :gamma_f:."""
 
+    if len(all_parts) == 0:
+        return []
+
     all_parts = list(all_parts)
     num_partitions = len(all_parts)
 
