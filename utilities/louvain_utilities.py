@@ -13,25 +13,35 @@ def sorted_tuple(t):
     return tuple(sort_map[x] for x in t)
 
 
-def singlelayer_louvain(G, gamma):
-    return tuple(louvain.find_partition(G, louvain.RBConfigurationVertexPartition, weights='weight',
-                                        resolution_parameter=gamma).membership)
+def singlelayer_louvain(G, gamma, return_partition=False):
+    partition = louvain.find_partition(G, louvain.RBConfigurationVertexPartition, weights='weight',
+                                       resolution_parameter=gamma)
+    if return_partition:
+        return partition
+    else:
+        return tuple(partition.membership)
 
 
-def multilayer_louvain(G_intralayer, G_interlayer, layer_vec, gamma, omega):
+def multilayer_louvain(G_intralayer, G_interlayer, layer_vec, gamma, omega, optimiser=None, return_partition=False):
     # RBConfigurationVertexPartitionWeightedLayers implements a multilayer version of "standard" modularity (i.e.
     # the Reichardt and Bornholdt's Potts model with configuration null model).
 
     if 'weight' not in G_intralayer.es:
         G_intralayer.es['weight'] = [1.0] * G_intralayer.ecount()
 
-    optimiser = louvain.Optimiser()
+    if optimiser is None:
+        optimiser = louvain.Optimiser()
+
     G_interlayer.es['weight'] = omega
     intralayer_part = louvain.RBConfigurationVertexPartitionWeightedLayers(G_intralayer, layer_vec=layer_vec,
                                                                            weights='weight', resolution_parameter=gamma)
     interlayer_part = louvain.CPMVertexPartition(G_interlayer, resolution_parameter=0.0, weights='weight')
     optimiser.optimise_partition_multiplex([intralayer_part, interlayer_part])
-    return tuple(intralayer_part.membership)
+
+    if return_partition:
+        return intralayer_part
+    else:
+        return tuple(intralayer_part.membership)
 
 
 def louvain_part(G):

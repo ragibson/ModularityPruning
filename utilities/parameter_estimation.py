@@ -1,5 +1,9 @@
+from .louvain_utilities import singlelayer_louvain, multilayer_louvain
+from .parameter_estimation_utilities import estimate_singlelayer_SBM_parameters, gamma_estimate_from_parameters
+from .parameter_estimation_utilities import multiplex_omega_estimate_from_parameters, \
+    temporal_multilevel_omega_estimate_from_parameters, ordinal_persistence, multilevel_persistence, \
+    categorical_persistence
 import louvain
-from math import log
 import numpy as np
 from scipy.optimize import fsolve
 import warnings
@@ -26,10 +30,7 @@ def iterative_monolayer_resolution_parameter_estimation(G, gamma=1.0, tol=1e-2, 
 
     if method == "louvain":
         def maximize_modularity(resolution_param):
-            # RBConfigurationVertexPartition implements sum (A_ij - gamma (k_ik_j)/(2m)) delta(sigma_i, sigma_j)
-            # i.e. "standard" modularity with resolution parameter
-            return louvain.find_partition(G, louvain.RBConfigurationVertexPartition,
-                                          resolution_parameter=resolution_param, weights='weight')
+            return singlelayer_louvain(G, resolution_param, return_partition=True)
     elif method == "2-spinglass":
         def maximize_modularity(resolution_param):
             return G.community_spinglass(spins=2, gamma=resolution_param)
@@ -37,51 +38,35 @@ def iterative_monolayer_resolution_parameter_estimation(G, gamma=1.0, tol=1e-2, 
         raise ValueError(f"Community detection method {method} not supported")
 
     def estimate_SBM_parameters(partition):
-        # TODO: should this be removed in favor of the parameter_estimation_utilities function?
-        community = partition.membership
-        m_in = sum(e['weight'] * (community[e.source] == community[e.target]) for e in G.es)
-        kappa_r_list = [0] * len(partition)
-        for e in G.es:
-            kappa_r_list[community[e.source]] += e['weight']
-            kappa_r_list[community[e.target]] += e['weight']
-        sum_kappa_sqr = sum(x ** 2 for x in kappa_r_list)
-
-        omega_in = (2 * m_in) / (sum_kappa_sqr / (2 * m))
-        # guard for div by zero with single community partition
-        omega_out = (2 * m - 2 * m_in) / (2 * m - sum_kappa_sqr / (2 * m)) if len(partition) > 1 else 0
-
-        # return estimates for omega_in, omega_out (for multilayer, this would return theta_in, theta_out, p, K)
-        return omega_in, omega_out
+        return estimate_singlelayer_SBM_parameters(G, partition, m=m)
 
     def update_gamma(omega_in, omega_out):
-        if omega_out == 0:
-            return omega_in / log(omega_in)
-        return (omega_in - omega_out) / (log(omega_in) - log(omega_out))
+        return gamma_estimate_from_parameters(omega_in, omega_out)
 
     part, last_gamma = None, None
     for iteration in range(max_iter):
         part = maximize_modularity(gamma)
         omega_in, omega_out = estimate_SBM_parameters(part)
 
-        if omega_in == 0 or omega_in == 1:
-            raise ValueError("gamma={:.3f} resulted in degenerate partition".format(gamma))
-
         last_gamma = gamma
         gamma = update_gamma(omega_in, omega_out)
 
+        if gamma is None:
+            raise ValueError(f"gamma={last_gamma:.3f} resulted in degenerate partition")
+
         if verbose:
-            print("Iter {:>2}: {} communities with Q={:.3f} and "
-                  "gamma={:.3f}->{:.3f}".format(iteration, len(part), part.q, last_gamma, gamma))
+            print(f"Iter {iteration:>2}: {len(part)} communities with Q={part.q:.3f} and "
+                  f"gamma={last_gamma:.3f}->{gamma:.3f}")
 
         if abs(gamma - last_gamma) < tol:
             break  # gamma converged
     else:
         if verbose:
-            print("Gamma failed to converge within {} iterations. "
-                  "Final move of {:.3f} was not within tolerance {}".format(max_iter, abs(gamma - last_gamma), tol))
+            print(f"Gamma failed to converge within {max_iter} iterations. "
+                  f"Final move of {abs(gamma - last_gamma):.3f} was not within tolerance {tol}")
 
     if verbose:
-        print("Returned {} communities with Q={:.3f} and gamma={:.3f}".format(len(part), part.q, gamma))
+        print(f"Returned {len(part)} communities with Q={part.q:.3f} and gamma={gamma:.3f}")
 
     return gamma, part
 
@@ -175,49 +160,28 @@ def iterative_multilayer_resolution_parameter_estimation(G_intralayer, G_interla
 
     if model is 'multiplex':
         def update_omega(theta_in, theta_out, p, K):
-            if theta_out == 0:
-                return log(1 + p * K / (1 - p)) / (T * log(theta_in)) if p < 1.0 else omega_max
-            # if p is 1, the optimal omega is infinite (here, omega_max)
-            return log(1 + p * K / (1 - p)) / (T * (log(theta_in) - log(theta_out))) if p < 1.0 else omega_max
+            return multiplex_omega_estimate_from_parameters(theta_in, theta_out, p, K, T, omega_max=omega_max)
     else:
         def update_omega(theta_in, theta_out, p, K):
-            if theta_out == 0:
-                return log(1 + p * K / (1 - p)) / (2 * log(theta_in)) if p < 1.0 else omega_max
-            # if p is 1, the optimal omega is infinite (here, omega_max)
-            return log(1 + p * K / (1 - p)) / (2 * (log(theta_in) - log(theta_out))) if p < 1.0 else omega_max
+            return temporal_multilevel_omega_estimate_from_parameters(theta_in, theta_out, p, K, omega_max=omega_max)
 
     # TODO: non-uniform cases
     # model affects SBM parameter estimation and the updating of omega
     if model is 'temporal':
         def calculate_persistence(community):
-            # ordinal persistence
-            return sum(community[e.source] == community[e.target] for e in G_interlayer.es) / (N * (T - 1))
+            return ordinal_persistence(G_interlayer, community)
     elif model is 'multilevel':
         def calculate_persistence(community):
-            # multilevel persistence
-            pers_per_layer = [0] * T
-            for e in G_interlayer.es:
-                pers_per_layer[layer_vec[e.target]] += (community[e.source] == community[e.target])
-
-            pers_per_layer = [pers_per_layer[l] / Nt[l] for l in range(T)]
-            return sum(pers_per_layer) / (T - 1)
+            return multilevel_persistence(G_interlayer, community, layer_vec, Nt, T)
     elif model is 'multiplex':
         def calculate_persistence(community):
-            # categorical persistence
-            return sum(community[e.source] == community[e.target] for e in G_interlayer.es) / (N * T * (T - 1))
+            return categorical_persistence(G_interlayer, community, N, T)
     else:
         raise ValueError("Model {} is not temporal, multilevel, or multiplex".format(model))
 
     def maximize_modularity(intralayer_resolution, interlayer_resolution):
-        # RBConfigurationVertexPartitionWeightedLayers implements a multilayer version of "standard" modularity (i.e.
-        # the Reichardt and Bornholdt's Potts model with configuration null model).
-        G_interlayer.es['weight'] = interlayer_resolution
-        intralayer_part = \
-            louvain.RBConfigurationVertexPartitionWeightedLayers(G_intralayer, layer_vec=layer_vec, weights='weight',
-                                                                 resolution_parameter=intralayer_resolution)
-        interlayer_part = louvain.CPMVertexPartition(G_interlayer, resolution_parameter=0.0, weights='weight')
-        optimiser.optimise_partition_multiplex([intralayer_part, interlayer_part])
-        return intralayer_part
+        return multilayer_louvain(G_intralayer, G_interlayer, layer_vec, intralayer_resolution, interlayer_resolution,
+                                  optimiser=optimiser, return_partition=True)
 
     def estimate_SBM_parameters(partition):
         # TODO: should this be removed in favor of the parameter_estimation_utilities function?
@@ -259,24 +223,22 @@ def iterative_multilayer_resolution_parameter_estimation(G_intralayer, G_interla
         return theta_in, theta_out, p, K
 
     def update_gamma(theta_in, theta_out):
-        if theta_out == 0:
-            return theta_in / log(theta_in)
-        return (theta_in - theta_out) / (log(theta_in) - log(theta_out))
+        return gamma_estimate_from_parameters(theta_in, theta_out)
 
     part, K, last_gamma, last_omega = (None,) * 4
     for iteration in range(max_iter):
         part = maximize_modularity(gamma, omega)
         theta_in, theta_out, p, K = estimate_SBM_parameters(part)
 
-        if theta_in == 0 or theta_in == 1:
-            raise ValueError("gamma={:.3f}, omega={:.3f} resulted in degenerate partition".format(gamma, omega))
-
         if not 0.0 <= p <= 1.0:
-            raise ValueError("gamma={:.3f}, omega={:.3f} resulted in impossible estimate p={:.3f}"
-                             "".format(gamma, omega, p))
+            raise ValueError(f"gamma={gamma:.3f}, omega={omega:.3f} resulted in impossible estimate p={p:.3f}")
 
         last_gamma, last_omega = gamma, omega
         gamma = update_gamma(theta_in, theta_out)
+
+        if gamma is None:
+            raise ValueError(f"gamma={gamma:.3f}, omega={omega:.3f} resulted in degenerate partition")
+
         omega = update_omega(theta_in, theta_out, p, K)
 
         if verbose:

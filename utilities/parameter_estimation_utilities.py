@@ -4,23 +4,87 @@ import numpy as np
 from scipy.optimize import fsolve
 
 
-def gamma_estimate(G, partition):
-    if 'weight' not in G.es:
-        G.es['weight'] = [1.0] * G.vcount()
+def estimate_singlelayer_SBM_parameters(G, partition, m=None):
+    """Estimates singlelayer SBM parameters from a graph and a partition
 
-    m = G.ecount()
-    m_in = sum(e['weight'] * (partition[e.source] == partition[e.target]) for e in G.es)
+    :param G: graph
+    :param partition: partition
+    :param m: total edge weight of graph (if None, will be computed)
+    :return: omega_in, omega_out
+    """
+
+    if m is None:
+        m = sum(G.es['weight'])
+
+    community = partition.membership
+    m_in = sum(e['weight'] * (community[e.source] == community[e.target]) for e in G.es)
     kappa_r_list = [0] * len(partition)
     for e in G.es:
-        kappa_r_list[partition[e.source]] += e['weight']
-        kappa_r_list[partition[e.target]] += e['weight']
+        kappa_r_list[community[e.source]] += e['weight']
+        kappa_r_list[community[e.target]] += e['weight']
     sum_kappa_sqr = sum(x ** 2 for x in kappa_r_list)
 
     omega_in = (2 * m_in) / (sum_kappa_sqr / (2 * m))
     # guard for div by zero with single community partition
-    omega_out = 0
-    if num_communities(partition) > 1:
-        omega_out = (2 * m - 2 * m_in) / (2 * m - sum_kappa_sqr / (2 * m))
+    omega_out = (2 * m - 2 * m_in) / (2 * m - sum_kappa_sqr / (2 * m)) if len(partition) > 1 else 0
+
+    # return estimates for omega_in, omega_out
+    return omega_in, omega_out
+
+
+def estimate_multilayer_SBM_parameters(G_intralayer, layer_vec, partition):
+    """TODO"""
+
+    K = len(partition)
+
+    community = partition.membership
+    m_t_in = [0] * T
+    for e in G_intralayer.es:
+        if community[e.source] == community[e.target] and layer_vec[e.source] == layer_vec[e.target]:
+            m_t_in[layer_vec[e.source]] += e['weight']
+
+    kappa_t_r_list = [[0] * K for _ in range(T)]
+    for e in G_intralayer.es:
+        layer = layer_vec[e.source]
+        kappa_t_r_list[layer][community[e.source]] += e['weight']
+        kappa_t_r_list[layer][community[e.target]] += e['weight']
+    sum_kappa_t_sqr = [sum(x ** 2 for x in kappa_t_r_list[t]) for t in range(T)]
+
+    theta_in = sum(2 * m_t_in[t] for t in range(T)) / sum(sum_kappa_t_sqr[t] / (2 * m_t[t]) for t in range(T))
+    # guard for div by zero with single community partition
+    theta_out = sum(2 * m_t[t] - 2 * m_t_in[t] for t in range(T)) / \
+                sum(2 * m_t[t] - sum_kappa_t_sqr[t] / (2 * m_t[t]) for t in range(T)) if K > 1 else 0
+
+    pers = calculate_persistence(community)
+    if model is 'multiplex':
+        # estimate p by solving polynomial root-finding problem with starting estimate p=0.5
+        def f(x):
+            coeff = 2 * (1 - 1 / K) / (T * (T - 1))
+            return coeff * sum((T - n) * x ** n for n in range(1, T)) + 1 / K - pers
+
+        # guard for div by zero with single community partition
+        # (in this case, all community assignments persist across layers)
+        p = fsolve(f, np.array([0.5]))[0] if pers < 1.0 and K > 1 else 1.0
+    else:
+        # guard for div by zero with single community partition
+        # (in this case, all community assignments persist across layers)
+        p = max((K * pers - 1) / (K - 1), 0) if pers < 1.0 and K > 1 else 1.0
+
+    return theta_in, theta_out, p, K
+
+
+def gamma_estimate(G, partition):
+    """Returns the gamma estimate for a graph and a partition"""
+
+    if 'weight' not in G.es:
+        G.es['weight'] = [1.0] * G.vcount()
+
+    omega_in, omega_out = estimate_singlelayer_SBM_parameters(G, partition)
+    return gamma_estimate_from_parameters(omega_in, omega_out)
+
+
+def gamma_estimate_from_parameters(omega_in, omega_out):
+    """Returns the gamma estimate for SBM parameters"""
 
     if omega_in == 0 or omega_in == 1:
         return None  # degenerate partition
@@ -30,15 +94,69 @@ def gamma_estimate(G, partition):
     return (omega_in - omega_out) / (np.log(omega_in) - np.log(omega_out))
 
 
-def gamma_omega_estimate(G_intralayer, G_interlayer, layer_vec, membership, omega_max=1000, model='temporal'):
-    """Returns the (gamma, omega) estimate for a temporal network
+def multiplex_omega_estimate_from_parameters(theta_in, theta_out, p, K, T, omega_max=1000):
+    """TODO"""
+    if theta_out == 0:
+        return log(1 + p * K / (1 - p)) / (T * log(theta_in)) if p < 1.0 else omega_max
+    # if p is 1, the optimal omega is infinite (here, omega_max)
+    return log(1 + p * K / (1 - p)) / (T * (log(theta_in) - log(theta_out))) if p < 1.0 else omega_max
 
-    Relevant code copied from our parameter_estimation toolkit."""
+
+def temporal_multilevel_omega_estimate_from_parameters(theta_in, theta_out, p, K, omega_max=1000):
+    """TODO"""
+    if theta_out == 0:
+        return log(1 + p * K / (1 - p)) / (2 * log(theta_in)) if p < 1.0 else omega_max
+    # if p is 1, the optimal omega is infinite (here, omega_max)
+    return log(1 + p * K / (1 - p)) / (2 * (log(theta_in) - log(theta_out))) if p < 1.0 else omega_max
+
+
+def ordinal_persistence(G_interlayer, community, N, T):
+    """TODO"""
+    # ordinal persistence (temporal model)
+    return sum(community[e.source] == community[e.target] for e in G_interlayer.es) / (N * (T - 1))
+
+
+def multilevel_persistence(G_interlayer, community, layer_vec, Nt, T):
+    """TODO"""
+    pers_per_layer = [0] * T
+    for e in G_interlayer.es:
+        pers_per_layer[layer_vec[e.target]] += (community[e.source] == community[e.target])
+
+    pers_per_layer = [pers_per_layer[l] / Nt[l] for l in range(T)]
+    return sum(pers_per_layer) / (T - 1)
+
+
+def categorical_persistence(G_interlayer, community, N, T):
+    """TODO"""
+    # categorical persistence (multiplex model)
+    return sum(community[e.source] == community[e.target] for e in G_interlayer.es) / (N * T * (T - 1))
+
+
+def gamma_omega_estimate(G_intralayer, G_interlayer, layer_vec, membership, omega_max=1000, model='temporal',
+                         N=None, T=None):
+    """Returns the (gamma, omega) estimate for a multilayer network and a partition
+
+    :param G_intralayer: intralayer graph
+    :param G_interlayer: interlayer graph
+    :param layer_vec: layer membership vector
+    :param membership: partition membership vector
+    :param omega_max: maximum allowed value for omega
+    :param model: network layer topology (temporal, multilevel, multiplex)
+    :param N: number of nodes per layer (if None, will be computed)
+    :param T: number of layers (if None, will be computed)
+    :return:
+    """
 
     if 'weight' not in G_intralayer.es:
         G_intralayer.es['weight'] = [1.0] * G_intralayer.ecount()
-    # else:
-    #     G_intralayer.es['weight'] = [1.0] * G_intralayer.ecount()
+
+    # TODO: check if this helps performance
+    if T is None:
+        T = max(layer_vec) + 1
+
+    # TODO: check if this helps performance
+    if N is None:
+        N = G_intralayer.vcount() // T
 
     # TODO: non-uniform cases
     # model affects SBM parameter estimation and the updating of omega
