@@ -29,7 +29,7 @@ for i, p_out2 in enumerate([0.02, 0.035, 0.05]):  # delta
     # print("'true' gamma (2 block) is", true_gamma2)
 
     # Store shared force-directed layout to make later plotting layouts consistent
-    layout = G.layout_fruchterman_reingold(maxiter=1000)
+    layout = G.layout_fruchterman_reingold(niter=1000)
 
     out2 = ig.plot(louvain.RBConfigurationVertexPartition(G, ground_truth), bbox=(1000, 1000), layout=layout)
     out2.save("bistable_sbm_delta{}_2-community.png".format(i))

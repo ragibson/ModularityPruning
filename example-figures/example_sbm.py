@@ -1,3 +1,5 @@
+# Generates an example SBM figure used in a presentation
+
 import igraph as ig
 import numpy as np
 import louvain
@@ -28,5 +30,5 @@ plt.title("Example SBM Adjacency Matrix", fontsize=14)
 plt.savefig("example_SBM_adjacency.png", dpi=200)
 
 out = ig.plot(louvain.RBConfigurationVertexPartition(G, initial_membership=[i // B for i in range(N)]), bbox=(750, 750),
-              layout=G.layout_fruchterman_reingold(maxiter=10000))
+              layout=G.layout_fruchterman_reingold(niter=10000))
 out.save("example_SBM_layout.png")

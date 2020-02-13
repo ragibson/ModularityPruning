@@ -1,8 +1,13 @@
+# This shows that our parallel implementation of Louvain is
+#   * ~34x faster than CHAMP's when single-threaded (and running 65409 times on the Karate Club)
+#   * ~11x faster than CHAMP's when using 8 cores (and running 331129 on the Karate Club)
+
 from champ.louvain_ext import parallel_louvain
 import igraph as ig
 from time import time
-from utilities import CHAMP_2D, repeated_parallel_louvain
+from utilities import CHAMP_2D, repeated_parallel_louvain_from_gammas
 from multiprocessing import cpu_count
+import numpy as np
 
 G = ig.Graph.Famous("Zachary")
 
@@ -24,9 +29,8 @@ def test(PROCESSORS):
         print("{:>15} ".format(ITERATIONS), end='', flush=True)
 
         start = time()
-        all_parts = repeated_parallel_louvain(G, GAMMA_0, GAMMA_F, gamma_iters=ITERATIONS // PROCESSORS,
-                                              repeat=PROCESSORS,
-                                              show_progress=False)
+        all_parts = repeated_parallel_louvain_from_gammas(G, gammas=np.linspace(GAMMA_0, GAMMA_F, ITERATIONS),
+                                                          show_progress=False)
         results1 = CHAMP_2D(G, all_parts, GAMMA_0, GAMMA_F)
         MC_duration = time() - start
 

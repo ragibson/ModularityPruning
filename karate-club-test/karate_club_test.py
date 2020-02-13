@@ -47,7 +47,7 @@ plt.ylabel("Number of communities", fontsize=14)
 plt.savefig("karate_club_CHAMP_gamma_estimates.pdf")
 
 # Store shared force-directed layout to make later plotting layouts consistent
-layout = G.layout_fruchterman_reingold(maxiter=1000)
+layout = G.layout_fruchterman_reingold(niter=1000)
 
 # Plot stable partitions when the number of communities is restricted
 for K in range(2, 5):
