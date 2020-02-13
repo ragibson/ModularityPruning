@@ -6,9 +6,9 @@
 
 ### Cleanup pass of implementation
 
-- [ ] utilities/bench.py
+- [X] utilities/bench.py
 - [ ] utilities/champ_utilities.py
-- [ ] utilities/\_\_init\_\_.py
+- [X] utilities/\_\_init\_\_.py
 - [ ] utilities/louvain_utilities.py
 - [ ] utilities/parameter_estimation.py
 - [ ] utilities/parameter_estimation_utilities.py
