@@ -8,7 +8,7 @@
 
 - [ ] utilities/bench.py
 - [ ] utilities/champ_utilities.py
-- [ ] utilities/__init__.py
+- [ ] utilities/\_\_init\_\_.py
 - [ ] utilities/louvain_utilities.py
 - [ ] utilities/parameter_estimation.py
 - [ ] utilities/parameter_estimation_utilities.py
@@ -16,10 +16,10 @@
 - [ ] utilities/plotting.py
 - [ ] utilities/progress.py
 - [ ] utilities/test_gamma_estimation.py
-- [ ] utilities/CHAMP-3D-test/__init__.py
+- [ ] utilities/CHAMP-3D-test/\_\_init\_\_.py
 - [ ] utilities/CHAMP-3D-test/multilayer_CHAMP_test.py
 - [ ] utilities/CHAMP-3D-test/plot_2d_domains_test.py
-- [ ] utilities/manual_CHAMP/__init__.py
+- [ ] utilities/manual_CHAMP/\_\_init\_\_.py
 - [ ] utilities/manual_CHAMP/manual_CHAMP_directed.py
 - [ ] utilities/manual_CHAMP/manual_CHAMP.py
 
