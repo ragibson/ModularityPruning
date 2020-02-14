@@ -287,7 +287,7 @@ def gamma_estimates_to_stable_partitions(gamma_estimates):
 
     Returns the memberships of the partitions where gamma_start <= gamma_estimate <= gamma_end."""
     return [membership for gamma_start, gamma_end, membership, gamma_estimate in gamma_estimates
-            if gamma_start <= gamma_estimate <= gamma_end]
+            if gamma_estimate is not None and gamma_start <= gamma_estimate <= gamma_end]
 
 
 def domains_to_gamma_omega_estimates(G_intralayer, G_interlayer, layer_vec, domains, model='temporal'):

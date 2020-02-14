@@ -38,7 +38,8 @@ def plot_estimates(gamma_estimates):
                 if gamma_start <= g_est <= gamma_end:
                     k_new = num_communities(part)
 
-            ax.plot([g_est], [k_new], c='black', marker='o', markersize=3)
+            if k_new != 0:
+                ax.plot([g_est], [k_new], c='black', marker='o', markersize=3)
 
             if k_new != 0 and x_low <= g_est <= x_high and y_low <= k_new <= y_high:
                 ax.annotate("", xy=(g_est, k_new), xytext=(middle, k),
