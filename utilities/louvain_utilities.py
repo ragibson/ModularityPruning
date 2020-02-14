@@ -3,6 +3,9 @@ import functools
 import louvain
 from multiprocessing import Pool, cpu_count
 import numpy as np
+import psutil
+
+LOW_MEMORY_THRESHOLD = 1e9  # 1 GB
 
 
 @functools.lru_cache(maxsize=1000)
@@ -70,6 +73,7 @@ def repeated_parallel_louvain_from_gammas(G, gammas, show_progress=True):
     if show_progress:
         progress = Progress(100)
 
+    pool = Pool(processes=cpu_count())
     total = set()
 
     chunk_size = len(gammas) // 99
@@ -79,18 +83,21 @@ def repeated_parallel_louvain_from_gammas(G, gammas, show_progress=True):
         chunk_params = [[(G, g) for g in gammas]]
 
     for chunk in chunk_params:
-        # Reinitialize pool every chunk in order to get around an apparent memory leak in multiprocessing
-        pool = Pool(processes=cpu_count())
         for partition in pool.starmap(singlelayer_louvain, chunk):
             total.add(sorted_tuple(partition))
-        pool.close()
 
         if show_progress:
             progress.increment()
 
+        if psutil.virtual_memory().available < LOW_MEMORY_THRESHOLD:
+            # Reinitialize pool to get around an apparent memory leak in multiprocessing
+            pool.close()
+            pool = Pool(processes=cpu_count())
+
     if show_progress:
         progress.done()
 
+    pool.close()
     return total
 
 
@@ -107,6 +114,7 @@ def repeated_parallel_louvain_from_gammas_omegas(G_intralayer, G_interlayer, lay
     if show_progress:
         progress = Progress(100)
 
+    pool = Pool(processes=cpu_count())
     total = set()
 
     chunk_size = len(resolution_parameter_points) // 99
@@ -119,16 +127,19 @@ def repeated_parallel_louvain_from_gammas_omegas(G_intralayer, G_interlayer, lay
                          for gamma, omega in resolution_parameter_points]]
 
     for chunk in chunk_params:
-        # Reinitialize pool every chunk in order to get around an apparent memory leak in multiprocessing
-        pool = Pool(processes=cpu_count())
         for partition in pool.starmap(multilayer_louvain, chunk):
             total.add(sorted_tuple(partition))
-        pool.close()
 
         if show_progress:
             progress.increment()
 
+        if psutil.virtual_memory().available < LOW_MEMORY_THRESHOLD:
+            # Reinitialize pool to get around an apparent memory leak in multiprocessing
+            pool.close()
+            pool = Pool(processes=cpu_count())
+
     if show_progress:
         progress.done()
 
+    pool.close()
     return total
