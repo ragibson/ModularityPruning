@@ -1,24 +1,9 @@
 # ModularityPruning
 
 - [X] Functionality checking of figure generation scripts
-- [ ] Cleanup pass of implementation
+- [X] Cleanup pass of implementation
 - [ ] Cleanup pass of figure generation scripts
 - [ ] Performance pass of implementation 
-
-### Cleanup pass of implementation
-
-- [X] utilities/bench.py
-- [ ] utilities/champ_utilities.py
-- [X] utilities/\_\_init\_\_.py
-- [X] utilities/louvain_utilities.py
-- [X] utilities/parameter_estimation.py
-- [X] utilities/parameter_estimation_utilities.py
-- [X] utilities/partition_utilities.py
-- [X] utilities/plotting.py
-- [X] utilities/progress.py
-- [X] utilities/test_gamma_estimation.py
-- [X] utilities/manual_CHAMP/\_\_init\_\_.py
-- [X] utilities/manual_CHAMP/manual_CHAMP.py
 
 
 ### Cleanup pass of figure generation scripts

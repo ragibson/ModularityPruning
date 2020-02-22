@@ -1,32 +1,25 @@
-from .louvain_utilities import louvain_part_with_membership
 from .partition_utilities import all_degrees, membership_to_communities
-from .progress import Progress
 from collections import defaultdict
-from champ import get_intersection, champ_functions
-import math
+from champ import get_intersection
 import numpy as np
 from numpy.random import choice
 from scipy.spatial import HalfspaceIntersection
 from scipy.optimize import linprog
 from utilities.louvain_utilities import louvain_part_with_membership
-import igraph as ig
 
 
-def get_interior_point(halfspaces, singlelayer=True):
-    '''
-    Find interior point to calculate intersections
+def get_interior_point(halfspaces):
+    """
+    Find interior point of halfspaces (needed to perform halfspace intersection)
+
     :param halfspaces: list of halfspaces
-    :return: an approximation to the point most interior to the halfspace intersection polyhedron (Chebyshev center).
-    '''
+    :return: an approximation to the point most interior to the halfspace intersection polyhedron (Chebyshev center)
+    """
 
     normals, offsets = np.split(halfspaces, [-1], axis=1)
 
-    if singlelayer:
-        # in our case, the last two halfspaces are boundary halfspaces
-        interior_hs, boundaries = np.split(halfspaces, [-2], axis=0)
-    else:
-        # the last six halfspaces are boundary halfspaces
-        interior_hs, boundaries = np.split(halfspaces, [-6], axis=0)
+    # in our singlelayer case, the last two halfspaces are boundary halfspaces
+    interior_hs, boundaries = np.split(halfspaces, [-2], axis=0)
 
     # randomly sample up to 50 of the halfspaces
     sample_len = min(50, len(interior_hs))  # len(interior_hs)
@@ -52,8 +45,8 @@ def get_interior_point(halfspaces, singlelayer=True):
     return intpt
 
 
-def CHAMP_2D(G, all_parts, gamma_0, gamma_f, show_progress=True):
-    """Calculates the CHAMP set at :gamma_0: <= gamma <= :gamma_f:."""
+def CHAMP_2D(G, all_parts, gamma_0, gamma_f):
+    """Calculates the CHAMP set at :gamma_0: <= gamma <= :gamma_f:"""
 
     if len(all_parts) == 0:
         return []
@@ -92,18 +85,14 @@ def CHAMP_2D(G, all_parts, gamma_0, gamma_f, show_progress=True):
 
 
 def CHAMP_3D(G_intralayer, G_interlayer, layer_vec, all_parts, gamma_0, gamma_f, omega_0, omega_f):
-    """Calculates the CHAMP set at :gamma_0: <= gamma <= :gamma_f: and :omega_0: <= omega <= :omega_f:.
+    """Calculates the CHAMP set at :gamma_0: <= gamma <= :gamma_f: and :omega_0: <= omega <= :omega_f:
 
     Defers to the original CHAMP implementation for most of the halfspace intersection for now.
 
     Returns a list of [(list of polygon vertices in (gamma, omega) plane, membership), ...]"""
 
-    # NOTE: layer_vec should be a numpy array here
-
     all_parts = list(all_parts)
-    partitions_coefficients = partition_coefficients_3D(G_intralayer, G_interlayer, layer_vec, all_parts)
-    A_hats, P_hats, C_hats = partitions_coefficients
-
+    A_hats, P_hats, C_hats = partition_coefficients_3D(G_intralayer, G_interlayer, layer_vec, all_parts)
     champ_coef_array = np.vstack((A_hats, P_hats, C_hats)).T
 
     for attempt in range(1, 10):
@@ -123,9 +112,9 @@ def CHAMP_3D(G_intralayer, G_interlayer, layer_vec, all_parts, gamma_0, gamma_f,
 
 
 def optimal_parts_to_ranges(optimal_parts):
-    """Converts a list of [(gamma, quality, membership), ...] to their ranges of dominance.
+    """Converts a list of [(gamma, quality, membership), ...] to their ranges of dominance
 
-    Returns a list of [(gamma_start, gamma_end, membership), ...]."""
+    Returns a list of [(gamma_start, gamma_end, membership), ...]"""
 
     ranges = []
     i = 0
@@ -143,7 +132,7 @@ def optimal_parts_to_ranges(optimal_parts):
 
 
 def partition_coefficients_2D(G, partitions):
-    """Computes A_hat and P_hat for partitions of :G:.
+    """Computes A_hat and P_hat for partitions of :G:
 
     TODO: support edge weights"""
 
@@ -166,6 +155,8 @@ def partition_coefficients_2D(G, partitions):
         P_hats = np.array([sum(sum(degree[v] for v in vs) ** 2 for vs in membership_to_communities(membership).values())
                            for membership in partitions]) / twom
 
+    # This appears to have been initially using louvain rather than performing the above calculation directly
+
     # P_hats = np.array([
     #     louvain_part_with_membership(G, part).quality(resolution_parameter=0.0) -
     #     louvain_part_with_membership(G, part).quality(resolution_parameter=1.0) for part in partitions
@@ -175,7 +166,7 @@ def partition_coefficients_2D(G, partitions):
 
 
 def halfspaces_from_coefficients_2D(A_hats, P_hats):
-    """Converts partitions' coefficients to halfspace normal, offset.
+    """Converts partitions' coefficients to halfspace normal, offset
 
     Q >= -P_hat*gamma + A_hat
     -Q - P_hat*gamma + A_hat <= 0
@@ -186,7 +177,7 @@ def halfspaces_from_coefficients_2D(A_hats, P_hats):
 
 def partition_coefficients_3D(G_intralayer, G_interlayer, layer_vec, partitions):
     """Computes A_hat, P_hat, C_hat for partitions of a graph with intralayer edges given in :G_intralayer:,
-    interlayer edges given in :G_interlayer:, and layer membership :layer_vec:.
+    interlayer edges given in :G_interlayer:, and layer membership :layer_vec:
 
     TODO: support edge weights"""
 
@@ -220,6 +211,8 @@ def partition_coefficients_3D(G_intralayer, G_interlayer, layer_vec, partitions)
                 layer_part = louvain_part_with_membership(subgraph, submem)
                 P_hat += layer_part.quality(resolution_parameter=0.0) - layer_part.quality(resolution_parameter=1.0)
         P_hats.append(P_hat)
+
+    # This appears to have been an attempt to perform the above calculation directly instead of resorting to louvain
 
     # degree = all_degrees(G_intralayer)
     # twom_per_layer = [0] * num_layers
