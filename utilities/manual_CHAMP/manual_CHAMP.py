@@ -1,75 +1,28 @@
+# Runs a performance comparison and consistency test between our CHAMP usage and the champ Python package
+# Notably, our calculation of the partition coefficient array is significantly faster than CHAMP's
+
 from utilities import CHAMP_3D, plot_2d_domains
 import louvain
-from math import ceil, inf
+from math import inf
 import matplotlib.pyplot as plt
-from multiprocessing import Pool, cpu_count
 import numpy as np
 import pickle
 from time import time
 from champ import create_coefarray_from_partitions
 from champ import get_intersection as champ_get_intersection
 from champ import plot_2d_domains as champ_plot_2d_domains
-import igraph as ig
-from synthetic_easy_regime.easy_regime_generation import generate_synthetic_network
+from utilities import sorted_tuple, repeated_parallel_louvain_from_gammas_omegas, partition_coefficients_3D
 
-GAMMA_END = 1.0
-OMEGA_END = 1.0
-NGAMMA = 10
-NOMEGA = 10
-PROGRESS_LENGTH = 50
-optimiser = louvain.Optimiser()
+GAMMA_END = 2.0
+OMEGA_END = 2.0
+NGAMMA = 25
+NOMEGA = 25
 
 
-def sorted_tuple(t):
-    sort_map = {x[0]: i for i, x in enumerate(sorted(zip(*np.unique(t, return_index=True)), key=lambda x: x[1]))}
-    return tuple(sort_map[x] for x in t)
+def plot_manual_CHAMP(G_intralayer, G_interlayer, layer_vec, partitions):
+    """Run an inefficient method to plot optimal modularity partititions across the (gamma, omega) plane to check
+    consistency of the CHAMP implementation"""
 
-
-def one_run(G_intralayer, G_interlayer, layer_vec, gamma, omega):
-    G_interlayer.es['weight'] = [omega] * G_interlayer.ecount()
-    wl_part = louvain.RBConfigurationVertexPartitionWeightedLayers(G_intralayer, resolution_parameter=gamma,
-                                                                   layer_vec=layer_vec, weights='weight')
-    wli_part = louvain.CPMVertexPartition(G_interlayer, resolution_parameter=0.0, weights='weight')
-    optimiser.optimise_partition_multiplex([wl_part, wli_part])
-    return wl_part.membership
-
-
-def repeated_multilayer_louvain(G_intralayer, G_interlayer, layer_vec, gammas, omegas, threads=cpu_count()):
-    pool = Pool(processes=threads)
-    start = time()
-    partitions = [pool.apply_async(one_run, (G_intralayer, G_interlayer, layer_vec, g, o))
-                  for g in gammas for o in omegas]
-
-    total = len(partitions)
-    iter_per_char = ceil(total / PROGRESS_LENGTH)
-    start = time()
-
-    def get_and_progress(i, p):
-        res = p.get(timeout=60)
-        i += 1
-        print("\rLouvain Progress: [{}{}], Time: {:.1f} s / {:.1f} s"
-              "".format("#" * (i // iter_per_char),
-                        "-" * (total // iter_per_char - i // iter_per_char),
-                        time() - start,
-                        (time() - start) * (total / i)), end="", flush=True)
-        return res
-
-    partitions = [get_and_progress(i, p) for i, p in enumerate(partitions)]
-    print()
-    return partitions
-
-
-def run_alternate(G_intralayer, G_interlayer, layer_vec):
-    if 'weight' not in G_intralayer.es:
-        G_intralayer.es['weight'] = [1.0] * G_intralayer.ecount()
-    if 'weight' not in G_interlayer.es:
-        G_interlayer.es['weight'] = [1.0] * G_interlayer.ecount()
-    return repeated_multilayer_louvain(G_intralayer, G_interlayer, layer_vec,
-                                       np.linspace(0, GAMMA_END, NGAMMA),
-                                       np.linspace(0, OMEGA_END, NOMEGA))
-
-
-def plot_alternate(G_intralayer, G_interlayer, layer_vec, partitions):
     if 'weight' not in G_intralayer.es:
         G_intralayer.es['weight'] = [1.0] * G_intralayer.ecount()
     if 'weight' not in G_interlayer.es:
@@ -79,18 +32,13 @@ def plot_alternate(G_intralayer, G_interlayer, layer_vec, partitions):
         membership_val = hash(sorted_tuple(membership))
         return tuple((membership_val / x) % 1.0 for x in [157244317, 183849443, 137530733])
 
-    denser_gammas = np.linspace(0, GAMMA_END, 200)
-    denser_omegas = np.linspace(0, OMEGA_END, 200)
+    denser_gammas = np.linspace(0, GAMMA_END, 250)
+    denser_omegas = np.linspace(0, OMEGA_END, 250)
 
     intralayer_part = louvain.RBConfigurationVertexPartitionWeightedLayers(G_intralayer, layer_vec=layer_vec,
                                                                            weights='weight')
     G_interlayer.es['weight'] = [1.0] * G_interlayer.ecount()
     interlayer_part = louvain.CPMVertexPartition(G_interlayer, resolution_parameter=0.0, weights='weight')
-
-    total = len(partitions)
-    iter_per_char = ceil(total / PROGRESS_LENGTH)
-    current = 0
-    start = time()
 
     # best_partitions = List(quality, partition, gamma, omega)
     best_partitions = [[(-inf,) * 4] * len(denser_omegas) for _ in range(len(denser_gammas))]
@@ -107,60 +55,67 @@ def plot_alternate(G_intralayer, G_interlayer, layer_vec, partitions):
                 if Q > best_partitions[g_index][o_index][0]:
                     best_partitions[g_index][o_index] = (Q, p, gamma, omega)
 
-        current += 1
-        print("\rSweep Progress: [{}{}], Time: {:.1f} s / {:.1f} s"
-              "".format("#" * (current // iter_per_char),
-                        "-" * (total // iter_per_char - current // iter_per_char),
-                        time() - start,
-                        (time() - start) * (total / current)), end="", flush=True)
-
-    print("\nPlotting...", flush=True)
-
     gammas, omegas, colors = zip(*[(x[2], x[3], part_color(x[1])) for row in best_partitions for x in row])
     plt.scatter(gammas, omegas, color=colors, s=1, marker='s')
     plt.xlabel("gamma")
     plt.ylabel("omega")
-    # plt.show()
 
 
-G_intralayer, G_interlayer = pickle.load(open("iter1.p", "rb"))
+def run_CHAMP_with_their_coefarray_computation(G_intralayer, G_interlayer, layer_vec, partitions):
+    layer_vec = np.array(layer_vec)
+    nlayers = max(layer_vec) + 1
 
-# G_intralayer, G_interlayer, layer_vec = generate_synthetic_network()
+    A = np.array(G_intralayer.get_adjacency().data)
+    C = np.array(G_interlayer.get_adjacency().data)
+    P = np.zeros((G_intralayer.vcount(), G_intralayer.vcount()))
+    for i in range(nlayers):
+        c_inds = np.where(layer_vec == i)[0]
+        c_degrees = np.array(G_intralayer.degree(c_inds))
+        P[np.ix_(c_inds, c_inds)] = np.outer(c_degrees, c_degrees.T) / (1.0 * np.sum(c_degrees))
 
-n_per_layer = 150
-num_layers = 15
-layer_vec = [i // n_per_layer for i in range(n_per_layer * num_layers)]
+    start = time()
+    coefarray = create_coefarray_from_partitions(np.array(list(partitions)), A, P, C)
+    domains = champ_get_intersection(coefarray, max_pt=(GAMMA_END, OMEGA_END))
 
-print("\n'manual' louvain:")
-partitions = run_alternate(G_intralayer, G_interlayer, layer_vec)
+    print("CHAMP with their coefarray computation took {:.2f} s".format(time() - start))
+    champ_plot_2d_domains(domains)
 
-layer_vec = np.array(layer_vec)
-nlayers = max(layer_vec) + 1
-champ_parts = np.array(partitions)
 
-A = np.array(G_intralayer.get_adjacency().data)
-C = np.array(G_interlayer.get_adjacency().data)
-P = np.zeros((G_intralayer.vcount(), G_intralayer.vcount()))
-for i in range(nlayers):
-    c_inds = np.where(layer_vec == i)[0]
-    c_degrees = np.array(G_intralayer.degree(c_inds))
-    P[np.ix_(c_inds, c_inds)] = np.outer(c_degrees, c_degrees.T) / (1.0 * np.sum(c_degrees))
+def run_CHAMP_with_our_coefarray_computation(G_intralayer, G_interlayer, layer_vec, partitions):
+    start = time()
+    A_hats, P_hats, C_hats = partition_coefficients_3D(G_intralayer, G_interlayer, layer_vec, partitions)
+    coefarray = np.vstack((A_hats, P_hats, C_hats)).T
+    domains = champ_get_intersection(coefarray, max_pt=(GAMMA_END, OMEGA_END))
 
-start = time()
-coefarray = create_coefarray_from_partitions(champ_parts, A, P, C)
-# A_hats, P_hats, C_hats = partition_coefficients_3D(G_intralayer, G_interlayer, layer_vec, champ_parts)
-# our_coefarray = np.vstack((A_hats, P_hats, C_hats)).T
-domains = champ_get_intersection(coefarray, max_pt=(1.0, 1.0))
-print("CHAMP's implementation took {:.2f} s".format(time() - start))
-champ_plot_2d_domains(domains)
-plt.savefig("CHAMP_test.png", dpi=300)
+    print("CHAMP with our coefarray computation took {:.2f} s".format(time() - start))
+    champ_plot_2d_domains(domains)
 
-start = time()
-domains = CHAMP_3D(G_intralayer, G_interlayer, layer_vec, champ_parts, 0.0, GAMMA_END, 0.0, OMEGA_END)
-print("Our implementation took {:.2f} s".format(time() - start))
-plot_2d_domains(domains, [0, GAMMA_END], [0, OMEGA_END])
-plt.savefig("our_CHAMP_test.png", dpi=300)
 
-print("\n'manual' CHAMP (with manual louvain):")
-plot_alternate(G_intralayer, G_interlayer, layer_vec, champ_parts)
-plt.savefig("manual_CHAMP_test.png")
+def run_our_CHAMP_implementation(G_intralayer, G_interlayer, layer_vec, partitions):
+    start = time()
+    domains = CHAMP_3D(G_intralayer, G_interlayer, layer_vec, partitions, 0.0, GAMMA_END, 0.0, OMEGA_END)
+    print("Our implementation took {:.2f} s".format(time() - start))
+    plot_2d_domains(domains, [0, GAMMA_END], [0, OMEGA_END])
+
+
+if __name__ == "__main__":
+    G_intralayer, G_interlayer = pickle.load(open("example_multilayer_network.p", "rb"))
+    n_per_layer = 150
+    num_layers = 15
+    layer_vec = [i // n_per_layer for i in range(n_per_layer * num_layers)]
+
+    partitions = repeated_parallel_louvain_from_gammas_omegas(G_intralayer, G_interlayer, layer_vec,
+                                                              gammas=np.linspace(0, GAMMA_END, NGAMMA),
+                                                              omegas=np.linspace(0, OMEGA_END, NOMEGA))
+
+    run_CHAMP_with_their_coefarray_computation(G_intralayer, G_interlayer, layer_vec, partitions)
+    plt.savefig("CHAMP_test_their_coefarray.png")
+
+    run_CHAMP_with_our_coefarray_computation(G_intralayer, G_interlayer, layer_vec, partitions)
+    plt.savefig("CHAMP_test_our_coefarray.png")
+
+    run_our_CHAMP_implementation(G_intralayer, G_interlayer, layer_vec, partitions)
+    plt.savefig("CHAMP_test_our_implementation.png")
+
+    plot_manual_CHAMP(G_intralayer, G_interlayer, layer_vec, partitions)
+    plt.savefig("CHAMP_test_manual_plot.png")

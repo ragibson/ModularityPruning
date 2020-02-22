@@ -17,9 +17,9 @@
 - [X] utilities/plotting.py
 - [X] utilities/progress.py
 - [X] utilities/test_gamma_estimation.py
-- [ ] utilities/manual_CHAMP/\_\_init\_\_.py
+- [X] utilities/manual_CHAMP/\_\_init\_\_.py
 - [ ] utilities/manual_CHAMP/manual_CHAMP_directed.py
-- [ ] utilities/manual_CHAMP/manual_CHAMP.py
+- [X] utilities/manual_CHAMP/manual_CHAMP.py
 
 
 ### Cleanup pass of figure generation scripts

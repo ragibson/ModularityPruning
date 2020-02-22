@@ -1,6 +1,7 @@
 from .progress import Progress
 import functools
 import louvain
+from math import ceil
 from multiprocessing import Pool, cpu_count
 import numpy as np
 import psutil
@@ -70,9 +71,6 @@ def repeated_parallel_louvain_from_gammas(G, gammas, show_progress=True):
     Returns a set of all unique partitions encountered.
     """
 
-    if show_progress:
-        progress = Progress(100)
-
     pool = Pool(processes=cpu_count())
     total = set()
 
@@ -81,6 +79,9 @@ def repeated_parallel_louvain_from_gammas(G, gammas, show_progress=True):
         chunk_params = ([(G, g) for g in gammas[i:i + chunk_size]] for i in range(0, len(gammas), chunk_size))
     else:
         chunk_params = [[(G, g) for g in gammas]]
+
+    if show_progress:
+        progress = Progress(ceil(len(gammas) / chunk_size))
 
     for chunk in chunk_params:
         for partition in pool.starmap(singlelayer_louvain, chunk):
@@ -111,9 +112,6 @@ def repeated_parallel_louvain_from_gammas_omegas(G_intralayer, G_interlayer, lay
 
     resolution_parameter_points = [(gamma, omega) for gamma in gammas for omega in omegas]
 
-    if show_progress:
-        progress = Progress(100)
-
     pool = Pool(processes=cpu_count())
     total = set()
 
@@ -125,6 +123,9 @@ def repeated_parallel_louvain_from_gammas_omegas(G_intralayer, G_interlayer, lay
     else:
         chunk_params = [[(G_intralayer, G_interlayer, layer_vec, gamma, omega)
                          for gamma, omega in resolution_parameter_points]]
+
+    if show_progress:
+        progress = Progress(ceil(len(resolution_parameter_points) / chunk_size))
 
     for chunk in chunk_params:
         for partition in pool.starmap(multilayer_louvain, chunk):

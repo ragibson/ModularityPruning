@@ -51,6 +51,9 @@ def estimate_multilayer_SBM_parameters(G_intralayer, G_interlayer, layer_vec, pa
     :return: theta_in, theta_out, p, K
     """
 
+    if 'weight' not in G_intralayer.es:
+        G_intralayer.es['weight'] = [1.0] * G_intralayer.ecount()
+
     # TODO: check if these None parameters and potentially caching calculate_persistence helps performance
     if T is None:
         T = max(layer_vec) + 1  # layer  count
