@@ -167,7 +167,7 @@ def iterative_multilayer_resolution_parameter_estimation(G_intralayer, G_interla
     # model affects SBM parameter estimation and the updating of omega
     if model is 'temporal':
         def calculate_persistence(community):
-            return ordinal_persistence(G_interlayer, community)
+            return ordinal_persistence(G_interlayer, community, N, T)
     elif model is 'multilevel':
         def calculate_persistence(community):
             return multilevel_persistence(G_interlayer, community, layer_vec, Nt, T)
@@ -175,7 +175,7 @@ def iterative_multilayer_resolution_parameter_estimation(G_intralayer, G_interla
         def calculate_persistence(community):
             return categorical_persistence(G_interlayer, community, N, T)
     else:
-        raise ValueError("Model {} is not temporal, multilevel, or multiplex".format(model))
+        raise ValueError(f"Model {model} is not temporal, multilevel, or multiplex")
 
     def maximize_modularity(intralayer_resolution, interlayer_resolution):
         return multilayer_louvain(G_intralayer, G_interlayer, layer_vec, intralayer_resolution, interlayer_resolution,
@@ -200,7 +200,7 @@ def iterative_multilayer_resolution_parameter_estimation(G_intralayer, G_interla
         gamma = update_gamma(theta_in, theta_out)
 
         if gamma is None:
-            raise ValueError(f"gamma={gamma:.3f}, omega={omega:.3f} resulted in degenerate partition")
+            raise ValueError(f"gamma={last_gamma:.3f}, omega={last_omega:.3f} resulted in degenerate partition")
 
         omega = update_omega(theta_in, theta_out, p, K)
 

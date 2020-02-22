@@ -3,6 +3,7 @@
 - [X] Functionality checking of figure generation scripts
 - [ ] Cleanup pass of implementation
 - [ ] Cleanup pass of figure generation scripts
+- [ ] Performance pass of implementation 
 
 ### Cleanup pass of implementation
 
