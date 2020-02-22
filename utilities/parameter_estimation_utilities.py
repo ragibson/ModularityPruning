@@ -36,19 +36,26 @@ def estimate_singlelayer_SBM_parameters(G, partition, m=None):
     return omega_in, omega_out
 
 
-def estimate_multilayer_SBM_parameters(G_intralayer, layer_vec, partition, model, calculate_persistence, T=None,
-                                       m_t=None):
+def estimate_multilayer_SBM_parameters(G_intralayer, G_interlayer, layer_vec, partition, model, N=None, T=None,
+                                       Nt=None, m_t=None):
     """TODO"""
 
-    # TODO: check if this helps performance
+    # TODO: check if these None parameters and potentially caching calculate_persistence helps performance
     if T is None:
-        T = max(layer_vec) + 1
+        T = max(layer_vec) + 1  # layer  count
 
-    # TODO: check if this helps performance
-    if m_t is None:
+    if N is None:
+        N = G_intralayer.vcount() // T
+
+    if m_t is None:  # compute total edge weights per layer
         m_t = [0] * T
         for e in G_intralayer.es:
             m_t[layer_vec[e.source]] += e['weight']
+
+    if Nt is None:  # compute total node counts per layer
+        Nt = [0] * T
+        for l in layer_vec:
+            Nt[l] += 1
 
     K = len(partition)
 
@@ -70,6 +77,7 @@ def estimate_multilayer_SBM_parameters(G_intralayer, layer_vec, partition, model
     theta_out = sum(2 * m_t[t] - 2 * m_t_in[t] for t in range(T)) / \
                 sum(2 * m_t[t] - sum_kappa_t_sqr[t] / (2 * m_t[t]) for t in range(T)) if K > 1 else 0
 
+    calculate_persistence = persistence_function_from_model(model, G_interlayer, layer_vec=layer_vec, N=N, T=T, Nt=Nt)
     pers = calculate_persistence(community)
     if model is 'multiplex':
         # estimate p by solving polynomial root-finding problem with starting estimate p=0.5
@@ -150,8 +158,51 @@ def categorical_persistence(G_interlayer, community, N, T):
     return sum(community[e.source] == community[e.target] for e in G_interlayer.es) / (N * T * (T - 1))
 
 
+def omega_function_from_model(model, omega_max, T):
+    """TODO"""
+
+    if model is 'multiplex':
+        def update_omega(theta_in, theta_out, p, K):
+            return multiplex_omega_estimate_from_parameters(theta_in, theta_out, p, K, T, omega_max=omega_max)
+    elif model is 'temporal' or model is 'multilayer':
+        def update_omega(theta_in, theta_out, p, K):
+            return temporal_multilevel_omega_estimate_from_parameters(theta_in, theta_out, p, K, omega_max=omega_max)
+    else:
+        raise ValueError(f"Model {model} is not temporal, multilevel, or multiplex")
+
+    return update_omega
+
+
+def persistence_function_from_model(model, G_interlayer, layer_vec=None, N=None, T=None, Nt=None):
+    """TODO"""
+
+    # Note: non-uniform cases are not implemented
+    if model is 'temporal':
+        if N is None or T is None:
+            raise ValueError("Parameters N and T cannot be None for temporal persistence calculation")
+
+        def calculate_persistence(community):
+            return ordinal_persistence(G_interlayer, community, N, T)
+    elif model is 'multilevel':
+        if Nt is None or T is None or layer_vec is None:
+            raise ValueError("Parameters layer_vec, Nt, T cannot be None for multilevel persistence calculation")
+
+        def calculate_persistence(community):
+            return multilevel_persistence(G_interlayer, community, layer_vec, Nt, T)
+    elif model is 'multiplex':
+        if N is None or T is None:
+            raise ValueError("Parameters N and T cannot be None for multiplex persistence calculation")
+
+        def calculate_persistence(community):
+            return categorical_persistence(G_interlayer, community, N, T)
+    else:
+        raise ValueError(f"Model {model} is not temporal, multilevel, or multiplex")
+
+    return calculate_persistence
+
+
 def gamma_omega_estimate(G_intralayer, G_interlayer, layer_vec, membership, omega_max=1000, model='temporal',
-                         N=None, T=None):
+                         N=None, T=None, Nt=None, m_t=None):
     """Returns the (gamma, omega) estimate for a multilayer network and a partition
 
     :param G_intralayer: intralayer graph
@@ -160,113 +211,20 @@ def gamma_omega_estimate(G_intralayer, G_interlayer, layer_vec, membership, omeg
     :param membership: partition membership vector
     :param omega_max: maximum allowed value for omega
     :param model: network layer topology (temporal, multilevel, multiplex)
-    :param N: number of nodes per layer (if None, will be computed)
-    :param T: number of layers (if None, will be computed)
-    :return:
+    :param N: TODO
+    :param T: TODO
+    :param Nt: TODO
+    :param m_t: TODO
+    :return: TODO
     """
-
-    if 'weight' not in G_intralayer.es:
-        G_intralayer.es['weight'] = [1.0] * G_intralayer.ecount()
-
-    # TODO: check if this helps performance
     if T is None:
-        T = max(layer_vec) + 1
+        T = max(layer_vec) + 1  # layer  count
 
-    # TODO: check if this helps performance
-    if N is None:
-        N = G_intralayer.vcount() // T
-
-    # TODO: non-uniform cases
-    # model affects SBM parameter estimation and the updating of omega
-    if model is 'temporal':
-        def calculate_persistence(community):
-            # ordinal persistence
-            return sum(community[e.source] == community[e.target] for e in G_interlayer.es) / (N * (T - 1))
-    elif model is 'multilevel':
-        def calculate_persistence(community):
-            # multilevel persistence
-            pers_per_layer = [0] * T
-            for e in G_interlayer.es:
-                pers_per_layer[layer_vec[e.target]] += (community[e.source] == community[e.target])
-
-            pers_per_layer = [pers_per_layer[l] / Nt[l] for l in range(T)]
-            return sum(pers_per_layer) / (T - 1)
-    elif model is 'multiplex':
-        def calculate_persistence(community):
-            # categorical persistence
-            return sum(community[e.source] == community[e.target] for e in G_interlayer.es) / (N * T * (T - 1))
-    else:
-        raise ValueError("Model {} is not temporal, multilevel, or multiplex".format(model))
-
-    def update_gamma(theta_in, theta_out):
-        if theta_in == 0 or theta_in == 1:
-            return None  # degenerate partition
-
-        if theta_out == 0:
-            return theta_in / log(theta_in)
-        return (theta_in - theta_out) / (log(theta_in) - log(theta_out))
-
-    if model is 'multiplex':
-        def update_omega(theta_in, theta_out, p, K):
-            if theta_out == 0:
-                return log(1 + p * K / (1 - p)) / (T * log(theta_in)) if p < 1.0 and theta_in != 1 else omega_max
-            # if p is 1, the optimal omega is infinite (here, omega_max)
-            return log(1 + p * K / (1 - p)) / (T * (log(theta_in) - log(theta_out))) if p < 1.0 else omega_max
-    else:
-        def update_omega(theta_in, theta_out, p, K):
-            if theta_out == 0:
-                return log(1 + p * K / (1 - p)) / (2 * log(theta_in)) if p < 1.0 and theta_in != 1 else omega_max
-            # if p is 1, the optimal omega is infinite (here, omega_max)
-            return log(1 + p * K / (1 - p)) / (2 * (log(theta_in) - log(theta_out))) if p < 1.0 else omega_max
-
-    T = max(layer_vec) + 1  # layer count
-    m_t = [0] * T
-    for e in G_intralayer.es:
-        m_t[layer_vec[e.source]] += e['weight']
-
-    N = G_intralayer.vcount() // T
-    Nt = [0] * T
-    for l in layer_vec:
-        Nt[l] += 1
-
-    K = num_communities(membership)
-
-    m_t_in = [0] * T
-    for e in G_intralayer.es:
-        if membership[e.source] == membership[e.target] and layer_vec[e.source] == layer_vec[e.target]:
-            m_t_in[layer_vec[e.source]] += e['weight']
-
-    kappa_t_r_list = [[0] * K for _ in range(T)]
-    for e in G_intralayer.es:
-        layer = layer_vec[e.source]
-        kappa_t_r_list[layer][membership[e.source]] += e['weight']
-        kappa_t_r_list[layer][membership[e.target]] += e['weight']
-    sum_kappa_t_sqr = [sum(x ** 2 for x in kappa_t_r_list[t]) for t in range(T)]
-
-    theta_in = sum(2 * m_t_in[t] for t in range(T)) / sum(sum_kappa_t_sqr[t] / (2 * m_t[t]) for t in range(T))
-
-    if any(sum_kappa_t_sqr[t] == (2 * m_t[t]) ** 2 for t in range(T)) != 0:
-        # intralayer SBM is degenerate
-        theta_out = 0
-    else:
-        # guard for div by zero with single community partition
-        theta_out = sum(2 * m_t[t] - 2 * m_t_in[t] for t in range(T)) / \
-                    sum(2 * m_t[t] - sum_kappa_t_sqr[t] / (2 * m_t[t]) for t in range(T)) if K > 1 else 0
-
-    pers = calculate_persistence(membership)
-    if model is 'multiplex':
-        # estimate p by solving polynomial root-finding problem with starting estimate p=0.5
-        def f(x):
-            coeff = 2 * (1 - 1 / K) / (T * (T - 1))
-            return coeff * sum((T - n) * x ** n for n in range(1, T)) + 1 / K - pers
-
-        # guard for div by zero with single community partition
-        # (in this case, all community assignments persist across layers)
-        p = fsolve(f, np.array([0.5]))[0] if pers < 1.0 and K > 1 else 1.0
-    else:
-        # guard for div by zero with single community partition
-        # (in this case, all community assignments persist across layers)
-        p = max((K * pers - 1) / (K - 1), 0) if pers < 1.0 and K > 1 else 1.0
+    partition = louvain_part_with_membership(G_intralayer, membership)
+    theta_in, theta_out, p, K = estimate_multilayer_SBM_parameters(G_intralayer, G_interlayer, layer_vec, partition,
+                                                                   model, N=N, T=T, Nt=Nt, m_t=m_t)
+    update_omega = omega_function_from_model(model, omega_max, T=T)
+    update_gamma = gamma_estimate_from_parameters
 
     gamma = update_gamma(theta_in, theta_out)
     omega = update_omega(theta_in, theta_out, p, K)

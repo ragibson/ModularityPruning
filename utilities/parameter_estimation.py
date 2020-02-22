@@ -155,38 +155,16 @@ def iterative_multilayer_resolution_parameter_estimation(G_intralayer, G_interla
         Nt[l] += 1
 
     check_multilayer_graph_consistency(G_intralayer, G_interlayer, layer_vec, model, m_t, T, N, Nt)
-
-    if model is 'multiplex':
-        def update_omega(theta_in, theta_out, p, K):
-            return multiplex_omega_estimate_from_parameters(theta_in, theta_out, p, K, T, omega_max=omega_max)
-    else:
-        def update_omega(theta_in, theta_out, p, K):
-            return temporal_multilevel_omega_estimate_from_parameters(theta_in, theta_out, p, K, omega_max=omega_max)
-
-    # Note: non-uniform cases are not implemented
-    # model affects SBM parameter estimation and the updating of omega
-    if model is 'temporal':
-        def calculate_persistence(community):
-            return ordinal_persistence(G_interlayer, community, N, T)
-    elif model is 'multilevel':
-        def calculate_persistence(community):
-            return multilevel_persistence(G_interlayer, community, layer_vec, Nt, T)
-    elif model is 'multiplex':
-        def calculate_persistence(community):
-            return categorical_persistence(G_interlayer, community, N, T)
-    else:
-        raise ValueError(f"Model {model} is not temporal, multilevel, or multiplex")
+    update_omega = omega_function_from_model(model, omega_max, T=T)
+    update_gamma = gamma_estimate_from_parameters
 
     def maximize_modularity(intralayer_resolution, interlayer_resolution):
         return multilayer_louvain(G_intralayer, G_interlayer, layer_vec, intralayer_resolution, interlayer_resolution,
                                   optimiser=optimiser, return_partition=True)
 
     def estimate_SBM_parameters(partition):
-        return estimate_multilayer_SBM_parameters(G_intralayer, layer_vec, partition, model, calculate_persistence,
-                                                  T=T, m_t=m_t)
-
-    def update_gamma(theta_in, theta_out):
-        return gamma_estimate_from_parameters(theta_in, theta_out)
+        return estimate_multilayer_SBM_parameters(G_intralayer, G_interlayer, layer_vec, partition, model,
+                                                  N=N, T=T, Nt=Nt, m_t=m_t)
 
     part, K, last_gamma, last_omega = (None,) * 4
     for iteration in range(max_iter):
