@@ -14,8 +14,9 @@ class Progress:
         self.name = name
 
     def update(self, i):
-        filled_portion = "#" * int(i // self.ipc)
-        remaining_portion = "." * int(self.length - i // self.ipc)
+        filled_count = math.floor(self.length * i / self.total)
+        filled_portion = "#" * filled_count
+        remaining_portion = "." * (self.length - filled_count)
         time_elapsed = time() - self.start
         time_estimate = time_elapsed * (self.total / i) if i > 0 else math.inf
         print(f"\r{self.name} [{filled_portion}{remaining_portion}] Time: {time_elapsed:.1f} / {time_estimate:.1f} s",

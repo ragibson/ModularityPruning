@@ -28,7 +28,8 @@ def iterative_monolayer_resolution_parameter_estimation(G, gamma=1.0, tol=1e-2, 
             return singlelayer_louvain(G, resolution_param, return_partition=True)
     elif method == "2-spinglass":
         def maximize_modularity(resolution_param):
-            return G.community_spinglass(spins=2, gamma=resolution_param)
+            membership = G.community_spinglass(spins=2, gamma=resolution_param).membership
+            return louvain_part_with_membership(G, membership)
     else:
         raise ValueError(f"Community detection method {method} not supported")
 

@@ -8,7 +8,7 @@
 
 ### Cleanup pass of figure generation scripts
 
-- [ ] Figure 2.1
+- [X] Figure 2.1
 - [ ] Figure 2.2
 - [ ] Figure 3.1
 - [ ] Figure 5.1
