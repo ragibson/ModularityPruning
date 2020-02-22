@@ -1,5 +1,6 @@
 # Runs a performance comparison and consistency test between our CHAMP usage and the champ Python package
 # Notably, our calculation of the partition coefficient array is significantly faster than CHAMP's
+# Furthermore, CHAMP's calculation appears incorrect when the intralayer graph is directed
 
 from utilities import CHAMP_3D, plot_2d_domains
 import louvain
@@ -13,6 +14,7 @@ from champ import get_intersection as champ_get_intersection
 from champ import plot_2d_domains as champ_plot_2d_domains
 from utilities import sorted_tuple, repeated_parallel_louvain_from_gammas_omegas, partition_coefficients_3D
 
+TEST_DIRECTED_INTRALAYER = False
 GAMMA_END = 2.0
 OMEGA_END = 2.0
 NGAMMA = 25
@@ -100,6 +102,10 @@ def run_our_CHAMP_implementation(G_intralayer, G_interlayer, layer_vec, partitio
 
 if __name__ == "__main__":
     G_intralayer, G_interlayer = pickle.load(open("example_multilayer_network.p", "rb"))
+
+    if TEST_DIRECTED_INTRALAYER:
+        G_intralayer.to_directed()
+
     n_per_layer = 150
     num_layers = 15
     layer_vec = [i // n_per_layer for i in range(n_per_layer * num_layers)]

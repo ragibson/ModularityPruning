@@ -18,7 +18,6 @@
 - [X] utilities/progress.py
 - [X] utilities/test_gamma_estimation.py
 - [X] utilities/manual_CHAMP/\_\_init\_\_.py
-- [ ] utilities/manual_CHAMP/manual_CHAMP_directed.py
 - [X] utilities/manual_CHAMP/manual_CHAMP.py
 
 

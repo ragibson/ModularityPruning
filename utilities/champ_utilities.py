@@ -192,7 +192,6 @@ def partition_coefficients_3D(G_intralayer, G_interlayer, layer_vec, partitions)
 
     all_intralayer_edges = [(e.source, e.target) for e in G_intralayer.es]
     all_interlayer_edges = [(e.source, e.target) for e in G_interlayer.es]
-    degree = all_degrees(G_intralayer)
 
     # multiply by 2 only if undirected here
     if G_intralayer.is_directed():
@@ -204,34 +203,37 @@ def partition_coefficients_3D(G_intralayer, G_interlayer, layer_vec, partitions)
 
     P_hats = []
     num_layers = max(layer_vec) + 1
-    if G_intralayer.is_directed() and G_interlayer.is_directed():
-        # Note: layer_vec seems to need to be a numpy array here
+    # Note: layer_vec seems to need to be a numpy array here
+    if not isinstance(layer_vec, np.ndarray):
+        layer_vec = np.array(layer_vec)
 
-        # Just to be entirely sure our coefficients are correct in this case, we split into layers separately.
-        # This isn't strictly necessary (this can be made much more efficient), but makes the reasoning easier.
-        for membership in partitions:
-            P_hat = 0
-            part_obj = louvain_part_with_membership(G_intralayer, membership)
-            for layer in range(num_layers):
-                cind = np.where(layer_vec == layer)[0]
-                if len(cind) > 0:
-                    subgraph = part_obj.graph.subgraph(cind)
-                    submem = np.array(part_obj.membership)[cind]
-                    layer_part = louvain_part_with_membership(subgraph, submem)
-                    P_hat += layer_part.quality(resolution_parameter=0.0) - layer_part.quality(resolution_parameter=1.0)
-            P_hats.append(P_hat)
-    else:
-        twom_per_layer = [0] * num_layers
-        for e in G_intralayer.es:
-            twom_per_layer[layer_vec[e.source]] += 2
-        for membership in partitions:
-            strength = 0
-            for vs in membership_to_communities(membership).values():
-                layer_strengths = [0] * num_layers
-                for v in vs:
-                    layer_strengths[layer_vec[v]] += degree[v]
-                strength += sum(layer_strengths[layer] ** 2 / twom_per_layer[layer] for layer in range(num_layers))
-            P_hats.append(strength)
+    # Just to be entirely sure our coefficients are correct in this case, we split into layers separately.
+    # This isn't strictly necessary (this can be made *much* more efficient), but makes the reasoning easier.
+    for membership in partitions:
+        P_hat = 0
+        part_obj = louvain_part_with_membership(G_intralayer, membership)
+        for layer in range(num_layers):
+            cind = np.where(layer_vec == layer)[0]
+            if len(cind) > 0:
+                subgraph = part_obj.graph.subgraph(cind)
+                submem = np.array(part_obj.membership)[cind]
+                layer_part = louvain_part_with_membership(subgraph, submem)
+                P_hat += layer_part.quality(resolution_parameter=0.0) - layer_part.quality(resolution_parameter=1.0)
+        P_hats.append(P_hat)
+
+    # degree = all_degrees(G_intralayer)
+    # twom_per_layer = [0] * num_layers
+    # for e in G_intralayer.es:
+    #     twom_per_layer[layer_vec[e.source]] += 2
+    # for membership in partitions:
+    #     strength = 0
+    #     for vs in membership_to_communities(membership).values():
+    #         layer_strengths = [0] * num_layers
+    #         for v in vs:
+    #             layer_strengths[layer_vec[v]] += degree[v]
+    #         strength += sum(layer_strengths[layer] ** 2 / twom_per_layer[layer] for layer in range(num_layers))
+    #     P_hats.append(strength)
+
     P_hats = np.array(P_hats)
 
     # multiply by 2 only if undirected here
