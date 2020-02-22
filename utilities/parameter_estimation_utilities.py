@@ -1,5 +1,4 @@
 from .louvain_utilities import louvain_part_with_membership
-from .partition_utilities import num_communities
 import louvain
 from math import log
 import numpy as np
@@ -38,7 +37,19 @@ def estimate_singlelayer_SBM_parameters(G, partition, m=None):
 
 def estimate_multilayer_SBM_parameters(G_intralayer, G_interlayer, layer_vec, partition, model, N=None, T=None,
                                        Nt=None, m_t=None):
-    """TODO"""
+    """Estimates multilayer SBM parameters from a graph and a partition
+
+    :param G_intralayer: input graph containing all intra-layer edges
+    :param G_interlayer: input graph containing all inter-layer edges
+    :param layer_vec: vector of each vertex's layer membership
+    :param partition: partition of interest
+    :param model: network layer topology (temporal, multilevel, multiplex)
+    :param N: number of nodes per layer
+    :param T: number of layers in input graph
+    :param Nt: vector of nodes per layer
+    :param m_t: vector of total edge weights per layer
+    :return: theta_in, theta_out, p, K
+    """
 
     # TODO: check if these None parameters and potentially caching calculate_persistence helps performance
     if T is None:
@@ -121,7 +132,17 @@ def gamma_estimate_from_parameters(omega_in, omega_out):
 
 
 def multiplex_omega_estimate_from_parameters(theta_in, theta_out, p, K, T, omega_max=1000):
-    """TODO"""
+    """Returns the omega estimate for a multiplex multilayer model
+
+    :param theta_in: SBM parameter
+    :param theta_out: SBM parameter
+    :param p: SBM parameter
+    :param K: number of blocks in SBM
+    :param T: number of layers in SBM
+    :param omega_max: maximum allowed value for omega
+    :return: omega estimate
+    """
+
     if theta_out == 0:
         return log(1 + p * K / (1 - p)) / (T * log(theta_in)) if p < 1.0 else omega_max
     # if p is 1, the optimal omega is infinite (here, omega_max)
@@ -129,7 +150,16 @@ def multiplex_omega_estimate_from_parameters(theta_in, theta_out, p, K, T, omega
 
 
 def temporal_multilevel_omega_estimate_from_parameters(theta_in, theta_out, p, K, omega_max=1000):
-    """TODO"""
+    """Returns the omega estimate for a temporal or multilevel multilayer model
+
+    :param theta_in: SBM parameter
+    :param theta_out: SBM parameter
+    :param p: SBM parameter
+    :param K: number of blocks in SBM
+    :param omega_max: maximum allowed value for omega
+    :return: omega estimate
+    """
+
     if theta_out == 0:
         return log(1 + p * K / (1 - p)) / (2 * log(theta_in)) if p < 1.0 else omega_max
     # if p is 1, the optimal omega is infinite (here, omega_max)
@@ -137,13 +167,11 @@ def temporal_multilevel_omega_estimate_from_parameters(theta_in, theta_out, p, K
 
 
 def ordinal_persistence(G_interlayer, community, N, T):
-    """TODO"""
     # ordinal persistence (temporal model)
     return sum(community[e.source] == community[e.target] for e in G_interlayer.es) / (N * (T - 1))
 
 
 def multilevel_persistence(G_interlayer, community, layer_vec, Nt, T):
-    """TODO"""
     pers_per_layer = [0] * T
     for e in G_interlayer.es:
         pers_per_layer[layer_vec[e.target]] += (community[e.source] == community[e.target])
@@ -153,14 +181,11 @@ def multilevel_persistence(G_interlayer, community, layer_vec, Nt, T):
 
 
 def categorical_persistence(G_interlayer, community, N, T):
-    """TODO"""
     # categorical persistence (multiplex model)
     return sum(community[e.source] == community[e.target] for e in G_interlayer.es) / (N * T * (T - 1))
 
 
 def omega_function_from_model(model, omega_max, T):
-    """TODO"""
-
     if model is 'multiplex':
         def update_omega(theta_in, theta_out, p, K):
             return multiplex_omega_estimate_from_parameters(theta_in, theta_out, p, K, T, omega_max=omega_max)
@@ -174,7 +199,17 @@ def omega_function_from_model(model, omega_max, T):
 
 
 def persistence_function_from_model(model, G_interlayer, layer_vec=None, N=None, T=None, Nt=None):
-    """TODO"""
+    """
+    Returns a function to calculate persistence according to a given multilayer model
+
+    :param model: network layer topology (temporal, multilevel, multiplex)
+    :param G_interlayer: input graph containing all inter-layer edges
+    :param layer_vec: vector of each vertex's layer membership
+    :param N: number of nodes per layer
+    :param T: number of layers in input graph
+    :param Nt: vector of nodes per layer
+    :return: calculate_persistence function
+    """
 
     # Note: non-uniform cases are not implemented
     if model is 'temporal':
@@ -211,11 +246,11 @@ def gamma_omega_estimate(G_intralayer, G_interlayer, layer_vec, membership, omeg
     :param membership: partition membership vector
     :param omega_max: maximum allowed value for omega
     :param model: network layer topology (temporal, multilevel, multiplex)
-    :param N: TODO
-    :param T: TODO
-    :param Nt: TODO
-    :param m_t: TODO
-    :return: TODO
+    :param N: number of nodes per layer
+    :param T: number of layers in input graph
+    :param Nt: vector of nodes per layer
+    :param m_t: vector of total edge weights per layer
+    :return: gamma_estimate, omega_estimate
     """
     if T is None:
         T = max(layer_vec) + 1  # layer  count

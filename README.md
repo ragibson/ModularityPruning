@@ -12,7 +12,7 @@
 - [X] utilities/\_\_init\_\_.py
 - [X] utilities/louvain_utilities.py
 - [X] utilities/parameter_estimation.py
-- [ ] utilities/parameter_estimation_utilities.py
+- [X] utilities/parameter_estimation_utilities.py
 - [X] utilities/partition_utilities.py
 - [X] utilities/plotting.py
 - [X] utilities/progress.py
