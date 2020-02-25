@@ -1,10 +1,14 @@
 # Generates figure 6.3
 
-from math import exp, log
-from random import random
+from math import exp
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.special import lambertw
+
+XMIN = 0
+XMAX = 3
+YMIN = 0
+YMAX = 2
 
 
 def parametric_omega(gamma, other_omega):
@@ -15,60 +19,52 @@ def parametric_omega(gamma, other_omega):
     return -gamma * lambertw(-other_omega * exp(-other_omega / gamma) / gamma).real
 
 
-def trial(m):
-    m_in = m * random()
+def plot_figure1():
+    # plots the left panel of figure 6.3
+    plt.figure()
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif')
+    plt.plot(xs, [(2 - x) / (2 - 1) for x in xs], color="C0")
+    plt.fill_between(xs_fill_above, [(2 - x) / (2 - 1) for x in xs_fill_above], above_line, color="C0",
+                     label=r"Possible $\Omega$ values", alpha=0.5)
+    plt.fill_between(xs_fill_below, [(2 - x) / (2 - 1) for x in xs_fill_below], below_line, color="C0",
+                     alpha=0.5)
+    plt.plot(xs, [parametric_omega(1.0, x) for x in xs], label=r"$\gamma=1.0$", linestyle="dashed", color="C2")
+    plt.xlim([XMIN, XMAX])
+    plt.ylim([YMIN, YMAX])
+    plt.xlabel(r"$\omega_{in}$", fontsize=14)
+    plt.ylabel(r"$\omega_{out}$", fontsize=14)
+    plt.title(r"Maximum Expected $\gamma$ Estimates, $K=2$", fontsize=14)
+    plt.legend()
+    plt.savefig("general_max_gamma2.pdf")
 
-    kappa_1 = (2 * m) * random()
-    kappa_2 = 2 * m - kappa_1
-    # kappa_2 = (2 * m - kappa_1) * random()
-    # kappa_3 = 2 * m - kappa_1 - kappa_2
 
-    sum_kappa_sqr = kappa_1 ** 2 + kappa_2 ** 2  # + kappa_3 ** 2
+def plot_figure2():
+    # plots the right panel of figure 6.3
+    plt.figure()
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif')
+    plt.plot(xs, [(3 - x) / (3 - 1) for x in xs], color="C1")
+    plt.fill_between(xs_fill_above, [(3 - x) / (3 - 1) for x in xs_fill_above], above_line, color="C1",
+                     label=r"Possible $\Omega$ values", alpha=0.5)
+    plt.fill_between(xs_fill_below, [(3 - x) / (3 - 1) for x in xs_fill_below], below_line, color="C1",
+                     alpha=0.5)
+    plt.plot(xs, [parametric_omega(1.0926, x) for x in xs], label=r"$\gamma=1.0926$", linestyle="dashed", color="C3")
+    plt.xlim([XMIN, XMAX])
+    plt.ylim([YMIN, YMAX])
+    plt.xlabel(r"$\omega_{in}$", fontsize=14)
+    plt.ylabel(r"$\omega_{out}$", fontsize=14)
+    plt.title(r"Maximum Expected $\gamma$ Estimates, $K=3$", fontsize=14)
+    plt.legend()
+    plt.savefig("general_max_gamma3.pdf")
 
-    omega_in = (4 * m * m_in) / sum_kappa_sqr
-    omega_out = (4 * m ** 2 - 4 * m * m_in) / (4 * m ** 2 - sum_kappa_sqr)
 
-    # if omega_in < omega_out:
-    #     return trial(m)
+if __name__ == "__main__":
+    xs = np.linspace(XMIN, XMAX, 500)
+    xs_fill_above = np.linspace(XMIN, 1, len(xs))
+    xs_fill_below = np.linspace(1, XMAX, len(xs))
+    below_line = [YMIN] * len(xs)
+    above_line = [YMAX] * len(xs)
 
-    # assert 4 * m ** 2 / 3 <= sum_kappa_sqr <= 4 * m * m_in
-    # assert omega_in + (3 - 1) * omega_out <= 3 + 1e-5
-    return omega_in, omega_out
-
-
-plt.close()
-NUM_POINTS = 500
-xs = np.linspace(0, 3, NUM_POINTS)
-xs_early = np.linspace(0, 1, NUM_POINTS)
-xs_late = np.linspace(1, 3, NUM_POINTS)
-
-plt.rc('text', usetex=True)
-plt.rc('font', family='serif')
-plt.plot(xs, [(2 - x) / (2 - 1) for x in xs], color="C0")
-plt.fill_between(xs_early, [(2 - x) / (2 - 1) for x in xs_early], [2] * len(xs_early), color="C0",
-                 label=r"Possible $\Omega$ values", alpha=0.5)
-plt.fill_between(xs_late, [(2 - x) / (2 - 1) for x in xs_late], [0] * len(xs_late), color="C0", alpha=0.5)
-plt.plot(xs, [parametric_omega(1.0, x) for x in xs], label=r"$\gamma=1.0$", linestyle="dashed", color="C2")
-plt.xlim([0.0, 3.0])
-plt.ylim([0.0, 2.0])
-plt.xlabel("$\omega_{in}$", fontsize=14)
-plt.ylabel("$\omega_{out}$", fontsize=14)
-plt.title(r"Maximum Expected $\gamma$ Estimates, $K=2$", fontsize=14)
-plt.legend()
-plt.savefig("general_max_gamma2.pdf")
-
-plt.close()
-plt.rc('text', usetex=True)
-plt.rc('font', family='serif')
-plt.plot(xs, [(3 - x) / (3 - 1) for x in xs], color="C1")
-plt.fill_between(xs_early, [(3 - x) / (3 - 1) for x in xs_early], [2] * len(xs_early), color="C1",
-                 label=r"Possible $\Omega$ values", alpha=0.5)
-plt.fill_between(xs_late, [(3 - x) / (3 - 1) for x in xs_late], [0] * len(xs_late), color="C1", alpha=0.5)
-plt.plot(xs, [parametric_omega(1.0926, x) for x in xs], label=r"$\gamma=1.0926$", linestyle="dashed", color="C3")
-plt.xlim([0.0, 3.0])
-plt.ylim([0.0, 2.0])
-plt.xlabel("$\omega_{in}$", fontsize=14)
-plt.ylabel("$\omega_{out}$", fontsize=14)
-plt.title(r"Maximum Expected $\gamma$ Estimates, $K=3$", fontsize=14)
-plt.legend()
-plt.savefig("general_max_gamma3.pdf")
+    plot_figure1()
+    plot_figure2()

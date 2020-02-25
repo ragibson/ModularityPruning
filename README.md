@@ -23,7 +23,7 @@
 - [ ] Figure 5.10
 - [X] Figure 6.1
 - [X] Figure 6.2
-- [ ] Figure 6.3
+- [X] Figure 6.3
 - [ ] Figure 6.4
 - [X] Figure A.1
 - [X] Figure A.2

@@ -1,6 +1,6 @@
 # Generates figures A.1 and A.2
 
-from math import exp, log
+from math import exp
 import matplotlib.pyplot as plt
 import matplotlib
 import numpy as np
@@ -9,12 +9,6 @@ from scipy.special import lambertw
 PLOT_START = 0
 PLOT_END = 3
 NUM_COLOR_BANDS = 11
-
-
-def gamma_estimate(omega_in, omega_out):
-    if omega_in == 0 or omega_out == 0 or omega_in == omega_out:
-        return np.nan
-    return (omega_in - omega_out) / (log(omega_in) - log(omega_out))
 
 
 def parametric_omega(gamma, other_omega):
