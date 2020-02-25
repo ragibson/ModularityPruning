@@ -1,7 +1,17 @@
 # Generates figure B.2
 
-from utilities import *
+import igraph as ig
+import matplotlib.pyplot as plt
+import numpy as np
 import os
+from utilities import Progress, gamma_estimate, num_communities, CHAMP_2D, repeated_parallel_louvain_from_gammas, \
+    ranges_to_gamma_estimates
+
+GAMMA_START = 0.0
+GAMMA_END = 2.0
+TRIALS_PER_DELTA = 100
+LOUVAIN_ITERATIONS_PER_DELTA = 1000
+PLOT_XLIM = [-0.003, 0.063]
 
 
 def generate_bistable_SBM_test_output():
@@ -14,13 +24,10 @@ def generate_bistable_SBM_test_output():
           np.linspace(0.0475, 0.0525, 15).tolist() + \
           np.linspace(0.0525, 0.06, 5).tolist()
 
-    DELTA_ITERATIONS = 100
-    LOUVAIN_ITERATIONS_PER_DELTA = 1000
-
-    c2s = []
-    c3s = []
-    cboths = []
-    progress = Progress(DELTA_ITERATIONS * len(p2s))
+    c2s = []  # probability of K=2 stability
+    c3s = []  # probability of K=3 stability
+    cboths = []  # probability of bistability
+    progress = Progress(TRIALS_PER_DELTA * len(p2s))
 
     for p_out2 in p2s:
         total = 0
@@ -28,7 +35,7 @@ def generate_bistable_SBM_test_output():
         count_3stable = 0
         count_both_stable = 0
 
-        while total < DELTA_ITERATIONS:
+        while total < TRIALS_PER_DELTA:
             p_in1 = 10 / 99  # m_in = 10/3
             p_in2 = p_in1 * 0.75  # m_in = 5/2 for each block
             p_out1 = 0.25 / 40  # m_out = 1.25
@@ -44,7 +51,6 @@ def generate_bistable_SBM_test_output():
                 print("\rDisconnected graph. Skipping...", end='', flush=True)
                 continue
 
-            # print("mean degree is", np.mean([G.degree(v) for v in range(N)]))
             ground_truth = tuple(i // block_sizes[0] for i in range(N))
             ground_truth2 = tuple(min(1, i // block_sizes[0]) for i in range(N))
             true_gamma = gamma_estimate(G, ground_truth)
@@ -54,13 +60,9 @@ def generate_bistable_SBM_test_output():
                 print("\rDegenerate ground truth estimate. Skipping...", end='', flush=True)
                 continue
 
-            # print("'true' gamma (3 block) is", true_gamma)
-            # print("'true' gamma (2 block) is", true_gamma2)
-            GAMMA_START = 0.0
-            GAMMA_END = 2.0
-            gammas = np.linspace(GAMMA_START, GAMMA_END, LOUVAIN_ITERATIONS_PER_DELTA)
-
-            all_parts = repeated_parallel_louvain_from_gammas(G, gammas, show_progress=False)
+            all_parts = repeated_parallel_louvain_from_gammas(G, gammas=np.linspace(GAMMA_START, GAMMA_END,
+                                                                                    LOUVAIN_ITERATIONS_PER_DELTA),
+                                                              show_progress=False)
             ranges = CHAMP_2D(G, all_parts, GAMMA_START, GAMMA_END)
             gamma_estimates = ranges_to_gamma_estimates(G, ranges)
 
@@ -79,15 +81,6 @@ def generate_bistable_SBM_test_output():
             if stable2 and stable3:
                 count_both_stable += 1
             total += 1
-
-            # plt.close()
-            # plot_estimates(gamma_estimates)
-            # plt.axvline(true_gamma, color='red', alpha=0.5, linestyle='dashed',
-            #             label="gamma for ground truth 3 block partition")
-            # plt.axvline(true_gamma2, color='blue', alpha=0.5, linestyle='dashed',
-            #             label="gamma for ground truth 2 block partition")
-            # plt.legend()
-            # plt.show()
 
             progress.increment()
 
@@ -124,12 +117,13 @@ def plot_bistable_SBM_empirical_results():
     plt.xlabel(r"$\delta$", fontsize=14)
     plt.ylabel("Probability", fontsize=14)
     plt.title(f"Simulation of Example Bistable SBM with $N={N}$", fontsize=14)
-    plt.xlim((-0.003, 0.063))
+    plt.xlim(PLOT_XLIM)
     plt.legend()
     plt.savefig("simulation_bistable_sbm.pdf")
 
 
-if not os.path.exists("SBM_constant_probs.out"):
-    generate_bistable_SBM_test_output()
+if __name__ == "__main__":
+    if not os.path.exists("SBM_constant_probs.out"):
+        generate_bistable_SBM_test_output()
 
-plot_bistable_SBM_empirical_results()
+    plot_bistable_SBM_empirical_results()

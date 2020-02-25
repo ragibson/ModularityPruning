@@ -4,6 +4,8 @@ from math import log
 import matplotlib.pyplot as plt
 import numpy as np
 
+PLOT_XLIM = [-0.003, 0.063]
+
 
 def gamma_cross(b, d):
     return (7040 * b * d * (b * (7920 * d + 1099) - 1000)) / ((b * (5280 * d + 433) - 400) ** 2)
@@ -29,22 +31,23 @@ def gamma_3(d):
     return numerator / (denominator_scalar * denominator_scalar2)
 
 
-deltas = np.linspace(0.0, 0.06, 100)
-g3s = [gamma_3(d) for d in deltas]
-g2s = [gamma_2(d) for d in deltas]
-cross1 = 0.02251
-cross2 = 0.04966
+if __name__ == "__main__":
+    deltas = np.linspace(0.0, 0.06, 100)
+    g3s = [gamma_3(d) for d in deltas]
+    g2s = [gamma_2(d) for d in deltas]
+    cross1 = 0.02251
+    cross2 = 0.04966
 
-plt.rc('text', usetex=True)
-plt.rc('font', family='serif')
-plt.axvline(cross1, color='red', linestyle='dashed', label="$\delta=0.02251$")
-plt.axvline(cross2, color='purple', linestyle='dashed', label="$\delta=0.04966$")
-plt.plot(deltas, g2s, label=r"2-community ground truth $\gamma$ estimate")
-plt.plot(deltas, g3s, label=r"3-community ground truth $\gamma$ estimate")
-plt.plot(deltas, [gamma_cross_limit(d) for d in deltas], label="Optimality switch from $K=2$ to $K=3$")
-plt.xlabel(r"$\delta$", fontsize=14)
-plt.ylabel(r"$\gamma$", fontsize=14)
-plt.title("Analytic Solutions for Example Bistable SBM", fontsize=14)
-plt.legend()
-print(plt.gca().get_xlim())
-plt.savefig("analytic_bistable_sbm.pdf")
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif')
+    plt.axvline(cross1, color='red', linestyle='dashed', label=rf"$\delta={cross1}$")
+    plt.axvline(cross2, color='purple', linestyle='dashed', label=rf"$\delta={cross2}$")
+    plt.plot(deltas, g2s, label=r"2-community ground truth $\gamma$ estimate")
+    plt.plot(deltas, g3s, label=r"3-community ground truth $\gamma$ estimate")
+    plt.plot(deltas, gamma_cross_limit(deltas), label="Optimality switch from $K=2$ to $K=3$")
+    plt.xlabel(r"$\delta$", fontsize=14)
+    plt.ylabel(r"$\gamma$", fontsize=14)
+    plt.title("Analytic Solutions for Example Bistable SBM", fontsize=14)
+    plt.legend()
+    plt.xlim(PLOT_XLIM)
+    plt.savefig("analytic_bistable_sbm.pdf")
