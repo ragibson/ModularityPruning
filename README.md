@@ -21,8 +21,8 @@
 - [ ] Figure 5.8
 - [ ] Figure 5.9
 - [ ] Figure 5.10
-- [ ] Figure 6.1
-- [ ] Figure 6.2
+- [X] Figure 6.1
+- [X] Figure 6.2
 - [ ] Figure 6.3
 - [ ] Figure 6.4
 - [ ] Figure A.1
