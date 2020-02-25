@@ -79,7 +79,7 @@ def run_CHAMP_with_their_coefarray_computation(G_intralayer, G_interlayer, layer
     coefarray = create_coefarray_from_partitions(np.array(list(partitions)), A, P, C)
     domains = champ_get_intersection(coefarray, max_pt=(GAMMA_END, OMEGA_END))
 
-    print("CHAMP with their coefarray computation took {:.2f} s".format(time() - start))
+    print(f"CHAMP with their coefarray computation took {time() - start:.2f} s")
     champ_plot_2d_domains(domains)
 
 
@@ -89,14 +89,14 @@ def run_CHAMP_with_our_coefarray_computation(G_intralayer, G_interlayer, layer_v
     coefarray = np.vstack((A_hats, P_hats, C_hats)).T
     domains = champ_get_intersection(coefarray, max_pt=(GAMMA_END, OMEGA_END))
 
-    print("CHAMP with our coefarray computation took {:.2f} s".format(time() - start))
+    print(f"CHAMP with our coefarray computation took {time() - start:.2f} s")
     champ_plot_2d_domains(domains)
 
 
 def run_our_CHAMP_implementation(G_intralayer, G_interlayer, layer_vec, partitions):
     start = time()
     domains = CHAMP_3D(G_intralayer, G_interlayer, layer_vec, partitions, 0.0, GAMMA_END, 0.0, OMEGA_END)
-    print("Our implementation took {:.2f} s".format(time() - start))
+    print(f"Our implementation took {time() - start:.2f} s")
     plot_2d_domains(domains, [0, GAMMA_END], [0, OMEGA_END])
 
 

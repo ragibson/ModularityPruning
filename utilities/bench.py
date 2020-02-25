@@ -33,7 +33,7 @@ def test(gamma_0=0.0, gamma_f=2.0, louvain_iterations=100, timeout=60):
 
     while our_duration < timeout:
         xs.append(louvain_iterations)
-        print("{:>15} ".format(louvain_iterations), end='', flush=True)
+        print(f"{louvain_iterations:>15} ", end='', flush=True)
 
         start = time()
         all_parts = repeated_parallel_louvain_from_gammas(G, gammas=np.linspace(gamma_0, gamma_f, louvain_iterations),
@@ -42,16 +42,16 @@ def test(gamma_0=0.0, gamma_f=2.0, louvain_iterations=100, timeout=60):
         our_duration = time() - start
 
         ys1.append(our_duration)
-        print("{:>15.2f} ".format(our_duration), end='', flush=True)
+        print(f"{our_duration:>15.2f} ", end='', flush=True)
 
         if champ_duration < timeout:
             start = time()
             _ = parallel_louvain(G, gamma_0, gamma_f, numruns=louvain_iterations, numprocesses=num_processors)
             champ_duration = time() - start
             ys2.append(champ_duration)
-            print("{:>15.2f}".format(champ_duration))
+            print(f"{champ_duration:>15.2f}")
         else:
-            print("{:>15.2f}".format(0))
+            print(f"{0:>15.2f}")
 
         # the number of louvain iterations roughly increases by 1.5x each iteration
         louvain_iterations = louvain_iterations + louvain_iterations // 2
