@@ -6,6 +6,7 @@ from matplotlib.patches import Polygon
 from matplotlib.collections import PatchCollection
 import matplotlib.pyplot as plt
 import seaborn as sbn
+from utilities import ami
 
 
 def plot_adjacency(adj):
@@ -145,7 +146,7 @@ def plot_2d_domains_with_num_communities(domains_with_estimates, xlim, ylim, fli
         if flip_axes:
             polyverts = [(x[1], x[0]) for x in polyverts]
 
-        if any(ylim[0] <= x[1] <= ylim[1] for x in polyverts):
+        if any(xlim[0] <= x[0] <= xlim[1] and ylim[0] <= x[1] <= ylim[1] for x in polyverts):
             polygon = Polygon(polyverts, True)
             patches.append(polygon)
             Ks.append(num_communities(membership))
@@ -156,6 +157,37 @@ def plot_2d_domains_with_num_communities(domains_with_estimates, xlim, ylim, fli
 
     cbar = plt.colorbar(p, ticks=range(2, max(Ks) + 1, tick_step))
     cbar.set_label("Number of Communities", fontsize=14, labelpad=15)
+
+    plt.xlim(xlim)
+    plt.ylim(ylim)
+
+
+def plot_2d_domains_with_ami(domains_with_estimates, ground_truth, xlim, ylim, flip_axes=False):
+    """Plot partition dominance ranges in the (gamma, omega) plane, using the domains from CHAMP_3D and coloring by the
+    AMI between the partitions and ground truth.
+
+    Limits output to xlim and ylim dimensions. Note that the plotting here has x=omega and y=gamma."""
+    assert flip_axes
+    fig, ax = plt.subplots()
+    patches = []
+    cm = matplotlib.cm.copper
+    amis = []
+
+    for polyverts, membership, gamma_est, omega_est in domains_with_estimates:
+        if flip_axes:
+            polyverts = [(x[1], x[0]) for x in polyverts]
+
+        if any(xlim[0] <= x[0] <= xlim[1] and ylim[0] <= x[1] <= ylim[1] for x in polyverts):
+            polygon = Polygon(polyverts, True)
+            patches.append(polygon)
+            amis.append(ami(membership, ground_truth))
+
+    p = PatchCollection(patches, cmap=cm, alpha=1.0, edgecolors='black', linewidths=2)
+    p.set_array(np.array(amis + [1.0]))  # this extends the colorbar to include 1.0
+    ax.add_collection(p)
+
+    cbar = plt.colorbar(p)
+    cbar.set_label('AMI', fontsize=14, labelpad=15)
 
     plt.xlim(xlim)
     plt.ylim(ylim)

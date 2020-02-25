@@ -13,10 +13,10 @@
 - [X] Figure 3.1
 - [X] Figure 5.1
 - [X] Figure 5.2
-- [ ] Figure 5.3
-- [ ] Figure 5.4
-- [ ] Figure 5.5
-- [ ] Figure 5.6
+- [X] Figure 5.3
+- [X] Figure 5.4
+- [X] Figure 5.5
+- [X] Figure 5.6
 - [ ] Figure 5.7
 - [ ] Figure 5.8
 - [ ] Figure 5.9
