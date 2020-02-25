@@ -11,8 +11,8 @@
 - [X] Figure 2.1
 - [X] Figure 2.2
 - [X] Figure 3.1
-- [ ] Figure 5.1
-- [ ] Figure 5.2
+- [X] Figure 5.1
+- [X] Figure 5.2
 - [ ] Figure 5.3
 - [ ] Figure 5.4
 - [ ] Figure 5.5
