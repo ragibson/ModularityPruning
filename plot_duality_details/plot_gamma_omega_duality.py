@@ -21,7 +21,7 @@ def parametric_omega(gamma, other_omega):
 
 def plot_figure1():
     # plots the left panel of figure A.1
-    plt.figure()
+    plt.close()
     plt.rc('text', usetex=True)
     plt.rc('font', family='serif')
 
@@ -47,7 +47,7 @@ def plot_figure1():
 
 def plot_figure2():
     # plots the right panel of figure A.1
-    plt.figure()
+    plt.close()
     plt.plot([PLOT_START, PLOT_END], [PLOT_START, PLOT_END], linestyle="dashed", color="black")
     for gamma_center in gamma_centers:
         plt.plot(xs, [parametric_omega(gamma_center, x) for x in xs], label=rf"$\gamma={gamma_center}$")
@@ -63,7 +63,7 @@ def plot_figure2():
 
 def plot_figure3():
     # plots figure A.2
-    plt.figure()
+    plt.close()
     plt.rc('text', usetex=True)
     plt.rc('font', family='serif')
     plt.plot([PLOT_START, PLOT_END], [PLOT_START, PLOT_END], linestyle="dashed", color="gray")

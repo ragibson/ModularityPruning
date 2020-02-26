@@ -21,7 +21,7 @@ def parametric_omega(gamma, other_omega):
 
 def plot_figure1():
     # plots the left panel of figure 6.3
-    plt.figure()
+    plt.close()
     plt.rc('text', usetex=True)
     plt.rc('font', family='serif')
     plt.plot(xs, [(2 - x) / (2 - 1) for x in xs], color="C0")
@@ -41,7 +41,7 @@ def plot_figure1():
 
 def plot_figure2():
     # plots the right panel of figure 6.3
-    plt.figure()
+    plt.close()
     plt.rc('text', usetex=True)
     plt.rc('font', family='serif')
     plt.plot(xs, [(3 - x) / (3 - 1) for x in xs], color="C1")

@@ -131,7 +131,7 @@ def plot_easy_regime_iteration():
     values = pickle.load(open("easy_regime_test_results.p", "rb"))
     # values.sort(key=lambda x: 1000 * x[0] + x[1])
 
-    plt.figure()
+    plt.close()
     plt.rc('text', usetex=True)
     plt.rc('font', family='serif')
 
@@ -161,7 +161,7 @@ def plot_easy_regime_domains():
     domains_with_estimates = pickle.load(open("synthetic_champ_domains_with_estimates.p", "rb"))
 
     # Plot domains of optimality with parameter estimates
-    plt.figure()
+    plt.close()
     plt.rc('text', usetex=True)
     plt.rc('font', family='serif')
     plot_2d_domains_with_estimates(domains_with_estimates, [ITERATION_OMEGA_START, ITERATION_OMEGA_END],
@@ -177,7 +177,7 @@ def plot_easy_regime_domains_with_ami_and_Ks():
     G_intralayer, G_interlayer, _, ground_truth = pickle.load(open("easy_regime_multilayer.p", "rb"))
     domains_with_estimates = pickle.load(open("synthetic_champ_domains_with_estimates.p", "rb"))
 
-    plt.figure()
+    plt.close()
     plt.rc('text', usetex=True)
     plt.rc('font', family='serif')
     plot_2d_domains_with_ami(domains_with_estimates, ground_truth, [ITERATION_OMEGA_START, ITERATION_OMEGA_END],
@@ -187,7 +187,7 @@ def plot_easy_regime_domains_with_ami_and_Ks():
     plt.ylabel(r"$\gamma$", fontsize=14)
     plt.savefig("synthetic_network_domains_with_ground_truth_ami.pdf")
 
-    plt.figure()
+    plt.close()
     plt.rc('text', usetex=True)
     plt.rc('font', family='serif')
     plot_2d_domains_with_num_communities(domains_with_estimates, [ITERATION_OMEGA_START, ITERATION_OMEGA_END],
@@ -228,7 +228,7 @@ def plot_easy_regime_domains_restricted_communities():
     domains_with_estimates = pickle.load(open("synthetic_champ_2-community_domains_with_estimates.p", "rb"))
 
     # Plot domains of optimality with parameter estimates
-    plt.figure()
+    plt.close()
     plt.rc('text', usetex=True)
     plt.rc('font', family='serif')
     plot_2d_domains_with_estimates(domains_with_estimates, [ITERATION_OMEGA_START, ITERATION_OMEGA_END],
