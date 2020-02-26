@@ -3,6 +3,8 @@ from collections import defaultdict
 from champ import get_intersection
 import numpy as np
 from numpy.random import choice
+from math import floor, ceil
+from multiprocessing import Pool, cpu_count
 from scipy.spatial import HalfspaceIntersection
 from scipy.optimize import linprog
 from utilities.louvain_utilities import louvain_part_with_membership
@@ -131,7 +133,7 @@ def optimal_parts_to_ranges(optimal_parts):
     return ranges
 
 
-def partition_coefficients_2D(G, partitions):
+def partition_coefficients_2D_serial(G, partitions):
     """Computes A_hat and P_hat for partitions of :G:
 
     TODO: support edge weights"""
@@ -165,6 +167,27 @@ def partition_coefficients_2D(G, partitions):
     return A_hats, P_hats
 
 
+def partition_coefficients_2D(G, partitions):
+    """Computes partitions coefficients in parallel by calling partition_coefficients_2D_serial"""
+    partitions = list(partitions)
+    partition_chunks = [
+        partitions[floor(i * len(partitions) / cpu_count()):floor((i + 1) * len(partitions) / cpu_count())]
+        for i in range(cpu_count())
+    ]
+
+    pool = Pool(processes=cpu_count())
+    results = pool.starmap(partition_coefficients_2D_serial,
+                           [(G, partition_chunk) for partition_chunk in partition_chunks])
+    pool.close()
+
+    A_hats = np.array([v for A_hats, P_hats in results for v in A_hats])
+    P_hats = np.array([v for A_hats, P_hats in results for v in P_hats])
+
+    assert len(A_hats) == len(P_hats) == len(partitions)
+
+    return A_hats, P_hats
+
+
 def halfspaces_from_coefficients_2D(A_hats, P_hats):
     """Converts partitions' coefficients to halfspace normal, offset
 
@@ -175,7 +198,7 @@ def halfspaces_from_coefficients_2D(A_hats, P_hats):
     return np.vstack((-P_hats, -np.ones_like(P_hats), A_hats)).T
 
 
-def partition_coefficients_3D(G_intralayer, G_interlayer, layer_vec, partitions):
+def partition_coefficients_3D_serial(G_intralayer, G_interlayer, layer_vec, partitions):
     """Computes A_hat, P_hat, C_hat for partitions of a graph with intralayer edges given in :G_intralayer:,
     interlayer edges given in :G_interlayer:, and layer membership :layer_vec:
 
@@ -236,5 +259,28 @@ def partition_coefficients_3D(G_intralayer, G_interlayer, layer_vec, partitions)
     else:
         C_hats = np.array([2 * sum([membership[u] == membership[v] for u, v in all_interlayer_edges])
                            for membership in partitions])
+
+    return A_hats, P_hats, C_hats
+
+
+def partition_coefficients_3D(G_intralayer, G_interlayer, layer_vec, partitions):
+    """Computes partitions coefficients in parallel by calling partition_coefficients_3D_serial"""
+    partitions = list(partitions)
+    partition_chunks = [
+        partitions[floor(i * len(partitions) / cpu_count()):floor((i + 1) * len(partitions) / cpu_count())]
+        for i in range(cpu_count())
+    ]
+
+    pool = Pool(processes=cpu_count())
+    results = pool.starmap(partition_coefficients_3D_serial,
+                           [(G_intralayer, G_interlayer, layer_vec, partition_chunk)
+                            for partition_chunk in partition_chunks])
+    pool.close()
+
+    A_hats = np.array([v for A_hats, P_hats, C_hats in results for v in A_hats])
+    P_hats = np.array([v for A_hats, P_hats, C_hats in results for v in P_hats])
+    C_hats = np.array([v for A_hats, P_hats, C_hats in results for v in C_hats])
+
+    assert len(A_hats) == len(P_hats) == len(C_hats) == len(partitions)
 
     return A_hats, P_hats, C_hats
