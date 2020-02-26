@@ -131,11 +131,9 @@ def gamma_estimate(G, partition):
 def gamma_estimate_from_parameters(omega_in, omega_out):
     """Returns the gamma estimate for SBM parameters"""
 
-    if omega_in == 0 or omega_in == 1:
-        return None  # degenerate partition
+    if omega_in == 0 or omega_out == 0:
+        return None  # degenerate partition, this could reasonably be taken to be 0
 
-    if omega_out == 0:
-        return omega_in / np.log(omega_in)
     return (omega_in - omega_out) / (np.log(omega_in) - np.log(omega_out))
 
 
