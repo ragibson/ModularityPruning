@@ -23,6 +23,10 @@ def adjacency_from_dat(lines):
 
 
 def generate_lazega_igraph():
+    for expected_file in ["ELadv.dat", "ELfriend.dat", "ELwork.dat"]:
+        if not os.path.exists(expected_file):
+            raise FileNotFoundError(f"Expected to find {expected_file}, but this file does not exist")
+
     advice_adj = adjacency_from_dat(open("ELadv.dat", "r").readlines())
     friend_adj = adjacency_from_dat(open("ELfriend.dat", "r").readlines())
     work_adj = adjacency_from_dat(open("ELwork.dat", "r").readlines())
