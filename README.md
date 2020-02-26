@@ -17,10 +17,10 @@
 - [X] Figure 5.4
 - [X] Figure 5.5
 - [X] Figure 5.6
-- [ ] Figure 5.7
-- [ ] Figure 5.8
-- [ ] Figure 5.9
-- [ ] Figure 5.10
+- [X] Figure 5.7
+- [X] Figure 5.8
+- [X] Figure 5.9
+- [X] Figure 5.10
 - [X] Figure 6.1
 - [X] Figure 6.2
 - [X] Figure 6.3

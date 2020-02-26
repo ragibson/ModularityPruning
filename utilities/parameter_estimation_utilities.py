@@ -87,9 +87,14 @@ def estimate_multilayer_SBM_parameters(G_intralayer, G_interlayer, layer_vec, pa
     sum_kappa_t_sqr = [sum(x ** 2 for x in kappa_t_r_list[t]) for t in range(T)]
 
     theta_in = sum(2 * m_t_in[t] for t in range(T)) / sum(sum_kappa_t_sqr[t] / (2 * m_t[t]) for t in range(T))
-    # guard for div by zero with single community partition
-    theta_out = sum(2 * m_t[t] - 2 * m_t_in[t] for t in range(T)) / \
-                sum(2 * m_t[t] - sum_kappa_t_sqr[t] / (2 * m_t[t]) for t in range(T)) if K > 1 else 0
+
+    # guard for div by zero with e.g. a single community partition
+    theta_out_numerator = sum(2 * m_t[t] - 2 * m_t_in[t] for t in range(T))
+    theta_out_denominator = sum(2 * m_t[t] - sum_kappa_t_sqr[t] / (2 * m_t[t]) for t in range(T))
+    if theta_out_denominator == 0:
+        theta_out = 0
+    else:
+        theta_out = theta_out_numerator / theta_out_denominator
 
     calculate_persistence = persistence_function_from_model(model, G_interlayer, layer_vec=layer_vec, N=N, T=T, Nt=Nt)
     pers = calculate_persistence(community)
@@ -146,10 +151,13 @@ def multiplex_omega_estimate_from_parameters(theta_in, theta_out, p, K, T, omega
     :return: omega estimate
     """
 
-    if theta_out == 0:
-        return log(1 + p * K / (1 - p)) / (T * log(theta_in)) if p < 1.0 else omega_max
     # if p is 1, the optimal omega is infinite (here, omega_max)
-    return log(1 + p * K / (1 - p)) / (T * (log(theta_in) - log(theta_out))) if p < 1.0 else omega_max
+    if p >= 1.0 or theta_in == 1.0:
+        return omega_max
+
+    if theta_out == 0:
+        return log(1 + p * K / (1 - p)) / (T * log(theta_in))
+    return log(1 + p * K / (1 - p)) / (T * (log(theta_in) - log(theta_out)))
 
 
 def temporal_multilevel_omega_estimate_from_parameters(theta_in, theta_out, p, K, omega_max=1000):
