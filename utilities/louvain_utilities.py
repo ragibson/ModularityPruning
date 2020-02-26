@@ -79,6 +79,7 @@ def repeated_parallel_louvain_from_gammas(G, gammas, show_progress=True):
         chunk_params = ([(G, g) for g in gammas[i:i + chunk_size]] for i in range(0, len(gammas), chunk_size))
     else:
         chunk_params = [[(G, g) for g in gammas]]
+        chunk_size = len(gammas)
 
     if show_progress:
         progress = Progress(ceil(len(gammas) / chunk_size))
@@ -123,6 +124,7 @@ def repeated_parallel_louvain_from_gammas_omegas(G_intralayer, G_interlayer, lay
     else:
         chunk_params = [[(G_intralayer, G_interlayer, layer_vec, gamma, omega)
                          for gamma, omega in resolution_parameter_points]]
+        chunk_size = len(gammas)
 
     if show_progress:
         progress = Progress(ceil(len(resolution_parameter_points) / chunk_size))
