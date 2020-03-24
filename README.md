@@ -9,7 +9,7 @@
 
 On a machine with
 
- - CPU: i7-9700K (stock, up to 4.9 GHz)
+ - CPU: i7-9700K (8 cores, stock, up to 4.9 GHz)
  - RAM: 16 GB DDR4 3200 MHz
 
 the figure generation runtimes are as follows.
