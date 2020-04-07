@@ -1,4 +1,6 @@
-from .louvain_utilities import louvain_part_with_membership
+from .louvain_utilities import louvain_part_with_membership, sorted_tuple
+from .champ_utilities import CHAMP_2D
+from .partition_utilities import num_communities
 import louvain
 from math import log
 import numpy as np
@@ -340,3 +342,32 @@ def gamma_omega_estimates_to_stable_partitions(domains_with_estimates):
             stable_partitions.append((polyverts, membership, gamma_est, omega_est))
 
     return stable_partitions
+
+
+def prune_to_stable_partitions(G, parts, gamma_start=0.0, gamma_end=2.0, restrict_num_communities=None):
+    """Runs our full pruning pipeline on a singlelayer network.
+
+    :param G: graph of interest
+    :param parts: partitions to prune
+    :param gamma_start: starting gamma value for CHAMP
+    :param gamma_end: ending gamma value for CHAMP
+    :param restrict_num_communities: if not None, only use partitions of this many communities
+    :return: pruned set of stable partitions
+    """
+    if isinstance(parts, louvain.RBConfigurationVertexPartition):
+        # convert to (canonically represented) membership vectors if necessary
+        parts = {sorted_tuple(part.membership) for part in parts}
+    else:
+        # assume parts contains membership vectors
+        parts = {sorted_tuple(part) for part in parts}
+
+    if restrict_num_communities is not None:
+        parts = {part for part in parts if num_communities(part) == restrict_num_communities}
+
+    if len(parts) == 0:
+        return parts
+
+    ranges = CHAMP_2D(G, parts, gamma_start, gamma_end)
+    gamma_estimates = ranges_to_gamma_estimates(G, ranges)
+    stable_parts = gamma_estimates_to_stable_partitions(gamma_estimates)
+    return stable_parts
