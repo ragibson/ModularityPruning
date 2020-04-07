@@ -53,7 +53,7 @@ for i in range(NUM_TRIALS):
 
                 print([(e.source, e.target) for e in G.es])
 
-                layout = G.layout_fruchterman_reingold(maxiter=1000)
+                layout = G.layout_fruchterman_reingold(niter=1000)
                 ig.plot(louvain.RBConfigurationVertexPartition(G, initial_membership=membership1),
                         bbox=(500, 500), layout=layout)
                 ig.plot(louvain.RBConfigurationVertexPartition(G, initial_membership=membership2),

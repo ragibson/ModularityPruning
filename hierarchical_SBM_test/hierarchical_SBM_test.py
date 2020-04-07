@@ -1,3 +1,4 @@
+import igraph as ig
 import matplotlib.pyplot as plt
 import numpy as np
 from utilities import *
@@ -61,7 +62,6 @@ def plot_CHAMP_gamma_estimates(gamma_estimates):
 
 
 if __name__ == "__main__":
-    ...
     while True:
         G, gt3, gt9 = generate_hierarchical_SBM()
 
@@ -75,14 +75,14 @@ if __name__ == "__main__":
             plt.show()
             break
 
-G, gt3, gt9 = pickle.load(open("hierarchical_SBM.p", "rb"))
-all_parts = run_louvain(G)
-gamma_estimates = run_CHAMP(G, all_parts)
-stable_parts = gamma_estimates_to_stable_partitions(gamma_estimates)
-plot_CHAMP_gamma_estimates(gamma_estimates)
-plt.savefig("hierarchical_sbm_gamma_estimates.pdf")
+    G, gt3, gt9 = pickle.load(open("hierarchical_SBM.p", "rb"))
+    all_parts = run_louvain(G)
+    gamma_estimates = run_CHAMP(G, all_parts)
+    stable_parts = gamma_estimates_to_stable_partitions(gamma_estimates)
+    plot_CHAMP_gamma_estimates(gamma_estimates)
+    plt.savefig("hierarchical_sbm_gamma_estimates.pdf")
 
-layout = G.layout_fruchterman_reingold(niter=10 ** 3)
-for p in stable_parts:
-    out = ig.plot(louvain.RBConfigurationVertexPartition(G, p), bbox=(1000, 1000), layout=layout)
-    out.save(f"hierarchical_sbm_{num_communities(p)}-community.png")
+    layout = G.layout_fruchterman_reingold(niter=10 ** 3)
+    for p in stable_parts:
+        out = ig.plot(louvain.RBConfigurationVertexPartition(G, p), bbox=(1000, 1000), layout=layout)
+        out.save(f"hierarchical_sbm_{num_communities(p)}-community.png")
