@@ -344,7 +344,7 @@ def gamma_omega_estimates_to_stable_partitions(domains_with_estimates):
     return stable_partitions
 
 
-def prune_to_stable_partitions(G, parts, gamma_start=0.0, gamma_end=2.0, restrict_num_communities=None):
+def prune_to_stable_partitions(G, parts, gamma_start, gamma_end, restrict_num_communities=None):
     """Runs our full pruning pipeline on a singlelayer network.
 
     :param G: graph of interest
