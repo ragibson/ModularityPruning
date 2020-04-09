@@ -344,7 +344,8 @@ def gamma_omega_estimates_to_stable_partitions(domains_with_estimates):
     return stable_partitions
 
 
-def prune_to_stable_partitions(G, parts, gamma_start, gamma_end, restrict_num_communities=None):
+def prune_to_stable_partitions(G, parts, gamma_start, gamma_end, restrict_num_communities=None,
+                               single_threaded=False):
     """Runs our full pruning pipeline on a singlelayer network.
 
     :param G: graph of interest
@@ -365,9 +366,11 @@ def prune_to_stable_partitions(G, parts, gamma_start, gamma_end, restrict_num_co
         parts = {part for part in parts if num_communities(part) == restrict_num_communities}
 
     if len(parts) == 0:
-        return parts
+        print("restricted communities led to no partitions!!!")
+        return []
 
-    ranges = CHAMP_2D(G, parts, gamma_start, gamma_end)
+    ranges = CHAMP_2D(G, parts, gamma_start, gamma_end, single_threaded=single_threaded)
     gamma_estimates = ranges_to_gamma_estimates(G, ranges)
     stable_parts = gamma_estimates_to_stable_partitions(gamma_estimates)
+
     return stable_parts

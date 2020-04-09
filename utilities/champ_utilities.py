@@ -47,7 +47,7 @@ def get_interior_point(halfspaces):
     return intpt
 
 
-def CHAMP_2D(G, all_parts, gamma_0, gamma_f):
+def CHAMP_2D(G, all_parts, gamma_0, gamma_f, single_threaded=False):
     """Calculates the CHAMP set at :gamma_0: <= gamma <= :gamma_f:"""
 
     if len(all_parts) == 0:
@@ -56,7 +56,7 @@ def CHAMP_2D(G, all_parts, gamma_0, gamma_f):
     all_parts = list(all_parts)
     num_partitions = len(all_parts)
 
-    partition_coefficients = partition_coefficients_2D(G, all_parts)
+    partition_coefficients = partition_coefficients_2D(G, all_parts, single_threaded=single_threaded)
     A_hats, P_hats = partition_coefficients
 
     top = max(A_hats - P_hats * gamma_0)  # Could potentially be optimized
@@ -167,21 +167,25 @@ def partition_coefficients_2D_serial(G, partitions):
     return A_hats, P_hats
 
 
-def partition_coefficients_2D(G, partitions):
+def partition_coefficients_2D(G, partitions, single_threaded=False):
     """Computes partitions coefficients in parallel by calling partition_coefficients_2D_serial"""
     partitions = list(partitions)
-    partition_chunks = [
-        partitions[floor(i * len(partitions) / cpu_count()):floor((i + 1) * len(partitions) / cpu_count())]
-        for i in range(cpu_count())
-    ]
 
-    pool = Pool(processes=cpu_count())
-    results = pool.starmap(partition_coefficients_2D_serial,
-                           [(G, partition_chunk) for partition_chunk in partition_chunks])
-    pool.close()
+    if single_threaded:
+        A_hats, P_hats = partition_coefficients_2D_serial(G, partitions)
+    else:
+        partition_chunks = [
+            partitions[floor(i * len(partitions) / cpu_count()):floor((i + 1) * len(partitions) / cpu_count())]
+            for i in range(cpu_count())
+        ]
 
-    A_hats = np.array([v for A_hats, P_hats in results for v in A_hats])
-    P_hats = np.array([v for A_hats, P_hats in results for v in P_hats])
+        pool = Pool(processes=cpu_count())
+        results = pool.starmap(partition_coefficients_2D_serial,
+                               [(G, partition_chunk) for partition_chunk in partition_chunks])
+        pool.close()
+
+        A_hats = np.array([v for A_hats, P_hats in results for v in A_hats])
+        P_hats = np.array([v for A_hats, P_hats in results for v in P_hats])
 
     assert len(A_hats) == len(P_hats) == len(partitions)
 

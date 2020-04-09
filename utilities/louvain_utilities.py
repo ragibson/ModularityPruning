@@ -64,6 +64,10 @@ def louvain_part_with_membership(G, membership):
     return part
 
 
+def repeated_louvain_from_gammas(G, gammas):
+    return {sorted_tuple(singlelayer_louvain(G, gamma)) for gamma in gammas}
+
+
 def repeated_parallel_louvain_from_gammas(G, gammas, show_progress=True):
     """
     Runs louvain at each gamma in :gammas:, using all CPU cores available.
