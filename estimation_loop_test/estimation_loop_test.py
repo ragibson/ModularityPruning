@@ -2,8 +2,11 @@ import igraph as ig
 import matplotlib.pyplot as plt
 import louvain
 import numpy as np
-from utilities import CHAMP_2D, ranges_to_gamma_estimates, singlelayer_louvain, num_communities
-from utilities import plot_estimates, Progress
+from modularitypruning.champ_utilities import CHAMP_2D
+from modularitypruning.louvain_utilities import singlelayer_louvain
+from modularitypruning.parameter_estimation_utilities import ranges_to_gamma_estimates
+from modularitypruning.plotting import plot_estimates
+from modularitypruning.progress import Progress
 import sys
 
 NUM_TRIALS = 3
@@ -49,7 +52,7 @@ for i in range(NUM_TRIALS):
                 #     continue
 
                 progress.done()
-                print(f"n={n}, p={p}")
+                print(f"n={n}, m={m}")
 
                 print([(e.source, e.target) for e in G.es])
 

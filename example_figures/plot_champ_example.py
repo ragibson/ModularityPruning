@@ -3,7 +3,7 @@
 import igraph as ig
 import louvain
 import numpy as np
-from utilities import CHAMP_2D
+from modularitypruning.champ_utilities import CHAMP_2D
 import matplotlib.pyplot as plt
 
 SAMPLE_GAMMAS = [0.5, 1.0, 1.5, 2.0]

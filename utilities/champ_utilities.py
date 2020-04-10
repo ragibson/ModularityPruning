@@ -1,13 +1,13 @@
 from .partition_utilities import all_degrees, membership_to_communities
+from .louvain_utilities import louvain_part_with_membership
 from collections import defaultdict
 from champ import get_intersection
 import numpy as np
 from numpy.random import choice
-from math import floor, ceil
+from math import floor
 from multiprocessing import Pool, cpu_count
 from scipy.spatial import HalfspaceIntersection
 from scipy.optimize import linprog
-from utilities.louvain_utilities import louvain_part_with_membership
 
 
 def get_interior_point(halfspaces):

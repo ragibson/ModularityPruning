@@ -4,9 +4,13 @@ import igraph as ig
 import louvain
 import matplotlib.pyplot as plt
 import numpy as np
-from utilities import repeated_parallel_louvain_from_gammas, CHAMP_2D, \
-    ranges_to_gamma_estimates, num_communities, gamma_estimates_to_stable_partitions
-from utilities import plot_estimates
+from modularitypruning.champ_utilities import CHAMP_2D
+from modularitypruning.louvain_utilities import repeated_parallel_louvain_from_gammas
+from modularitypruning.parameter_estimation_utilities import gamma_estimates_to_stable_partitions, \
+    ranges_to_gamma_estimates
+from modularitypruning.partition_utilities import num_communities
+from modularitypruning.plotting import plot_estimates
+from modularitypruning.progress import Progress
 
 GAMMA_START = 0.0
 GAMMA_END = 2.0

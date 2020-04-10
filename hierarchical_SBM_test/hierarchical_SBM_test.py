@@ -1,7 +1,13 @@
 import igraph as ig
 import matplotlib.pyplot as plt
 import numpy as np
-from utilities import *
+import louvain
+from modularitypruning.champ_utilities import CHAMP_2D
+from modularitypruning.louvain_utilities import repeated_parallel_louvain_from_gammas
+from modularitypruning.parameter_estimation_utilities import ranges_to_gamma_estimates, \
+    gamma_estimates_to_stable_partitions
+from modularitypruning.partition_utilities import num_communities
+from modularitypruning.plotting import plot_estimates
 import pickle
 
 GAMMA_START = 0.0

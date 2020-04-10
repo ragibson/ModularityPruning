@@ -4,8 +4,10 @@ import igraph as ig
 import matplotlib.pyplot as plt
 import numpy as np
 import os
-from utilities import Progress, gamma_estimate, num_communities, CHAMP_2D, repeated_parallel_louvain_from_gammas, \
-    ranges_to_gamma_estimates
+from modularitypruning.champ_utilities import CHAMP_2D
+from modularitypruning.parameter_estimation_utilities import gamma_estimate, num_communities, ranges_to_gamma_estimates
+from modularitypruning.louvain_utilities import repeated_parallel_louvain_from_gammas
+from modularitypruning.progress import Progress
 
 GAMMA_START = 0.0
 GAMMA_END = 2.0

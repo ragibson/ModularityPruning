@@ -2,7 +2,7 @@
 
 import igraph as ig
 import louvain
-from utilities import gamma_estimate
+from modularitypruning.parameter_estimation_utilities import gamma_estimate
 
 if __name__ == "__main__":
     N = 600

@@ -2,7 +2,7 @@
 
 import igraph as ig
 import louvain
-from utilities import plot_adjacency
+from modularitypruning.plotting import plot_adjacency
 import matplotlib.pyplot as plt
 
 if __name__ == "__main__":

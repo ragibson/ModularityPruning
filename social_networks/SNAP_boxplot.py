@@ -3,8 +3,10 @@
 import os
 import louvain
 from multiprocessing import Pool, cpu_count
-from utilities import num_communities, gamma_estimate, sorted_tuple
-from utilities import gamma_estimate_from_parameters as gamma
+from modularitypruning.louvain_utilities import sorted_tuple
+from modularitypruning.parameter_estimation_utilities import gamma_estimate
+from modularitypruning.parameter_estimation_utilities import gamma_estimate_from_parameters as gamma
+from modularitypruning.partition_utilities import num_communities
 from social_networks import read_graphs
 import matplotlib.pyplot as plt
 import numpy as np

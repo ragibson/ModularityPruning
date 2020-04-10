@@ -3,7 +3,7 @@
 import igraph as ig
 from math import log
 import matplotlib.pyplot as plt
-from utilities.parameter_estimation import iterative_monolayer_resolution_parameter_estimation
+from modularitypruning.parameter_estimation import iterative_monolayer_resolution_parameter_estimation
 from numpy import mean
 
 if __name__ == "__main__":

@@ -2,7 +2,8 @@
 
 import igraph as ig
 import matplotlib.pyplot as plt
-from utilities import iterative_monolayer_resolution_parameter_estimation, num_communities
+from modularitypruning.parameter_estimation import iterative_monolayer_resolution_parameter_estimation
+from modularitypruning.partition_utilities import num_communities
 from multiprocessing import Pool, cpu_count
 import numpy as np
 

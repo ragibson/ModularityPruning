@@ -1,4 +1,4 @@
-from .partition_utilities import num_communities
+from .partition_utilities import num_communities, ami
 from random import shuffle
 import numpy as np
 import matplotlib
@@ -6,7 +6,6 @@ from matplotlib.patches import Polygon
 from matplotlib.collections import PatchCollection
 import matplotlib.pyplot as plt
 import seaborn as sbn
-from utilities import ami
 
 
 def plot_adjacency(adj):

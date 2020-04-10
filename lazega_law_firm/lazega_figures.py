@@ -1,9 +1,13 @@
 # Generates figures 5.7 through 5.10
 
 import os
-from utilities import repeated_parallel_louvain_from_gammas_omegas, CHAMP_3D, domains_to_gamma_omega_estimates, nmi, \
-    plot_2d_domains_with_estimates, plot_2d_domains_with_num_communities, gamma_omega_estimates_to_stable_partitions, \
-    num_communities, plot_multiplex_community
+from modularitypruning.champ_utilities import CHAMP_3D
+from modularitypruning.louvain_utilities import repeated_parallel_louvain_from_gammas_omegas
+from modularitypruning.parameter_estimation_utilities import domains_to_gamma_omega_estimates, \
+    gamma_omega_estimates_to_stable_partitions
+from modularitypruning.partition_utilities import nmi, num_communities
+from modularitypruning.plotting import plot_2d_domains_with_estimates, plot_2d_domains_with_num_communities, \
+    plot_multiplex_community
 import igraph as ig
 import numpy as np
 import pickle

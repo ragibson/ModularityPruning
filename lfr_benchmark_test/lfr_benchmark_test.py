@@ -4,11 +4,13 @@ import networkx as nx
 from networkx.generators.community import LFR_benchmark_graph
 from networkx.exception import ExceededMaxIterations
 import numpy as np
-from utilities import repeated_louvain_from_gammas, gamma_estimate, nmi, prune_to_stable_partitions, \
-    Progress, num_communities, louvain_part_with_membership
+from modularitypruning.louvain_utilities import repeated_louvain_from_gammas, louvain_part_with_membership
+from modularitypruning.parameter_estimation_utilities import gamma_estimate, prune_to_stable_partitions
+from modularitypruning.partition_utilities import nmi, num_communities
+from modularitypruning.progress import Progress
 import igraph as ig
 import pickle
-from functools import wraps, lru_cache
+from functools import wraps
 import errno
 import os
 import signal

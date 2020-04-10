@@ -4,7 +4,8 @@
 from champ.louvain_ext import parallel_louvain
 import igraph as ig
 from time import time
-from utilities import CHAMP_2D, repeated_parallel_louvain_from_gammas
+from modularitypruning.champ_utilities import CHAMP_2D
+from modularitypruning.louvain_utilities import repeated_parallel_louvain_from_gammas
 from multiprocessing import cpu_count
 import numpy as np
 

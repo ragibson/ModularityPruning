@@ -2,7 +2,6 @@
 # Notably, our calculation of the partition coefficient array is significantly faster than CHAMP's
 # Furthermore, CHAMP's calculation appears incorrect when the intralayer graph is directed
 
-from utilities import CHAMP_3D, plot_2d_domains
 import louvain
 from math import inf
 import matplotlib.pyplot as plt
@@ -12,7 +11,9 @@ from time import time
 from champ import create_coefarray_from_partitions
 from champ import get_intersection as champ_get_intersection
 from champ import plot_2d_domains as champ_plot_2d_domains
-from utilities import sorted_tuple, repeated_parallel_louvain_from_gammas_omegas, partition_coefficients_3D
+from modularitypruning.champ_utilities import CHAMP_3D, partition_coefficients_3D
+from modularitypruning.louvain_utilities import sorted_tuple, repeated_parallel_louvain_from_gammas_omegas
+from modularitypruning.plotting import plot_2d_domains
 
 TEST_DIRECTED_INTRALAYER = False
 GAMMA_END = 2.0

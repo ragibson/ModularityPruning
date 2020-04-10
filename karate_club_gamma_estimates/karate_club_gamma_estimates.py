@@ -2,7 +2,8 @@
 
 import igraph as ig
 import matplotlib.pyplot as plt
-from utilities import iterative_monolayer_resolution_parameter_estimation, Progress
+from modularitypruning.parameter_estimation import iterative_monolayer_resolution_parameter_estimation
+from modularitypruning.progress import Progress
 import numpy as np
 
 
