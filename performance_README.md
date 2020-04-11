@@ -1,4 +1,4 @@
-## Initial performance pass of implementation
+## Performance pass of implementation
 
 On a machine with
 

@@ -16,8 +16,8 @@ setup(
     license='',
     author='Ryan Gibson',
     author_email='ryan.alex.gibson@gmail.com',
-    description='Pruning tool to identify small subsets of network partitions that are significant from the perspective'
-                ' of stochastic block model inference.',
+    description='Pruning tool to identify small subsets of network partitions that are '
+                'significant from the perspective of stochastic block model inference.',
     long_description=long_description,
     long_description_content_type='text/markdown',
     classifiers=[
@@ -30,5 +30,6 @@ setup(
         'License :: OSI Approved :: MIT License'
     ],
     python_requires='>=3.6, <4',
-    install_requires=['champ', 'louvain', 'matplotlib', 'numpy', 'psutil', 'scipy', 'seaborn', 'sklearn']
+    install_requires=['champ', 'louvain', 'matplotlib', 'numpy', 'psutil', 'python-igraph',
+                      'scipy', 'seaborn', 'sklearn']
 )
