@@ -5,6 +5,7 @@ import louvain
 from math import log
 import numpy as np
 from scipy.optimize import fsolve
+import warnings
 
 
 def estimate_singlelayer_SBM_parameters(G, partition, m=None):
@@ -355,6 +356,14 @@ def prune_to_stable_partitions(G, parts, gamma_start, gamma_end, restrict_num_co
     :param restrict_num_communities: if not None, only use partitions of this many communities
     :return: pruned set of stable partitions
     """
+    if not G.is_connected():
+        warnings.warn("The pruning pipeline has not been thoroughly tested on disconnected graphs. If you run into "
+                      "problems, consider using the largest connected component of your graph.")
+
+    if G.is_weighted():
+        warnings.warn("The pruning pipeline does not fully handle weighted graphs and will proceed as though the input "
+                      "graph is unweighted.")
+
     if isinstance(parts, louvain.RBConfigurationVertexPartition):
         # convert to (canonically represented) membership vectors if necessary
         parts = {sorted_tuple(part.membership) for part in parts}
