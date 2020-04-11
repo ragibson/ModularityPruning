@@ -68,18 +68,23 @@ def repeated_louvain_from_gammas(G, gammas):
     return {sorted_tuple(singlelayer_louvain(G, gamma)) for gamma in gammas}
 
 
-def repeated_parallel_louvain_from_gammas(G, gammas, show_progress=True):
+def repeated_parallel_louvain_from_gammas(G, gammas, show_progress=True, chunk_dispatch=True):
     """
     Runs louvain at each gamma in :gammas:, using all CPU cores available.
 
-    Returns a set of all unique partitions encountered.
+    :param G: input graph
+    :param gammas: list of gammas to run louvain at
+    :param show_progress: if True, render a progress bar
+    :param chunk_dispatch: if True, dispatch parallel work in chunks. Setting this to False may increase performance,
+                           but can lead to out-of-memory issues
+    :return: a set of all unique partitions encountered
     """
 
     pool = Pool(processes=cpu_count())
     total = set()
 
     chunk_size = len(gammas) // 99
-    if chunk_size > 0:
+    if chunk_size > 0 and chunk_dispatch:
         chunk_params = ([(G, g) for g in gammas[i:i + chunk_size]] for i in range(0, len(gammas), chunk_size))
     else:
         chunk_params = [[(G, g) for g in gammas]]
@@ -108,11 +113,19 @@ def repeated_parallel_louvain_from_gammas(G, gammas, show_progress=True):
 
 
 def repeated_parallel_louvain_from_gammas_omegas(G_intralayer, G_interlayer, layer_vec, gammas, omegas,
-                                                 show_progress=True):
+                                                 show_progress=True, chunk_dispatch=True):
     """
     Runs louvain at each gamma and omega in :gammas: and :omegas:, using all CPU cores available.
 
-    Returns a set of all unique partitions encountered.
+    :param G_intralayer: input graph containing all intra-layer edges
+    :param G_interlayer: input graph containing all inter-layer edges
+    :param layer_vec: vector of each vertex's layer membership
+    :param gammas: list of gammas to run louvain at
+    :param omegas: list of omegas to run louvain at
+    :param show_progress: if True, render a progress bar
+    :param chunk_dispatch: if True, dispatch parallel work in chunks. Setting this to False may increase performance,
+                           but can lead to out-of-memory issues
+    :return: a set of all unique partitions encountered
     """
 
     resolution_parameter_points = [(gamma, omega) for gamma in gammas for omega in omegas]
@@ -121,7 +134,7 @@ def repeated_parallel_louvain_from_gammas_omegas(G_intralayer, G_interlayer, lay
     total = set()
 
     chunk_size = len(resolution_parameter_points) // 99
-    if chunk_size > 0:
+    if chunk_size > 0 and chunk_dispatch:
         chunk_params = ([(G_intralayer, G_interlayer, layer_vec, gamma, omega)
                          for gamma, omega in resolution_parameter_points[i:i + chunk_size]]
                         for i in range(0, len(resolution_parameter_points), chunk_size))

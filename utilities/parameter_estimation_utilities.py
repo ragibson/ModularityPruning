@@ -366,7 +366,6 @@ def prune_to_stable_partitions(G, parts, gamma_start, gamma_end, restrict_num_co
         parts = {part for part in parts if num_communities(part) == restrict_num_communities}
 
     if len(parts) == 0:
-        print("restricted communities led to no partitions!!!")
         return []
 
     ranges = CHAMP_2D(G, parts, gamma_start, gamma_end, single_threaded=single_threaded)
