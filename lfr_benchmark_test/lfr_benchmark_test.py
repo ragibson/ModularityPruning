@@ -225,14 +225,16 @@ if __name__ == "__main__":
     if not os.path.exists("lfr_benchmark_results.p"):
         run_experiment(num_louvain_runs=500, num_graphs_per_mu=num_graphs_per_mu, mus=mus)
 
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif')
     fig, axs = plt.subplots(nrows=2, ncols=2, figsize=(10, 8))
     ax_idx = 0
 
     plot1_data, plot2_data, plot3_data, plot4_data = pickle.load(open("lfr_benchmark_results.p", "rb"))
-    for data_dict, label in [(plot1_data, "modularity pruning"),
-                             (plot2_data, "Louvain running with gamma in [0.5, 2.0]"),
-                             (plot3_data, "modularity pruning restricted to ground truth K"),
-                             (plot4_data, "Louvain running with ground truth gamma")]:
+    for data_dict, label in [(plot1_data, "Modularity Pruning"),
+                             (plot2_data, r"Louvain running with $\gamma \in [0.5, 2.0]$"),
+                             (plot3_data, r"Modularity Pruning with ground truth $K$"),
+                             (plot4_data, r"Louvain running with ground truth $\gamma$")]:
         mus = []
         medians = []
         yerrs = []
@@ -257,17 +259,18 @@ if __name__ == "__main__":
 
         yerrs = np.array(yerrs).T
 
-        ax = axs[ax_idx // 2][ax_idx % 2]
+        ax = axs[1 - ax_idx % 2][ax_idx // 2]
         ax_idx += 1
-        ax.set_title(label)
+        ax.set_title(label, fontsize=14)
         ax.errorbar(mus, medians, yerr=yerrs, label="NMI with ground truth", fmt='-o', markersize=5, capsize=5)
         ax.set_xlim([0.09, 0.51])
         ax.set_ylim([-0.01, 1.01])
-        ax.set_xlabel("mixing parameter mu")
+        ax.set_xlabel(r"mixing parameter $\mu$", fontsize=14)
 
-        if "pruning" in label:
-            ax.plot(list(data_dict.keys()), fraction_with_data, label="probabilty of finding stable partitions")
-            ax.legend()
+        if "Pruning" in label:
+            ax.plot(list(data_dict.keys()), fraction_with_data, label="probability of finding stable partitions")
+
+        ax.legend()
 
     plt.tight_layout()
     plt.savefig("lfr_benchmark_results.pdf")
