@@ -360,7 +360,7 @@ def prune_to_stable_partitions(G, parts, gamma_start, gamma_end, restrict_num_co
         warnings.warn("The pruning pipeline has not been thoroughly tested on disconnected graphs. If you run into "
                       "problems, consider using the largest connected component of your graph.")
 
-    if G.is_weighted():
+    if G.is_weighted() and any(x != 1.0 for x in G.es['weight']):
         warnings.warn("The pruning pipeline does not fully handle weighted graphs and will proceed as though the input "
                       "graph is unweighted.")
 
