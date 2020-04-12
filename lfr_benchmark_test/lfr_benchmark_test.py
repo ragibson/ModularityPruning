@@ -72,7 +72,7 @@ def LFR_benchmark_igraph(n, tau1, tau2, mu, average_degree):
         for v in community_set:
             assert community_vector[v] == i
 
-    G_igraph = ig.Graph(G.edges, directed=G.is_directed())
+    G_igraph = ig.Graph(edges=list(G.edges), directed=G.is_directed())
     assert not G.is_directed()
     assert all(c is not None for c in community_vector)
     assert G.number_of_nodes() == G_igraph.vcount()
@@ -100,7 +100,7 @@ def run_method(G, ground_truth_communities, num_louvain_runs, method, gamma_swee
 
     :param G: graph of interest
     :param ground_truth_communities: ground truth community vector
-    :param method: TODO
+    :param method: "modularity pruning", "modularity pruning ground truth K", "gamma sweep" or "ground truth gamma"
     :return: list of NMIs compared to the ground truth communities
     """
     ground_truth_gamma = gamma_estimate(G, ground_truth_communities)
