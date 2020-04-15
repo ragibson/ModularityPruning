@@ -116,11 +116,11 @@ def find_stability_probabilities(num_trials=500):
 
 
 if __name__ == "__main__":
-    # plot_SBM_example()
-    # find_example_with_4_stable_partitions()
-    #
-    # if not os.path.exists("hierarchical_stability_probabilities.p"):
-    #     find_stability_probabilities()
+    plot_SBM_example()
+    find_example_with_4_stable_partitions()
+
+    if not os.path.exists("hierarchical_stability_probabilities.p"):
+        find_stability_probabilities()
 
     plt.rc('text', usetex=True)
     plt.rc('font', family='serif')
