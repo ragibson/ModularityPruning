@@ -28,11 +28,19 @@ if __name__ == "__main__":
         if part1.quality(resolution_parameter=g2) > part2.quality(resolution_parameter=g2):
             if part2.quality(resolution_parameter=g1) > part1.quality(resolution_parameter=g1):
                 layout = G.layout_fruchterman_reingold(maxiter=1000)
-                ig.plot(part1, layout=layout)
-                ig.plot(part2, layout=layout)
+                out = ig.plot(part1, layout=layout)
+                out.save("estimation_loop1.png")
+                out = ig.plot(part2, layout=layout)
+                out.save("estimation_loop2.png")
 
                 ranges = CHAMP_2D(G, [p1, p2], 0, 2)
                 gamma_estimates = ranges_to_gamma_estimates(G, ranges)
+
+                plt.rc('text', usetex=True)
+                plt.rc('font', family='serif')
                 plot_estimates(gamma_estimates)
-                plt.show()
+                plt.title("Domains of Optimality with Loop in Gamma Estimates", fontsize=14)
+                plt.ylabel("Number of communities", fontsize=14)
+                plt.xlabel("$\gamma$", fontsize=14)
+                plt.savefig("estimation_loop_estimates.pdf")
                 break
