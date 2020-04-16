@@ -73,7 +73,7 @@ def repeated_parallel_louvain_from_gammas(G, gammas, show_progress=True, chunk_d
     Runs louvain at each gamma in :gammas:, using all CPU cores available.
 
     :param G: input graph
-    :param gammas: list of gammas to run louvain at
+    :param gammas: list of gammas (resolution parameters) to run louvain at
     :param show_progress: if True, render a progress bar
     :param chunk_dispatch: if True, dispatch parallel work in chunks. Setting this to False may increase performance,
                            but can lead to out-of-memory issues

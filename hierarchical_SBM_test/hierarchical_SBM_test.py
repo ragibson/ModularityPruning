@@ -1,3 +1,5 @@
+# Runs our pruning method on a hierarchical SBM with 3 and 9 block ground truths
+
 import igraph as ig
 import matplotlib.pyplot as plt
 import numpy as np
@@ -9,7 +11,6 @@ from modularitypruning.parameter_estimation_utilities import ranges_to_gamma_est
 from modularitypruning.partition_utilities import num_communities
 from modularitypruning.plotting import plot_estimates
 from modularitypruning.progress import Progress
-from time import time
 import pickle
 import os
 

@@ -281,7 +281,10 @@ def gamma_omega_estimate(G_intralayer, G_interlayer, layer_vec, membership, omeg
 def ranges_to_gamma_estimates(G, ranges):
     """Compute gamma estimates from ranges of dominance.
 
-    Returns a list of [(gamma_start, gamma_end, membership, gamma_estimate), ...]"""
+    :param G: input graph
+    :param ranges: list of (gamma_start, gamma_end, membership) tuples
+    :return: list of [(gamma_start, gamma_end, membership, gamma_estimate), ...]
+    """
 
     return [(gamma_start, gamma_end, part, gamma_estimate(G, part)) for
             gamma_start, gamma_end, part in ranges]
@@ -290,7 +293,10 @@ def ranges_to_gamma_estimates(G, ranges):
 def gamma_estimates_to_stable_partitions(gamma_estimates):
     """Computes the stable partitions from gamma estimates.
 
-    Returns the memberships of the partitions where gamma_start <= gamma_estimate <= gamma_end."""
+    :param gamma_estimates: list of (gamma_start, gamma_end, membership, gamma_estimate) tuples
+    :return: the memberships of the partitions where gamma_start <= gamma_estimate <= gamma_end
+    """
+
     return [membership for gamma_start, gamma_end, membership, gamma_estimate in gamma_estimates
             if gamma_estimate is not None and gamma_start <= gamma_estimate <= gamma_end]
 
@@ -353,7 +359,8 @@ def prune_to_stable_partitions(G, parts, gamma_start, gamma_end, restrict_num_co
     :param parts: partitions to prune
     :param gamma_start: starting gamma value for CHAMP
     :param gamma_end: ending gamma value for CHAMP
-    :param restrict_num_communities: if not None, only use partitions of this many communities
+    :param restrict_num_communities: if not None, only use input partitions of this many communities
+    :param single_threaded: if True, run the CHAMP step without parallelization
     :return: pruned set of stable partitions
     """
     if not G.is_connected():

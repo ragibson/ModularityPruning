@@ -1,3 +1,5 @@
+# Compares the NMI with ground truth from our pruning strategy to Louvain baselines on LFR benchmark networks
+
 import matplotlib.pyplot as plt
 from multiprocessing import Pool, cpu_count
 import networkx as nx
@@ -150,12 +152,12 @@ def generate_LFR_graphs(num_graphs, mu):
             except TimeoutError:
                 # timeout is necessary to work around pathological generation cases
                 # (see comment in LFR_benchmark_igraph)
-                print("TIMEOUT!!!")
+                # print("TIMEOUT!!!")
                 pass
             pool.close()
-            print(f"\r{filename} currently at length {len(LFR_graphs)}", end="", flush=True)
+            # print(f"\r{filename} currently at length {len(LFR_graphs)}", end="", flush=True)
 
-        print()
+        # print()
         LFR_graphs = LFR_graphs[:num_graphs]
         assert len(LFR_graphs) == num_graphs
         pickle.dump(LFR_graphs, open(filename, "wb"))

@@ -50,8 +50,7 @@ which is the stable 4-community split of the Karate Club network.
 
 ## More Information
 
-TODO: place links to relevant research papers and additional
-documentation/READMEs
+More package documentation is available in the [functions README](functions_README.md).
 
 The [TODO README](TODO.md) and [performance README](performance_README.md) 
 may also be of interest.

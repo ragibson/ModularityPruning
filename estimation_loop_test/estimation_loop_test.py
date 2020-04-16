@@ -1,3 +1,5 @@
+# Attempts to generate a parameter estimation loop example with Louvain
+
 import igraph as ig
 import matplotlib.pyplot as plt
 import numpy as np
@@ -9,7 +11,7 @@ from modularitypruning.progress import Progress
 import sys
 
 if __name__ == "__main__":
-    NUM_TRIALS = 10 ** 6
+    NUM_TRIALS = int(sys.argv[1])
     progress = Progress(NUM_TRIALS)
     num_trials_completed = 0
 

@@ -48,7 +48,15 @@ def get_interior_point(halfspaces):
 
 
 def CHAMP_2D(G, all_parts, gamma_0, gamma_f, single_threaded=False):
-    """Calculates the CHAMP set at :gamma_0: <= gamma <= :gamma_f:"""
+    """Calculates the pruned set of partitions from CHAMP on gamma_0 <= gamma <= gamma_f
+
+    :param G: graph of interest
+    :param all_parts: partitions to prune
+    :param gamma_0: starting gamma value
+    :param gamma_f: ending gamma value
+    :param single_threaded: if True, run without parallelization
+    :return: list of [(domain_gamma_start, domain_gamma_end, membership), ...]
+    """
 
     if len(all_parts) == 0:
         return []
@@ -111,26 +119,6 @@ def CHAMP_3D(G_intralayer, G_interlayer, layer_vec, all_parts, gamma_0, gamma_f,
 
     domains = [([x[:2] for x in polyverts], all_parts[part_idx]) for part_idx, polyverts in champ_domains.items()]
     return domains
-
-
-def optimal_parts_to_ranges(optimal_parts):
-    """Converts a list of [(gamma, quality, membership), ...] to their ranges of dominance
-
-    Returns a list of [(gamma_start, gamma_end, membership), ...]"""
-
-    ranges = []
-    i = 0
-    while i < len(optimal_parts):
-        gamma_start, Q, part = optimal_parts[i]
-        gamma_end = gamma_start
-        while i + 1 < len(optimal_parts) and optimal_parts[i + 1][2] == part:
-            gamma_end = optimal_parts[i + 1][0]
-            i += 1
-        ranges.append((gamma_start, gamma_end, part))
-
-        i += 1
-
-    return ranges
 
 
 def partition_coefficients_2D_serial(G, partitions):

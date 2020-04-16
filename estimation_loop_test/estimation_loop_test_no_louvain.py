@@ -1,3 +1,5 @@
+# Generates a parameter estimation loop example with random partitions
+
 import igraph as ig
 from modularitypruning.champ_utilities import CHAMP_2D
 from modularitypruning.louvain_utilities import louvain_part_with_membership, sorted_tuple
