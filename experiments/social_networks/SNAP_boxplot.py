@@ -1,5 +1,7 @@
 # Generates figure 6.4
 
+import glob
+import igraph as ig
 import os
 import louvain
 from multiprocessing import Pool, cpu_count
@@ -7,13 +9,73 @@ from modularitypruning.louvain_utilities import sorted_tuple
 from modularitypruning.parameter_estimation_utilities import gamma_estimate
 from modularitypruning.parameter_estimation_utilities import gamma_estimate_from_parameters as gamma
 from modularitypruning.partition_utilities import num_communities
-from social_networks import read_graphs
 import matplotlib.pyplot as plt
 import numpy as np
 from time import time
 import pickle
 
 K_MAX = 71
+
+
+def read_file(filename, format):
+    with open(filename) as file:
+        lines = file.readlines()
+    if format is "tsv":
+        edges = [tuple(int(x) for x in l.split()) for l in lines if len(l) and l[0] != '#']
+        G = ig.Graph(edges, directed=False)
+        return G.clusters().giant()
+    elif format is "csv":
+        edges = [tuple(int(x) for x in l.split(",")) for l in lines if len(l) and "node" not in l]
+        G = ig.Graph(edges, directed=False)
+        return G.clusters().giant()
+    else:
+        return None
+
+
+def read_graphs(idx=None):
+    graphs = []
+    social_networks_files = glob.glob("*.txt") + glob.glob("*.csv")
+
+    # artist_edges.csv            Gemsec Facebook dataset
+    # athletes_edges.csv          Gemsec Facebook dataset
+    # company_edges.csv           Gemsec Facebook dataset
+    # facebook_combined.txt       Social circles from Facebook
+    # government_edges.csv        Gemsec Facebook dataset
+    # HR_edges.csv                Gemsec Deezer dataset
+    # HU_edges.csv                Gemsec Deezer dataset
+    # new_sites_edges.csv         Gemsec Facebook dataset
+    # politician_edges.csv        Gemsec Facebook dataset
+    # public_figure_edges.csv     Gemsec Facebook dataset
+    # RO_edges.csv                Gemsec Deezer dataset
+    # Slashdot0811.txt            Slashdot social network from November 2008
+    # Slashdot0902.txt            Slashdot social network from February 2009
+    # soc-Epinions1.txt           Who-trusts-whom network of Epinions.com
+    # tvshow_edges.csv            Gemsec Facebook dataset
+    # Wiki-Vote.txt               Wikipedia who-votes-on-whom network
+    expected_files = {'Slashdot0902.txt', 'facebook_combined.txt',
+                      'soc-Epinions1.txt', 'Wiki-Vote.txt',
+                      'Slashdot0811.txt', 'government_edges.csv',
+                      'public_figure_edges.csv', 'artist_edges.csv',
+                      'politician_edges.csv', 'new_sites_edges.csv',
+                      'HU_edges.csv', 'company_edges.csv',
+                      'HR_edges.csv', 'tvshow_edges.csv',
+                      'RO_edges.csv', 'athletes_edges.csv'}
+
+    for file in expected_files:
+        if file not in social_networks_files:
+            raise FileNotFoundError(f"Expected to find {file}, but this file does not exist")
+
+    for file in social_networks_files:
+        if ".txt" in file:
+            graphs.append(read_file(file, "tsv"))
+        else:
+            graphs.append(read_file(file, "csv"))
+
+    graphs.sort(key=lambda x: x.vcount())
+    if idx is None:
+        return graphs
+    else:
+        return graphs[idx]
 
 
 def run_louvain(graphnum):
