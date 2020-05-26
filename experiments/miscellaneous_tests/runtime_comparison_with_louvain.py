@@ -1,8 +1,12 @@
+# Runs a simple comparision between the runtime of our pruning method and the time required to run Louvain
+# In this example, our method runs in ~5% of the time required for Louvain, though we expect our method will be
+# (relatively) faster for larger graphs and those with stronger community structure.
+
 import igraph as ig
 import matplotlib.pyplot as plt
 import numpy as np
 from modularitypruning import prune_to_stable_partitions
-from modularitypruning.louvain_utilities import repeated_parallel_louvain_from_gammas, repeated_louvain_from_gammas
+from modularitypruning.louvain_utilities import repeated_parallel_louvain_from_gammas
 import pickle
 import os
 from time import time

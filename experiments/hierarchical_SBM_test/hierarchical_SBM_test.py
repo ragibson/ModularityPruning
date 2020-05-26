@@ -64,10 +64,10 @@ def plot_CHAMP_gamma_estimates(gamma_estimates):
 
 def plot_SBM_example():
     G, gt3, gt9 = generate_hierarchical_SBM()
-    layout = G.layout_fruchterman_reingold(maxiter=10 ** 3)
+    layout = G.layout_fruchterman_reingold(niter=10 ** 3)
     for p in [gt3, gt9]:
-        out = ig.plot(louvain.RBConfigurationVertexPartition(G, p), bbox=(1000, 1000), layout=layout)
-        out.save(f"hierarchical_sbm_example_{num_communities(p)}.png")
+        ig.plot(louvain.RBConfigurationVertexPartition(G, p), bbox=(1000, 1000), layout=layout,
+                target=f"hierarchical_sbm_example_{num_communities(p)}.png")
 
 
 def find_example_with_4_stable_partitions():
@@ -86,11 +86,12 @@ def find_example_with_4_stable_partitions():
             # stable_parts = gamma_estimates_to_stable_partitions(gamma_estimates)
             plot_CHAMP_gamma_estimates(gamma_estimates)
             plt.savefig("hierarchical_sbm_gamma_estimates.pdf")
+            plt.close()
 
-            layout = G.layout_fruchterman_reingold(maxiter=10 ** 3)
+            layout = G.layout_fruchterman_reingold(niter=10 ** 3)
             for p in stable_parts:
-                out = ig.plot(louvain.RBConfigurationVertexPartition(G, p), bbox=(1000, 1000), layout=layout)
-                out.save(f"hierarchical_sbm_{num_communities(p)}-community.png")
+                ig.plot(louvain.RBConfigurationVertexPartition(G, p), bbox=(1000, 1000), layout=layout,
+                        target=f"hierarchical_sbm_{num_communities(p)}-community.png")
             return
         else:
             print(f"Trial completed with {num_stable_partitions_below_nine} partitions with K <= 9. Continuing...")

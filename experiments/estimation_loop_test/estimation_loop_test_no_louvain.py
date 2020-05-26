@@ -29,7 +29,7 @@ if __name__ == "__main__":
 
         if part1.quality(resolution_parameter=g2) > part2.quality(resolution_parameter=g2):
             if part2.quality(resolution_parameter=g1) > part1.quality(resolution_parameter=g1):
-                layout = G.layout_fruchterman_reingold(maxiter=1000)
+                layout = G.layout_fruchterman_reingold(niter=1000)
                 out = ig.plot(part1, layout=layout)
                 out.save("estimation_loop1.png")
                 out = ig.plot(part2, layout=layout)
