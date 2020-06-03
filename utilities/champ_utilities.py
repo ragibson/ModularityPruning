@@ -10,11 +10,13 @@ from scipy.spatial import HalfspaceIntersection
 from scipy.optimize import linprog
 
 
-def get_interior_point(halfspaces):
+def get_interior_point(halfspaces, initial_num_sampled=50):
     """
     Find interior point of halfspaces (needed to perform halfspace intersection)
 
     :param halfspaces: list of halfspaces
+    :param initial_num_sampled: initial number of halfspaces sampled for the linear program. If the resulting point is
+                                not interior to all halfspaces, this value is doubled and the procedure is retried.
     :return: an approximation to the point most interior to the halfspace intersection polyhedron (Chebyshev center)
     """
 
@@ -23,27 +25,36 @@ def get_interior_point(halfspaces):
     # in our singlelayer case, the last two halfspaces are boundary halfspaces
     interior_hs, boundaries = np.split(halfspaces, [-2], axis=0)
 
-    # randomly sample up to 50 of the halfspaces
-    sample_len = min(50, len(interior_hs))  # len(interior_hs)
-    sampled_hs = np.vstack((interior_hs[choice(interior_hs.shape[0], sample_len, replace=False)], boundaries))
+    while True:  # retry until success
+        # randomly sample some of the halfspaces
+        sample_len = min(initial_num_sampled, len(interior_hs))  # len(interior_hs)
+        sampled_hs = np.vstack((interior_hs[choice(interior_hs.shape[0], sample_len, replace=False)], boundaries))
 
-    # compute the Chebyshev center of the sampled halfspaces' intersection
-    norm_vector = np.reshape(np.linalg.norm(sampled_hs[:, :-1], axis=1), (sampled_hs.shape[0], 1))
-    c = np.zeros((sampled_hs.shape[1],))
-    c[-1] = -1
-    A = np.hstack((sampled_hs[:, :-1], norm_vector))
-    b = -sampled_hs[:, -1:]
+        # compute the Chebyshev center of the sampled halfspaces' intersection
+        norm_vector = np.reshape(np.linalg.norm(sampled_hs[:, :-1], axis=1), (sampled_hs.shape[0], 1))
+        c = np.zeros((sampled_hs.shape[1],))
+        c[-1] = -1
+        A = np.hstack((sampled_hs[:, :-1], norm_vector))
+        b = -sampled_hs[:, -1:]
 
-    res = linprog(c, A_ub=A, b_ub=b, bounds=None, method='interior-point')
+        res = linprog(c, A_ub=A, b_ub=b, bounds=None, method='interior-point')
 
-    assert res.status == 0, {1: "Interior point calculation: scipy.optimize.linprog exceeded iteration limit",
-                             2: "Interior point calculation: scipy.optimize.linprog problem is infeasible",
-                             3: "Interior point calculation: scipy.optimize.linprog problem is unbounded"}[res.status]
+        if res.status == 0 and res.success:
+            intpt = res.x[:-1]  # res.x contains [interior_point, distance to enclosing polyhedron]
 
-    intpt = res.x[:-1]  # res.x contains [interior_point, distance to enclosing polyhedron]
+            # ensure that the computed point is actually interior to all halfspaces
+            if (np.dot(normals, intpt) + np.transpose(offsets) < 0).all():
+                break
 
-    # ensure that the computed point is actually interior to all halfspaces
-    assert (np.dot(normals, intpt) + np.transpose(offsets) < 0).all() and res.success
+        # res.status codes
+        # 1: "Interior point calculation: scipy.optimize.linprog exceeded iteration limit"
+        # 2: "Interior point calculation: scipy.optimize.linprog problem is infeasible"
+        # 3: "Interior point calculation: scipy.optimize.linprog problem is unbounded"
+
+        # if we failed while sampling all halfspaces, the linear program seems impossible
+        assert initial_num_sampled < len(interior_hs), "get_interior_point problem is impossible or degenerate!"
+        initial_num_sampled *= 2  # try again and sample more halfspaces this time
+
     return intpt
 
 
