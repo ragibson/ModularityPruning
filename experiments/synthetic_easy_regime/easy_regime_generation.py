@@ -3,7 +3,6 @@
 from random import random, randint
 from collections import Counter
 import igraph as ig
-from champ.parameter_estimation import iterative_multilayer_resolution_parameter_estimation
 import os
 from time import time
 import pickle
@@ -11,6 +10,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from modularitypruning.champ_utilities import CHAMP_3D
 from modularitypruning.louvain_utilities import repeated_parallel_louvain_from_gammas_omegas
+from modularitypruning.parameter_estimation import iterative_multilayer_resolution_parameter_estimation
 from modularitypruning.parameter_estimation_utilities import gamma_omega_estimate, domains_to_gamma_omega_estimates
 from modularitypruning.partition_utilities import num_communities
 from modularitypruning.plotting import plot_2d_domains_with_estimates, plot_2d_domains_with_ami, \

@@ -30,9 +30,20 @@ def singlelayer_louvain(G, gamma, return_partition=False):
         return tuple(partition.membership)
 
 
+def check_multilayer_louvain_capabilities():
+    """Ensure that we are using the version of louvain with fast multilayer optimization."""
+    try:
+        louvain.RBConfigurationVertexPartitionWeightedLayers
+    except AttributeError as e:
+        raise AttributeError("Your installation of louvain does not support fast multilayer optimization. See "
+                             "https://github.com/wweir827/louvain-igraph and "
+                             "https://github.com/vtraag/louvain-igraph/pull/34") from e
+
+
 def multilayer_louvain(G_intralayer, G_interlayer, layer_vec, gamma, omega, optimiser=None, return_partition=False):
     # RBConfigurationVertexPartitionWeightedLayers implements a multilayer version of "standard" modularity (i.e.
     # the Reichardt and Bornholdt's Potts model with configuration null model).
+    check_multilayer_louvain_capabilities()
 
     if 'weight' not in G_intralayer.es:
         G_intralayer.es['weight'] = [1.0] * G_intralayer.ecount()
