@@ -3,11 +3,13 @@ from .louvain_utilities import louvain_part_with_membership
 from collections import defaultdict
 from champ import get_intersection
 import numpy as np
+from numpy import VisibleDeprecationWarning
 from numpy.random import choice
 from math import floor
 from multiprocessing import Pool, cpu_count
 from scipy.spatial import HalfspaceIntersection
 from scipy.optimize import linprog
+import warnings
 
 
 def get_interior_point(halfspaces, initial_num_sampled=50):
@@ -68,6 +70,10 @@ def CHAMP_2D(G, all_parts, gamma_0, gamma_f, single_threaded=False):
     :param single_threaded: if True, run without parallelization
     :return: list of [(domain_gamma_start, domain_gamma_end, membership), ...]
     """
+
+    # TODO: remove this filter once scipy updates their library
+    # scipy.linprog currently uses deprecated numpy behavior, so we suppress this warning to avoid output clutter
+    warnings.filterwarnings("ignore", category=VisibleDeprecationWarning)
 
     if len(all_parts) == 0:
         return []
