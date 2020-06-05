@@ -10,7 +10,6 @@ from modularitypruning.parameter_estimation_utilities import gamma_estimates_to_
     ranges_to_gamma_estimates
 from modularitypruning.partition_utilities import num_communities
 from modularitypruning.plotting import plot_estimates
-from modularitypruning.progress import Progress
 
 GAMMA_START = 0.0
 GAMMA_END = 2.0

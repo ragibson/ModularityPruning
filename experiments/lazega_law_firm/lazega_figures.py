@@ -118,7 +118,7 @@ def plot_figure1():
     plt.title("Lazega Law Firm Domains and (Gamma, Omega) Estimates", fontsize=14)
     plt.xlabel(r"$\omega$", fontsize=14)
     plt.ylabel(r"$\gamma$", fontsize=14)
-    plt.savefig(f"lazega_domains_and_estimates.pdf")
+    plt.savefig("lazega_domains_and_estimates.pdf")
 
     plt.close()
     plt.rc('text', usetex=True)
@@ -129,7 +129,7 @@ def plot_figure1():
     plt.title("Lazega Law Firm Stable Partitions", fontsize=14)
     plt.xlabel(r"$\omega$", fontsize=14)
     plt.ylabel(r"$\gamma$", fontsize=14)
-    plt.savefig(f"lazega_stable_partitions.pdf")
+    plt.savefig("lazega_stable_partitions.pdf")
 
 
 def plot_figure1_restricted_K():

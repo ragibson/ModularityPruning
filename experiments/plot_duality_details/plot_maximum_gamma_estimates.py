@@ -5,7 +5,8 @@ from math import log
 import numpy as np
 
 
-def f(K, x): return K * (1 / x - 1) / (1 / x + K - 1) / log(1 / x)
+def f(K, x):
+    return K * (1 / x - 1) / (1 / x + K - 1) / log(1 / x)
 
 
 def compute_and_print_maximum_gamma_estimates():

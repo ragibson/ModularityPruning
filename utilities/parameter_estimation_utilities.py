@@ -71,8 +71,8 @@ def estimate_multilayer_SBM_parameters(G_intralayer, G_interlayer, layer_vec, pa
 
     if Nt is None:  # compute total node counts per layer
         Nt = [0] * T
-        for l in layer_vec:
-            Nt[l] += 1
+        for layer in layer_vec:
+            Nt[layer] += 1
 
     K = len(partition)
 
@@ -101,7 +101,7 @@ def estimate_multilayer_SBM_parameters(G_intralayer, G_interlayer, layer_vec, pa
 
     calculate_persistence = persistence_function_from_model(model, G_interlayer, layer_vec=layer_vec, N=N, T=T, Nt=Nt)
     pers = calculate_persistence(community)
-    if model is 'multiplex':
+    if model == 'multiplex':
         # estimate p by solving polynomial root-finding problem with starting estimate p=0.5
         def f(x):
             coeff = 2 * (1 - 1 / K) / (T * (T - 1))
@@ -188,7 +188,7 @@ def multilevel_persistence(G_interlayer, community, layer_vec, Nt, T):
     for e in G_interlayer.es:
         pers_per_layer[layer_vec[e.target]] += (community[e.source] == community[e.target])
 
-    pers_per_layer = [pers_per_layer[l] / Nt[l] for l in range(T)]
+    pers_per_layer = [pers_per_layer[layer] / Nt[layer] for layer in range(T)]
     return sum(pers_per_layer) / (T - 1)
 
 
@@ -198,10 +198,10 @@ def categorical_persistence(G_interlayer, community, N, T):
 
 
 def omega_function_from_model(model, omega_max, T):
-    if model is 'multiplex':
+    if model == 'multiplex':
         def update_omega(theta_in, theta_out, p, K):
             return multiplex_omega_estimate_from_parameters(theta_in, theta_out, p, K, T, omega_max=omega_max)
-    elif model is 'temporal' or model is 'multilayer':
+    elif model == 'temporal' or model == 'multilayer':
         def update_omega(theta_in, theta_out, p, K):
             return temporal_multilevel_omega_estimate_from_parameters(theta_in, theta_out, p, K, omega_max=omega_max)
     else:
@@ -224,19 +224,19 @@ def persistence_function_from_model(model, G_interlayer, layer_vec=None, N=None,
     """
 
     # Note: non-uniform cases are not implemented
-    if model is 'temporal':
+    if model == 'temporal':
         if N is None or T is None:
             raise ValueError("Parameters N and T cannot be None for temporal persistence calculation")
 
         def calculate_persistence(community):
             return ordinal_persistence(G_interlayer, community, N, T)
-    elif model is 'multilevel':
+    elif model == 'multilevel':
         if Nt is None or T is None or layer_vec is None:
             raise ValueError("Parameters layer_vec, Nt, T cannot be None for multilevel persistence calculation")
 
         def calculate_persistence(community):
             return multilevel_persistence(G_interlayer, community, layer_vec, Nt, T)
-    elif model is 'multiplex':
+    elif model == 'multiplex':
         if N is None or T is None:
             raise ValueError("Parameters N and T cannot be None for multiplex persistence calculation")
 

@@ -29,7 +29,7 @@ class TestMonolayerParameterEstimation(unittest.TestCase):
             true_gamma = (true_omega_in - true_omega_out) / (log(true_omega_in) - log(true_omega_out))
 
             gamma, _ = iterative_monolayer_resolution_parameter_estimation(G, gamma=1.0)
-            
+
             # check we converged close to the ground truth "correct" value
             self.assertLess(abs(true_gamma - gamma), 0.05)
 

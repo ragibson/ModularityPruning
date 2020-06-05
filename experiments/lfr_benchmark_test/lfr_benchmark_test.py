@@ -6,7 +6,7 @@ import networkx as nx
 from networkx.generators.community import LFR_benchmark_graph
 from networkx.exception import ExceededMaxIterations
 import numpy as np
-from modularitypruning.louvain_utilities import repeated_louvain_from_gammas, louvain_part_with_membership
+from modularitypruning.louvain_utilities import repeated_louvain_from_gammas
 from modularitypruning.parameter_estimation_utilities import gamma_estimate, prune_to_stable_partitions
 from modularitypruning.partition_utilities import nmi, num_communities
 from modularitypruning.progress import Progress

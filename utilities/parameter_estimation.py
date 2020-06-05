@@ -98,17 +98,17 @@ def check_multilayer_graph_consistency(G_intralayer, G_interlayer, layer_vec, mo
              "All layers of graph must contain edges",
              all(layer_vec[e.source] == layer_vec[e.target] for e in G_intralayer.es),
              "Intralayer graph should not contain edges across layers",
-             model is not 'temporal' or G_interlayer.ecount() == N * (T - 1),
+             model != 'temporal' or G_interlayer.ecount() == N * (T - 1),
              "Interlayer temporal graph must contain (nodes per layer) * (number of layers - 1) edges",
-             model is not 'temporal' or (G_interlayer.vcount() % T == 0 and G_intralayer.vcount() % T == 0),
+             model != 'temporal' or (G_interlayer.vcount() % T == 0 and G_intralayer.vcount() % T == 0),
              "Vertex count of a temporal graph should be a multiple of the number of layers",
-             model is not 'temporal' or all(nt == N for nt in Nt),
+             model != 'temporal' or all(nt == N for nt in Nt),
              "Temporal networks must have the same number of nodes in every layer",
-             model is not 'multilevel' or all(nt > 0 for nt in Nt),
+             model != 'multilevel' or all(nt > 0 for nt in Nt),
              "All layers of a multilevel graph must be consecutive and nonempty",
-             model is not 'multiplex' or all(nt == N for nt in Nt),
+             model != 'multiplex' or all(nt == N for nt in Nt),
              "Multiplex networks must have the same number of nodes in every layer",
-             model is not 'multiplex' or G_interlayer.ecount() == N * T * (T - 1),
+             model != 'multiplex' or G_interlayer.ecount() == N * T * (T - 1),
              "Multiplex interlayer networks must contain edges between all pairs of layers"]
 
     checks, messages = rules[::2], rules[1::2]
@@ -153,8 +153,8 @@ def iterative_multilayer_resolution_parameter_estimation(G_intralayer, G_interla
     # compute total node counts per layer
     N = G_intralayer.vcount() // T
     Nt = [0] * T
-    for l in layer_vec:
-        Nt[l] += 1
+    for layer in layer_vec:
+        Nt[layer] += 1
 
     check_multilayer_graph_consistency(G_intralayer, G_interlayer, layer_vec, model, m_t, T, N, Nt)
     update_omega = omega_function_from_model(model, omega_max, T=T)

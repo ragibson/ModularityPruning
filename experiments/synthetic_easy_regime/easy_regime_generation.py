@@ -57,8 +57,8 @@ def generate_synthetic_network():
         comm_vec = [item for sublist in comm_per_layer for item in sublist]
 
         intralayer_edges = []
-        interlayer_edges = [(n_per_layer * l + v, n_per_layer * l + v + n_per_layer)
-                            for l in range(num_layers - 1)
+        interlayer_edges = [(n_per_layer * layer + v, n_per_layer * layer + v + n_per_layer)
+                            for layer in range(num_layers - 1)
                             for v in range(n_per_layer)]
 
         for v in range(len(comm_vec)):

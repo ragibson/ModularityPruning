@@ -43,6 +43,6 @@ if __name__ == "__main__":
                 plot_estimates(gamma_estimates)
                 plt.title("Domains of Optimality with Loop in Gamma Estimates", fontsize=14)
                 plt.ylabel("Number of communities", fontsize=14)
-                plt.xlabel("$\gamma$", fontsize=14)
+                plt.xlabel(r"$\gamma$", fontsize=14)
                 plt.savefig("estimation_loop_estimates.pdf")
                 break

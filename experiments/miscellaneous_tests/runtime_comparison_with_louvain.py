@@ -27,7 +27,7 @@ def generate_runtimes(G, num_gammas):
         louvain_duration = time() - louvain_start
 
         pruning_start = time()
-        stable_parts = prune_to_stable_partitions(G, parts, GAMMA_START, GAMMA_END)
+        _ = prune_to_stable_partitions(G, parts, GAMMA_START, GAMMA_END)
         pruning_duration = time() - pruning_start
 
         louvain_durations.append(louvain_duration)

@@ -20,12 +20,12 @@ K_MAX = 71
 def read_file(filename, format):
     with open(filename) as file:
         lines = file.readlines()
-    if format is "tsv":
-        edges = [tuple(int(x) for x in l.split()) for l in lines if len(l) and l[0] != '#']
+    if format == "tsv":
+        edges = [tuple(int(x) for x in line.split()) for line in lines if len(line) and line[0] != '#']
         G = ig.Graph(edges, directed=False)
         return G.clusters().giant()
-    elif format is "csv":
-        edges = [tuple(int(x) for x in l.split(",")) for l in lines if len(l) and "node" not in l]
+    elif format == "csv":
+        edges = [tuple(int(x) for x in line.split(",")) for line in lines if len(line) and "node" not in line]
         G = ig.Graph(edges, directed=False)
         return G.clusters().giant()
     else:
@@ -83,9 +83,9 @@ def run_louvain(graphnum):
     parts = []
     start = time()
 
-    for gamma in np.linspace(0, 10, 1000):
+    for gamma_louvain in np.linspace(0, 10, 1000):
         part = louvain.find_partition(G, louvain.RBConfigurationVertexPartition,
-                                      resolution_parameter=gamma).membership
+                                      resolution_parameter=gamma_louvain).membership
 
         if num_communities(part) > 100:
             break
