@@ -1,4 +1,4 @@
-from .partition_utilities import all_degrees, membership_to_communities
+from .partition_utilities import all_degrees, membership_to_communities, in_degrees, out_degrees
 from .louvain_utilities import louvain_part_with_membership
 from collections import defaultdict
 from champ import get_intersection
@@ -8,7 +8,8 @@ from numpy.random import choice
 from math import floor
 from multiprocessing import Pool, cpu_count
 from scipy.spatial import HalfspaceIntersection
-from scipy.optimize import linprog
+from scipy.linalg import LinAlgWarning
+from scipy.optimize import linprog, OptimizeWarning
 import warnings
 
 
@@ -21,6 +22,12 @@ def get_interior_point(halfspaces, initial_num_sampled=50):
                                 not interior to all halfspaces, this value is doubled and the procedure is retried.
     :return: an approximation to the point most interior to the halfspace intersection polyhedron (Chebyshev center)
     """
+
+    # We suppress these two warnings to avoid cluttering output, some of these warnings are expected as the result is
+    # converged to and we've checked the consistency of results in our own tests. Moreover, we explicitly check the
+    # interior point's validity prior to returning.
+    warnings.filterwarnings("ignore", category=LinAlgWarning)
+    warnings.filterwarnings("ignore", category=OptimizeWarning)
 
     normals, offsets = np.split(halfspaces, [-1], axis=1)
 
@@ -39,7 +46,7 @@ def get_interior_point(halfspaces, initial_num_sampled=50):
         A = np.hstack((sampled_hs[:, :-1], norm_vector))
         b = -sampled_hs[:, -1:]
 
-        res = linprog(c, A_ub=A, b_ub=b, bounds=None, method='interior-point')
+        res = linprog(c, A_ub=A, b_ub=b, bounds=(-np.inf, np.inf), method='interior-point')
 
         if res.status == 0 and res.success:
             intpt = res.x[:-1]  # res.x contains [interior_point, distance to enclosing polyhedron]
@@ -144,8 +151,6 @@ def partition_coefficients_2D_serial(G, partitions):
     TODO: support edge weights"""
 
     all_edges = [(e.source, e.target) for e in G.es]
-    degree = all_degrees(G)
-    twom = 2 * G.ecount()
 
     # multiply by 2 only if undirected here
     if G.is_directed():
@@ -156,9 +161,16 @@ def partition_coefficients_2D_serial(G, partitions):
                            for membership in partitions])
 
     if G.is_directed():
-        P_hats = np.array([sum(sum(degree[v] for v in vs) ** 2 for vs in membership_to_communities(membership).values())
-                           for membership in partitions]) / (2 * twom)
+        # directed modularity of Leicht and Newman is actually
+        #   (1/m) sum_{ij} [A_{ij} - k_i^{in} * k_j^{out} / m] delta(c_i, c_j)
+        in_degree = in_degrees(G)
+        out_degree = out_degrees(G)
+        P_hats = np.array([sum(sum(in_degree[v] for v in vs) * sum(out_degree[v] for v in vs)
+                               for vs in membership_to_communities(membership).values())
+                           for membership in partitions]) / G.ecount()
     else:
+        twom = 2 * G.ecount()
+        degree = all_degrees(G)
         P_hats = np.array([sum(sum(degree[v] for v in vs) ** 2 for vs in membership_to_communities(membership).values())
                            for membership in partitions]) / twom
 

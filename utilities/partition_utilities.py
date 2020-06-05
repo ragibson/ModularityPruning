@@ -14,6 +14,14 @@ def all_degrees(G):
     return G.degree()
 
 
+def in_degrees(G):
+    return G.indegree()
+
+
+def out_degrees(G):
+    return G.outdegree()
+
+
 def membership_to_communities(membership):
     communities = defaultdict(list)
     for v, c in enumerate(membership):
