@@ -1,6 +1,6 @@
 import igraph as ig
 from modularitypruning.champ_utilities import CHAMP_2D
-from modularitypruning.louvain_utilities import louvain_part_with_membership
+from modularitypruning.louvain_utilities import louvain_part_with_membership, repeated_louvain_from_gammas
 from random import randint, uniform, seed
 import unittest
 
@@ -34,10 +34,10 @@ class TestCHAMP2D(unittest.TestCase):
                     # check that the best partition quality matches that of the champ domains at this gamma
                     champ_quality = membership_to_louvain_partition[membership].quality(resolution_parameter=gamma)
 
-                    # note that this is exact float equality
-                    self.assertEqual(best_partition_quality, champ_quality,
-                                     msg=f"CHAMP domain quality does not match best input partition "
-                                         f"at gamma {gamma:.2f}")
+                    # note that this is float comparision to within ~10^{-10}
+                    self.assertAlmostEqual(best_partition_quality, champ_quality, places=10,
+                                           msg=f"CHAMP domain quality does not match best input partition "
+                                               f"at gamma {gamma:.2f}")
                     break
             else:
                 self.assertFalse(True, msg=f"gamma {gamma:.2f} was not found within any CHAMP domain")
@@ -98,6 +98,32 @@ class TestCHAMP2D(unittest.TestCase):
             self.assert_champ_correctness_unweighted_ER(n=100, m=1000, num_partitions=1000,
                                                         directed=True, num_gammas=100, K_max=10,
                                                         gamma_start=gamma_start, gamma_end=gamma_end)
+
+    def test_champ_correctness_igraph_famous_louvain(self):
+        """Test CHAMP correctness on various famous graphs while obtaining partitions via Louvain.
+
+        In particular, we use
+            Meredith (n=70, m=140): a counterexample to a conjecture regarding 4-regular 4-connected Hamiltonian graphs
+            Nonline (n=50, m=72): a disconnnected graph composed of the 9 subgraphs whose presence makes a nonline graph
+            Thomassen (n=34, m=52): the smallest graph without a Hamiltonian path
+            Tutte (n=46, m=69): a counterexample to a conjecture regarding 3-connected 3-regular Hamiltonian graphs
+            Zachary (n=34, m=78): popular network of the social interactions between 34 members of a karate club
+
+        The correctness of the CHAMP domains are checked for the original undirected and (symmetric) directed variants.
+        """
+
+        seed(0)
+        for name in ['meredith', 'nonline', 'thomassen', 'tutte', 'zachary']:
+            G = ig.Graph.Famous(name)
+            gammas = [uniform(0, 5) for _ in range(100)]
+            partitions = repeated_louvain_from_gammas(G, gammas)
+            champ_ranges = CHAMP_2D(G, partitions, gamma_0=0, gamma_f=5)
+            self.assert_best_partitions_match_champ_set(G, partitions, champ_ranges, gammas)
+
+            G.to_directed()  # check the directed version of the graph as well
+            partitions = repeated_louvain_from_gammas(G, gammas)
+            champ_ranges = CHAMP_2D(G, partitions, gamma_0=0, gamma_f=5)
+            self.assert_best_partitions_match_champ_set(G, partitions, champ_ranges, gammas)
 
     # TODO: undirected & directed, weighted
     # TODO: multilayer with all combinations of undirected/directed/unweighted/weighted layers

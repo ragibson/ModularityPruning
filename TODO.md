@@ -1,5 +1,6 @@
 ## TODO items
 
+- [ ] Add support for Leiden algorithm for maximizing modularity
 - [ ] Add more error handling for missing data files
 - [ ] Improve documentation (use readthedocs) and add multilayer documentation
 - [ ] Implement handling of weighted graphs
