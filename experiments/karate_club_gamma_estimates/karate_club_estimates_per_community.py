@@ -10,7 +10,6 @@ import numpy as np
 if __name__ == "__main__":
     G = ig.Graph.Famous("Zachary")
 
-
     def one_run(gamma):
         """Returns (gamma_estimate, num_communities) from a gamma estimation run starting at :gamma:"""
         try:
@@ -18,7 +17,6 @@ if __name__ == "__main__":
             return final_gamma, num_communities(part.membership)
         except ValueError:
             return None, None
-
 
     gammas = np.linspace(0.0, 2.0, 10 ** 6)
     pool = Pool(cpu_count())

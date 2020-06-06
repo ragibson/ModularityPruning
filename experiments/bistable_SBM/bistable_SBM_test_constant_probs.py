@@ -20,11 +20,11 @@ def generate_bistable_SBM_test_output():
     print("Running bistable SBM test...")
 
     N = 2400
-    p2s = np.linspace(0.01, 0.02, 5).tolist() + \
-          np.linspace(0.02, 0.025, 15).tolist() + \
-          np.linspace(0.025, 0.0475, 5).tolist() + \
-          np.linspace(0.0475, 0.0525, 15).tolist() + \
-          np.linspace(0.0525, 0.06, 5).tolist()
+    p2s = (np.linspace(0.01, 0.02, 5).tolist() +
+           np.linspace(0.02, 0.025, 15).tolist() +
+           np.linspace(0.025, 0.0475, 5).tolist() +
+           np.linspace(0.0475, 0.0525, 15).tolist() +
+           np.linspace(0.0525, 0.06, 5).tolist())
 
     c2s = []  # probability of K=2 stability
     c3s = []  # probability of K=3 stability

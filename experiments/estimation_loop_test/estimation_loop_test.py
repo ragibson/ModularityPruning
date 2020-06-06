@@ -26,7 +26,7 @@ if __name__ == "__main__":
         m = np.random.randint(3 * n, 10 * n)
         try:
             G = ig.Graph.Erdos_Renyi(n=n, m=m, directed=False)
-        except:
+        except ig.InternalError:
             continue
 
         if not G.is_connected():
@@ -42,13 +42,11 @@ if __name__ == "__main__":
         ranges = CHAMP_2D(G, all_parts, GAMMA_START, GAMMA_END, single_threaded=True)
         gamma_estimates = ranges_to_gamma_estimates(G, ranges)
 
-
         def gamma_to_domain(gamma):
             for gamma_start, gamma_end, part, gamma_est in gamma_estimates:
                 if gamma_start <= gamma <= gamma_end:
                     return part, gamma_est
             return None, None
-
 
         for i in range(len(gamma_estimates)):
             _, _, old_membership, old_estimate = gamma_estimates[i]

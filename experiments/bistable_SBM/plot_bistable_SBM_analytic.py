@@ -18,16 +18,16 @@ def gamma_cross_limit(d):
 def gamma_2(d):
     numerator = 2 * (80 * d + 11) ** 2 * (256 * d + 19)
     denominator_scalar = 9 * (160 * d + 13) * (2560 * d ** 2 + 416 * d + 25)
-    denominator_scalar2 = log((4 * (8 * d + 1) * (80 * d + 11)) / (2560 * d ** 2 + 416 * d + 25)) - \
-                          log((160 * d + 22) / (1440 * d + 117))
+    denominator_scalar2 = (log((4 * (8 * d + 1) * (80 * d + 11)) / (2560 * d ** 2 + 416 * d + 25)) -
+                           log((160 * d + 22) / (1440 * d + 117)))
     return numerator / (denominator_scalar * denominator_scalar2)
 
 
 def gamma_3(d):
     numerator = 8 * (80 * d + 11) ** 2 * (320 * d * (80 * d - 7) - 549)
     denominator_scalar = (160 * d + 13) * (160 * d + 49) * (320 * d * (80 * d + 13) + 331)
-    denominator_scalar2 = log((8 * (80 * d + 1) * (80 * d + 11)) / ((160 * d + 13) * (160 * d + 49))) - \
-                          log((80 * (80 * d + 11)) / (320 * d * (80 * d + 13) + 331))
+    denominator_scalar2 = (log((8 * (80 * d + 1) * (80 * d + 11)) / ((160 * d + 13) * (160 * d + 49))) -
+                           log((80 * (80 * d + 11)) / (320 * d * (80 * d + 13) + 331)))
     return numerator / (denominator_scalar * denominator_scalar2)
 
 

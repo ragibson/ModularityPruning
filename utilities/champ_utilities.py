@@ -133,7 +133,7 @@ def CHAMP_3D(G_intralayer, G_interlayer, layer_vec, all_parts, gamma_0, gamma_f,
         try:
             champ_domains = get_intersection(champ_coef_array, max_pt=(omega_f, gamma_f))
             break
-        except:  # QhullError
+        except:  # noqa TODO: I think this is generally QhullError, but this needs to be checked
             continue
     else:
         # If this actually occurs, it's best to break your input partitions into smaller subsets
