@@ -30,14 +30,22 @@ def singlelayer_louvain(G, gamma, return_partition=False):
         return tuple(partition.membership)
 
 
-def check_multilayer_louvain_capabilities():
-    """Ensure that we are using the version of louvain with fast multilayer optimization."""
+def check_multilayer_louvain_capabilities(fatal=True):
+    """Check if we are using the version of louvain with fast multilayer optimization.
+
+    :param fatal: if True, raise an error when we are not using the desired louvain version
+    """
     try:
         louvain.RBConfigurationVertexPartitionWeightedLayers
     except AttributeError as e:
+        if not fatal:
+            return False
+
         raise AttributeError("Your installation of louvain does not support fast multilayer optimization. See "
                              "https://github.com/wweir827/louvain-igraph and "
                              "https://github.com/vtraag/louvain-igraph/pull/34") from e
+
+    return True
 
 
 def multilayer_louvain(G_intralayer, G_interlayer, layer_vec, gamma, omega, optimiser=None, return_partition=False):
