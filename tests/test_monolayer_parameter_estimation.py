@@ -1,9 +1,10 @@
-from shared_testing_functions import generate_igraph_famous, generate_random_partitions
+from shared_testing_functions import generate_igraph_famous, generate_random_partition
 import igraph as ig
 from math import log
 from numpy import mean
 from modularitypruning.parameter_estimation import iterative_monolayer_resolution_parameter_estimation
 from modularitypruning.parameter_estimation_utilities import gamma_estimate
+from modularitypruning.partition_utilities import all_degrees
 from random import seed
 import unittest
 
@@ -25,7 +26,7 @@ class TestMonolayerParameterEstimation(unittest.TestCase):
             G = ig.Graph.SBM(n, pref_matrix, community_sizes)
 
             # compute "ground truth" gamma estimate
-            k = mean([G.degree(v) for v in range(n)])
+            k = mean(all_degrees(G))
             true_omega_in = p_in * (2 * G.ecount()) / (k * k)
             true_omega_out = p_out * (2 * G.ecount()) / (k * k)
             true_gamma = (true_omega_in - true_omega_out) / (log(true_omega_in) - log(true_omega_out))
@@ -40,7 +41,7 @@ class TestMonolayerParameterEstimation(unittest.TestCase):
 
         seed(0)
         for G in generate_igraph_famous():
-            random_membership = generate_random_partitions(G.vcount(), 1, 5)[0]
+            random_membership = generate_random_partition(G.vcount(), 5)
 
             gamma_undirected = gamma_estimate(G, random_membership)
             G.to_directed()

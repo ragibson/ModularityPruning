@@ -13,11 +13,15 @@ def generate_random_gammas(num_gammas, gamma_start, gamma_end):
     return [uniform(gamma_start, gamma_end) for _ in range(num_gammas)]
 
 
+def generate_random_partition(num_nodes, K):
+    return tuple(randint(0, K - 1) for _ in range(num_nodes))
+
+
 def generate_random_partitions(num_nodes, num_partitions, K_max):
     partitions = []
     for _ in range(num_partitions):
         K = randint(1, K_max)
-        part = tuple(randint(0, K - 1) for _ in range(num_nodes))
+        part = generate_random_partition(num_nodes, K)
         partitions.append(part)
     return partitions
 
