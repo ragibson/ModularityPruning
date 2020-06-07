@@ -131,6 +131,11 @@ def repeated_parallel_louvain_from_gammas(G, gammas, show_progress=True, chunk_d
     return total
 
 
+def repeated_louvain_from_gammas_omegas(G_intralayer, G_interlayer, layer_vec, gammas, omegas):
+    return {sorted_tuple(multilayer_louvain(G_intralayer, G_interlayer, layer_vec, gamma, omega))
+            for gamma in gammas for omega in omegas}
+
+
 def repeated_parallel_louvain_from_gammas_omegas(G_intralayer, G_interlayer, layer_vec, gammas, omegas,
                                                  show_progress=True, chunk_dispatch=True):
     """
