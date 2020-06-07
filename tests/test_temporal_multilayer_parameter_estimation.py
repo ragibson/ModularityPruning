@@ -81,40 +81,30 @@ class TestTemporalParameterEstimation(unittest.TestCase):
         self.assertLess(abs(true_omega - omega), 0.1)
 
     def test_temporal_SBM_correct_convergence_varying_copying_probabilty(self):
-        seed(0)
-
         for eta in [0.25, 0.5, 0.75, 0.9]:
             membership = generate_random_partition(num_nodes=100, K=2)
             self.assert_temporal_SBM_correct_convergence(copying_probability=eta, p_in=0.25, p_out=0.05,
                                                          first_layer_membership=membership, num_layers=25)
 
     def test_temporal_SBM_correct_convergence_varying_p_in(self):
-        seed(0)
-
         for p_in in [0.5, 0.4, 0.3, 0.2]:
             membership = generate_random_partition(num_nodes=100, K=2)
             self.assert_temporal_SBM_correct_convergence(copying_probability=0.75, p_in=p_in, p_out=0.025,
                                                          first_layer_membership=membership, num_layers=25)
 
     def test_temporal_SBM_correct_convergence_varying_p_out(self):
-        seed(0)
-
         for p_out in [0.05, 0.04, 0.03, 0.02]:
             membership = generate_random_partition(num_nodes=100, K=2)
             self.assert_temporal_SBM_correct_convergence(copying_probability=0.75, p_in=0.25, p_out=p_out,
                                                          first_layer_membership=membership, num_layers=25)
 
     def test_temporal_SBM_correct_convergence_varying_num_communities(self):
-        seed(0)
-
         for K in [2, 3, 4, 5]:
             membership = generate_random_partition(num_nodes=250, K=K)
             self.assert_temporal_SBM_correct_convergence(copying_probability=0.75, p_in=0.25, p_out=0.05,
                                                          first_layer_membership=membership, num_layers=25)
 
     def test_temporal_SBM_correct_convergence_varying_num_layers(self):
-        seed(0)
-
         for num_layers in [20, 30, 40]:
             membership = generate_random_partition(num_nodes=100, K=2)
             self.assert_temporal_SBM_correct_convergence(copying_probability=0.75, p_in=0.25, p_out=0.05,
@@ -151,4 +141,5 @@ class TestTemporalParameterEstimation(unittest.TestCase):
 
 
 if __name__ == "__main__":
+    seed(0)
     unittest.main()

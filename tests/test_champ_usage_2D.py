@@ -39,66 +39,56 @@ class TestCHAMP2D(unittest.TestCase):
         self.assert_best_partitions_match_champ_set(G, partitions, champ_ranges, gammas)
 
     def test_champ_correctness_undirected_unweighted_varying_n(self):
-        seed(0)
         for n in [50, 100, 250, 500]:
             self.assert_champ_correctness_unweighted_ER(n=n, m=5 * n, directed=False, num_partitions=10,
                                                         num_gammas=100, K_max=5, gamma_start=0, gamma_end=2)
 
     def test_champ_correctness_undirected_unweighted_varying_m(self):
-        seed(0)
         for m in [200, 500, 1000]:
             self.assert_champ_correctness_unweighted_ER(n=100, m=m, num_partitions=10, directed=False,
                                                         num_gammas=100, K_max=5, gamma_start=0, gamma_end=2)
 
     def test_champ_correctness_undirected_unweighted_varying_num_partitions(self):
-        seed(0)
         for num_partitions in [10, 100, 1000]:
             self.assert_champ_correctness_unweighted_ER(n=100, m=500, num_partitions=num_partitions,
                                                         directed=False, num_gammas=100, K_max=5,
                                                         gamma_start=0, gamma_end=2)
 
     def test_champ_correctness_undirected_unweighted_varying_K_max(self):
-        seed(0)
         for K_max in [2, 5, 10, 20]:
             self.assert_champ_correctness_unweighted_ER(n=100, m=500, num_partitions=100,
                                                         directed=False, num_gammas=100, K_max=K_max,
                                                         gamma_start=0, gamma_end=2)
 
     def test_champ_correctness_undirected_unweighted_varying_gamma_range(self):
-        seed(0)
         for gamma_start, gamma_end in zip([0.0, 1.0, 2.0, 3.0, 4.0], [10.0, 9.0, 8.0, 7.0, 6.0]):
             self.assert_champ_correctness_unweighted_ER(n=100, m=500, num_partitions=100,
                                                         directed=False, num_gammas=100, K_max=10,
                                                         gamma_start=gamma_start, gamma_end=gamma_end)
 
     def test_champ_correctness_directed_unweighted_varying_n(self):
-        seed(0)
         for n in [50, 100, 250, 500]:
             self.assert_champ_correctness_unweighted_ER(n=n, m=10 * n, directed=True, num_partitions=10,
                                                         num_gammas=100, K_max=5, gamma_start=0, gamma_end=2)
 
     def test_champ_correctness_directed_unweighted_varying_m(self):
-        seed(0)
         for m in [400, 1000, 2000]:
             self.assert_champ_correctness_unweighted_ER(n=100, m=m, num_partitions=10, directed=True,
                                                         num_gammas=100, K_max=5, gamma_start=0, gamma_end=2)
 
     def test_champ_correctness_directed_unweighted_varying_num_partitions(self):
-        seed(0)
         for num_partitions in [10, 100, 1000]:
             self.assert_champ_correctness_unweighted_ER(n=100, m=1000, num_partitions=num_partitions,
                                                         directed=True, num_gammas=100, K_max=5,
                                                         gamma_start=0, gamma_end=2)
 
     def test_champ_correctness_directed_unweighted_varying_K_max(self):
-        seed(0)
         for K_max in [2, 5, 10, 20]:
             self.assert_champ_correctness_unweighted_ER(n=100, m=1000, num_partitions=100,
                                                         directed=True, num_gammas=100, K_max=K_max,
                                                         gamma_start=0, gamma_end=2)
 
     def test_champ_correctness_directed_unweighted_varying_gamma_range(self):
-        seed(0)
         for gamma_start, gamma_end in zip([0.0, 1.0, 2.0, 3.0, 4.0], [10.0, 9.0, 8.0, 7.0, 6.0]):
             self.assert_champ_correctness_unweighted_ER(n=100, m=1000, num_partitions=100,
                                                         directed=True, num_gammas=100, K_max=10,
@@ -110,7 +100,6 @@ class TestCHAMP2D(unittest.TestCase):
         The correctness of the CHAMP domains are checked for the original undirected and (symmetric) directed variants.
         """
 
-        seed(0)
         for G in generate_igraph_famous():
             gammas = generate_random_gammas(100, gamma_start=0, gamma_end=5)
             partitions = repeated_louvain_from_gammas(G, gammas)
@@ -124,4 +113,5 @@ class TestCHAMP2D(unittest.TestCase):
 
 
 if __name__ == "__main__":
+    seed(0)
     unittest.main()

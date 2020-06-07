@@ -16,7 +16,6 @@ class TestMonolayerParameterEstimation(unittest.TestCase):
         The setup here is the same as in FIG 1 of 'Equivalence between modularity optimization and maximum likelihood
         methods for community detection', albeit using Louvain for modularity maximization."""
 
-        seed(0)
         for q in range(3, 15):
             community_sizes = [250] * q  # q equally sized groups of 250 nodes
             n = 250 * q
@@ -39,7 +38,6 @@ class TestMonolayerParameterEstimation(unittest.TestCase):
     def test_directed_consistency_igraph_famous(self):
         """Test gamma estimate consistency on undirected and (symmetric) directed versions of various famous graphs."""
 
-        seed(0)
         for G in generate_igraph_famous():
             random_membership = generate_random_partition(G.vcount(), 5)
 
@@ -51,4 +49,5 @@ class TestMonolayerParameterEstimation(unittest.TestCase):
 
 
 if __name__ == "__main__":
+    seed(0)
     unittest.main()

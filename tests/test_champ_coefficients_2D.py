@@ -35,49 +35,41 @@ class TestCHAMPCoefficients2D(unittest.TestCase):
         self.assert_partition_coefficient_correctness(G, partitions, coefficients)
 
     def test_partition_coefficient_correctness_undirected_unweighted_varying_n(self):
-        seed(0)
         for n in [50, 100, 250, 500]:
             self.assert_partition_coefficient_correctness_unweighted_ER(n=n, m=5 * n, directed=False,
                                                                         num_partitions=10, K_max=5)
 
     def test_partition_coefficient_correctness_undirected_unweighted_varying_m(self):
-        seed(0)
         for m in [200, 500, 1000]:
             self.assert_partition_coefficient_correctness_unweighted_ER(n=100, m=m, directed=False,
                                                                         num_partitions=10, K_max=5)
 
     def test_partition_coefficient_correctness_undirected_unweighted_varying_num_partitions(self):
-        seed(0)
         for num_partitions in [10, 100, 1000]:
             self.assert_partition_coefficient_correctness_unweighted_ER(n=100, m=500, directed=False,
                                                                         num_partitions=num_partitions, K_max=5)
 
     def test_partition_coefficient_correctness_undirected_unweighted_varying_K_max(self):
-        seed(0)
         for K_max in [2, 5, 10, 20]:
             self.assert_partition_coefficient_correctness_unweighted_ER(n=100, m=500, directed=False,
                                                                         num_partitions=100, K_max=K_max)
 
     def test_partition_coefficient_correctness_directed_unweighted_varying_n(self):
-        seed(0)
         for n in [50, 100, 250, 500]:
             self.assert_partition_coefficient_correctness_unweighted_ER(n=n, m=10 * n, directed=True,
                                                                         num_partitions=10, K_max=5)
 
     def test_partition_coefficient_correctness_directed_unweighted_varying_m(self):
-        seed(0)
         for m in [400, 1000, 2000]:
             self.assert_partition_coefficient_correctness_unweighted_ER(n=100, m=m, directed=True,
                                                                         num_partitions=10, K_max=5)
 
     def test_partition_coefficient_correctness_directed_unweighted_varying_num_partitions(self):
-        seed(0)
         for num_partitions in [10, 100, 1000]:
             self.assert_partition_coefficient_correctness_unweighted_ER(n=100, m=1000, directed=True,
                                                                         num_partitions=num_partitions, K_max=5)
 
     def test_partition_coefficient_correctness_directed_unweighted_varying_K_max(self):
-        seed(0)
         for K_max in [2, 5, 10, 20]:
             self.assert_partition_coefficient_correctness_unweighted_ER(n=100, m=1000, directed=True,
                                                                         num_partitions=100, K_max=K_max)
@@ -88,7 +80,6 @@ class TestCHAMPCoefficients2D(unittest.TestCase):
         The correctness is checked for the original undirected and (symmetric) directed variants.
         """
 
-        seed(0)
         for G in generate_igraph_famous():
             gammas = generate_random_gammas(100, gamma_start=0, gamma_end=5)
             partitions = repeated_louvain_from_gammas(G, gammas)
@@ -102,4 +93,5 @@ class TestCHAMPCoefficients2D(unittest.TestCase):
 
 
 if __name__ == "__main__":
+    seed(0)
     unittest.main()
