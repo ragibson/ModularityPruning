@@ -1,9 +1,10 @@
+from shared_testing_functions import generate_igraph_famous, generate_random_partitions
 import igraph as ig
 from math import log
 from numpy import mean
 from modularitypruning.parameter_estimation import iterative_monolayer_resolution_parameter_estimation
 from modularitypruning.parameter_estimation_utilities import gamma_estimate
-from random import randint, seed
+from random import seed
 import unittest
 
 
@@ -35,20 +36,11 @@ class TestMonolayerParameterEstimation(unittest.TestCase):
             self.assertLess(abs(true_gamma - gamma), 0.05)
 
     def test_directed_consistency_igraph_famous(self):
-        """Test consistency of gamma estimates on undirected and (symmetric) directed versions of various famous graphs.
-
-        In particular, we use
-            Meredith (n=70, m=140): a counterexample to a conjecture regarding 4-regular 4-connected Hamiltonian graphs
-            Nonline (n=50, m=72): a disconnnected graph composed of the 9 subgraphs whose presence makes a nonline graph
-            Thomassen (n=34, m=52): the smallest graph without a Hamiltonian path
-            Tutte (n=46, m=69): a counterexample to a conjecture regarding 3-connected 3-regular Hamiltonian graphs
-            Zachary (n=34, m=78): popular network of the social interactions between 34 members of a karate club
-        """
+        """Test gamma estimate consistency on undirected and (symmetric) directed versions of various famous graphs."""
 
         seed(0)
-        for name in ['meredith', 'nonline', 'thomassen', 'tutte', 'zachary']:
-            G = ig.Graph.Famous(name)
-            random_membership = [randint(0, 5) for _ in range(G.vcount())]
+        for G in generate_igraph_famous():
+            random_membership = generate_random_partitions(G.vcount(), 1, 5)[0]
 
             gamma_undirected = gamma_estimate(G, random_membership)
             G.to_directed()
