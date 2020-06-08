@@ -141,7 +141,9 @@ def iterative_multilayer_resolution_parameter_estimation(G_intralayer, G_interla
     if 'weight' not in G_intralayer.es:
         G_intralayer.es['weight'] = [1.0] * G_intralayer.ecount()
 
-    G_interlayer.es['weight'] = [omega] * G_interlayer.ecount()
+    if 'weight' not in G_interlayer.es:
+        G_interlayer.es['weight'] = [1.0] * G_interlayer.ecount()
+
     T = max(layer_vec) + 1  # layer count
     optimiser = louvain.Optimiser()
 

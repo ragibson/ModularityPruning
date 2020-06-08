@@ -56,14 +56,16 @@ def multilayer_louvain(G_intralayer, G_interlayer, layer_vec, gamma, omega, opti
     if 'weight' not in G_intralayer.es:
         G_intralayer.es['weight'] = [1.0] * G_intralayer.ecount()
 
+    if 'weight' not in G_interlayer.es:
+        G_interlayer.es['weight'] = [1.0] * G_interlayer.ecount()
+
     if optimiser is None:
         optimiser = louvain.Optimiser()
 
-    G_interlayer.es['weight'] = omega
     intralayer_part = louvain.RBConfigurationVertexPartitionWeightedLayers(G_intralayer, layer_vec=layer_vec,
                                                                            weights='weight', resolution_parameter=gamma)
     interlayer_part = louvain.CPMVertexPartition(G_interlayer, resolution_parameter=0.0, weights='weight')
-    optimiser.optimise_partition_multiplex([intralayer_part, interlayer_part])
+    optimiser.optimise_partition_multiplex([intralayer_part, interlayer_part], layer_weights=[1, omega])
 
     if return_partition:
         return intralayer_part
