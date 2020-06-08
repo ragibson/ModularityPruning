@@ -1,8 +1,8 @@
 ## TODO items
 
 - [ ] Improve documentation (use readthedocs) and add multilayer documentation
-- [ ] Complete test suite for CHAMP usage (multilayer and edge weights)
-- [ ] Expand simple test suite for parameter estimation
+- [ ] Complete test suite for CHAMP usage (multilayer domains)
+- [ ] Expand test suite for parameter estimation
 - [ ] Add more error handling for missing data files
 - [ ] Implement handling of weighted graphs
 - [ ] Add support for Leiden algorithm for maximizing modularity

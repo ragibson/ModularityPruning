@@ -7,7 +7,7 @@ import unittest
 
 
 class TestCHAMPCoefficients3D(unittest.TestCase):
-    # TODO: multilayer with undirected/directed/unweighted/weighted layers (coefficients and CHAMP domains)
+    # TODO: coefficient correctness with weighted layers
 
     def assert_partition_coefficient_correctness(self, G_intralayer, G_interlayer, layer_membership,
                                                  partitions, coefficients):
@@ -51,12 +51,89 @@ class TestCHAMPCoefficients3D(unittest.TestCase):
         self.assert_partition_coefficient_correctness(G_intralayer, G_interlayer, layer_membership, partitions,
                                                       coefficients)
 
-    def test_partition_coefficient_correctness_undirected_unweighted(self):
-        # TODO: expand this into multiple tests
+    def test_partition_coefficient_correctness_undirected_unweighted_varying_num_nodes_per_layer(self):
         for num_nodes_per_layer in [50, 100, 250, 500]:
             self.assert_partition_coefficient_correctness_unweighted_ER(num_nodes_per_layer=num_nodes_per_layer,
                                                                         m=50 * num_nodes_per_layer, num_layers=10,
-                                                                        directed=False, num_partitions=100, K_max=10)
+                                                                        directed=False, num_partitions=10, K_max=10)
+
+    def test_partition_coefficient_correctness_undirected_unweighted_varying_m(self):
+        for m in [5000, 10000, 15000, 20000]:
+            self.assert_partition_coefficient_correctness_unweighted_ER(num_nodes_per_layer=100,
+                                                                        m=m, num_layers=10, directed=False,
+                                                                        num_partitions=10, K_max=10)
+
+    def test_partition_coefficient_correctness_undirected_unweighted_varying_num_layers(self):
+        for num_layers in [5, 10, 20, 30]:
+            self.assert_partition_coefficient_correctness_unweighted_ER(num_nodes_per_layer=100,
+                                                                        m=15000, num_layers=num_layers, directed=False,
+                                                                        num_partitions=10, K_max=10)
+
+    def test_partition_coefficient_correctness_undirected_unweighted_varying_num_partitions(self):
+        for num_partitions in [5, 10, 100, 250]:
+            self.assert_partition_coefficient_correctness_unweighted_ER(num_nodes_per_layer=100,
+                                                                        m=5000, num_layers=10, directed=False,
+                                                                        num_partitions=num_partitions, K_max=10)
+
+    def test_partition_coefficient_correctness_undirected_unweighted_varying_K_max(self):
+        for K_max in [2, 5, 10, 25]:
+            self.assert_partition_coefficient_correctness_unweighted_ER(num_nodes_per_layer=100,
+                                                                        m=5000, num_layers=10, directed=False,
+                                                                        num_partitions=10, K_max=K_max)
+
+    def test_partition_coefficient_correctness_directed_unweighted_varying_num_nodes_per_layer(self):
+        for num_nodes_per_layer in [50, 100, 250, 500]:
+            self.assert_partition_coefficient_correctness_unweighted_ER(num_nodes_per_layer=num_nodes_per_layer,
+                                                                        m=100 * num_nodes_per_layer, num_layers=10,
+                                                                        directed=True, num_partitions=10, K_max=10)
+
+    def test_partition_coefficient_correctness_directed_unweighted_varying_m(self):
+        for m in [10000, 20000, 30000, 40000]:
+            self.assert_partition_coefficient_correctness_unweighted_ER(num_nodes_per_layer=100,
+                                                                        m=m, num_layers=10, directed=True,
+                                                                        num_partitions=10, K_max=10)
+
+    def test_partition_coefficient_correctness_directed_unweighted_varying_num_layers(self):
+        for num_layers in [5, 10, 20, 30]:
+            self.assert_partition_coefficient_correctness_unweighted_ER(num_nodes_per_layer=100,
+                                                                        m=30000, num_layers=num_layers, directed=True,
+                                                                        num_partitions=10, K_max=10)
+
+    def test_partition_coefficient_correctness_directed_unweighted_varying_num_partitions(self):
+        for num_partitions in [5, 10, 100, 250]:
+            self.assert_partition_coefficient_correctness_unweighted_ER(num_nodes_per_layer=100,
+                                                                        m=10000, num_layers=10, directed=True,
+                                                                        num_partitions=num_partitions, K_max=10)
+
+    def test_partition_coefficient_correctness_directed_unweighted_varying_K_max(self):
+        for K_max in [2, 5, 10, 25]:
+            self.assert_partition_coefficient_correctness_unweighted_ER(num_nodes_per_layer=100,
+                                                                        m=10000, num_layers=10, directed=True,
+                                                                        num_partitions=10, K_max=K_max)
+
+    def test_partition_coefficient_correctness_interleaved_directedness(self):
+        """Test partition coefficient correctness when directedness of interlayer and intralayer edges do not match."""
+        if not check_multilayer_louvain_capabilities(fatal=False):
+            # just return since this version of louvain is unable to perform multilayer parameter estimation anyway
+            return
+
+        # Intralayer directed edges, but interlayer undirected ones
+        G_intralayer, G_interlayer, layer_membership = generate_connected_multilayer_ER(num_nodes_per_layer=100, m=5000,
+                                                                                        num_layers=10, directed=False)
+        G_intralayer.to_directed()
+        partitions = generate_random_partitions(num_nodes=G_intralayer.vcount(), num_partitions=10, K_max=10)
+        coefficients = partition_coefficients_3D(G_intralayer, G_interlayer, layer_membership, partitions)
+        self.assert_partition_coefficient_correctness(G_intralayer, G_interlayer, layer_membership, partitions,
+                                                      coefficients)
+
+        # Interlayer directed edges, but intralayer undirected ones
+        G_intralayer, G_interlayer, layer_membership = generate_connected_multilayer_ER(num_nodes_per_layer=100, m=5000,
+                                                                                        num_layers=10, directed=False)
+        G_interlayer.to_directed()
+        partitions = generate_random_partitions(num_nodes=G_intralayer.vcount(), num_partitions=10, K_max=10)
+        coefficients = partition_coefficients_3D(G_intralayer, G_interlayer, layer_membership, partitions)
+        self.assert_partition_coefficient_correctness(G_intralayer, G_interlayer, layer_membership, partitions,
+                                                      coefficients)
 
 
 if __name__ == "__main__":
