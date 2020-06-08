@@ -85,6 +85,28 @@ def louvain_part_with_membership(G, membership):
     return part
 
 
+def multilayer_louvain_part(G_intralayer, G_interlayer, layer_membership):
+    if 'weight' not in G_intralayer.es:
+        G_intralayer.es['weight'] = [1.0] * G_intralayer.ecount()
+
+    if 'weight' not in G_interlayer.es:
+        G_interlayer.es['weight'] = [1.0] * G_interlayer.ecount()
+
+    intralayer_part = louvain.RBConfigurationVertexPartitionWeightedLayers(G_intralayer, layer_vec=layer_membership,
+                                                                           weights='weight')
+    interlayer_part = louvain.CPMVertexPartition(G_interlayer, resolution_parameter=0.0, weights='weight')
+    return intralayer_part, interlayer_part
+
+
+def multilayer_louvain_part_with_membership(G_intralayer, G_interlayer, layer_membership, community_membership):
+    if isinstance(community_membership, np.ndarray):
+        community_membership = community_membership.tolist()
+    intralayer_part, interlayer_part = multilayer_louvain_part(G_intralayer, G_interlayer, layer_membership)
+    intralayer_part.set_membership(community_membership)
+    interlayer_part.set_membership(community_membership)
+    return intralayer_part, interlayer_part
+
+
 def repeated_louvain_from_gammas(G, gammas):
     return {sorted_tuple(singlelayer_louvain(G, gamma)) for gamma in gammas}
 

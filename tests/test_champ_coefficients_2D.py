@@ -25,8 +25,8 @@ class TestCHAMPCoefficients2D(unittest.TestCase):
             #   = P_hat
             louvain_P_hat = louvain_A_hat - louvain_part.quality(resolution_parameter=1)
 
-            self.assertAlmostEqual(A_hat, louvain_A_hat)
-            self.assertAlmostEqual(P_hat, louvain_P_hat)
+            self.assertAlmostEqual(A_hat, louvain_A_hat, places=10)
+            self.assertAlmostEqual(P_hat, louvain_P_hat, places=10)
 
     def assert_partition_coefficient_correctness_unweighted_ER(self, n, m, directed, num_partitions, K_max):
         G = generate_connected_ER(n=n, m=m, directed=directed)

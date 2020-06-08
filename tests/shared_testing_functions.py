@@ -9,12 +9,26 @@ def generate_connected_ER(n, m, directed):
     return G
 
 
+def generate_connected_multilayer_ER(num_nodes_per_layer, m, num_layers, directed):
+    total_num_nodes = num_nodes_per_layer * num_layers
+    G = generate_connected_ER(n=total_num_nodes, m=m, directed=directed)
+    layer_membership = [i // num_nodes_per_layer for i in range(total_num_nodes)]
+    intralayer_edges = [(e.source, e.target) for e in G.es if layer_membership[e.source] == layer_membership[e.target]]
+    interlayer_edges = [(e.source, e.target) for e in G.es if layer_membership[e.source] != layer_membership[e.target]]
+    return (ig.Graph(n=total_num_nodes, edges=intralayer_edges),
+            ig.Graph(n=total_num_nodes, edges=interlayer_edges),
+            layer_membership)
+
+
 def generate_random_gammas(num_gammas, gamma_start, gamma_end):
     return [uniform(gamma_start, gamma_end) for _ in range(num_gammas)]
 
 
 def generate_random_partition(num_nodes, K):
-    return tuple(randint(0, K - 1) for _ in range(num_nodes))
+    partition = tuple(randint(0, K - 1) for _ in range(num_nodes))
+    while len(set(partition)) != K:
+        partition = tuple(randint(0, K - 1) for _ in range(num_nodes))
+    return partition
 
 
 def generate_random_partitions(num_nodes, num_partitions, K_max):
