@@ -124,6 +124,7 @@ def CHAMP_3D(G_intralayer, G_interlayer, layer_vec, all_parts, gamma_0, gamma_f,
     Defers to the original CHAMP implementation for most of the halfspace intersection for now.
 
     Returns a list of [(list of polygon vertices in (gamma, omega) plane, membership), ...]"""
+    # TODO: we resort to the original CHAMP implementation, so gamma_0 and omega_0 have no effect for now
 
     all_parts = list(all_parts)
     A_hats, P_hats, C_hats = partition_coefficients_3D(G_intralayer, G_interlayer, layer_vec, all_parts)
