@@ -50,8 +50,8 @@ class TestTemporalParameterEstimation(unittest.TestCase):
 
         return G_intralayer, G_interlayer, layer_membership
 
-    def assert_temporal_SBM_correct_convergence(self, copying_probability, p_in, p_out, first_layer_membership,
-                                                num_layers):
+    def assert_temporal_SBM_correct_convergence(self, first_layer_membership, copying_probability=0.75, num_layers=25,
+                                                p_in=0.25, p_out=0.05):
         if not check_multilayer_louvain_capabilities(fatal=False):
             # just return since this version of louvain is unable to perform multilayer parameter estimation anyway
             return
@@ -83,33 +83,27 @@ class TestTemporalParameterEstimation(unittest.TestCase):
     def test_temporal_SBM_correct_convergence_varying_copying_probabilty(self):
         for eta in [0.25, 0.5, 0.75, 0.9]:
             membership = generate_random_partition(num_nodes=100, K=2)
-            self.assert_temporal_SBM_correct_convergence(copying_probability=eta, p_in=0.25, p_out=0.05,
-                                                         first_layer_membership=membership, num_layers=25)
+            self.assert_temporal_SBM_correct_convergence(copying_probability=eta, first_layer_membership=membership)
 
     def test_temporal_SBM_correct_convergence_varying_p_in(self):
         for p_in in [0.5, 0.4, 0.3, 0.2]:
             membership = generate_random_partition(num_nodes=100, K=2)
-            self.assert_temporal_SBM_correct_convergence(copying_probability=0.75, p_in=p_in, p_out=0.025,
-                                                         first_layer_membership=membership, num_layers=25)
+            self.assert_temporal_SBM_correct_convergence(p_in=p_in, p_out=0.025, first_layer_membership=membership)
 
     def test_temporal_SBM_correct_convergence_varying_p_out(self):
         for p_out in [0.05, 0.04, 0.03, 0.02]:
             membership = generate_random_partition(num_nodes=100, K=2)
-            self.assert_temporal_SBM_correct_convergence(copying_probability=0.75, p_in=0.25, p_out=p_out,
-                                                         first_layer_membership=membership, num_layers=25)
+            self.assert_temporal_SBM_correct_convergence(p_out=p_out, first_layer_membership=membership)
 
     def test_temporal_SBM_correct_convergence_varying_num_communities(self):
         for K in [2, 3, 4, 5]:
             membership = generate_random_partition(num_nodes=250, K=K)
-            self.assert_temporal_SBM_correct_convergence(copying_probability=0.75, p_in=0.25, p_out=0.05,
-                                                         first_layer_membership=membership, num_layers=25)
+            self.assert_temporal_SBM_correct_convergence(first_layer_membership=membership)
 
     def test_temporal_SBM_correct_convergence_varying_num_layers(self):
         for num_layers in [20, 30, 40]:
             membership = generate_random_partition(num_nodes=100, K=2)
-            self.assert_temporal_SBM_correct_convergence(copying_probability=0.75, p_in=0.25, p_out=0.05,
-                                                         first_layer_membership=membership,
-                                                         num_layers=num_layers)
+            self.assert_temporal_SBM_correct_convergence(first_layer_membership=membership, num_layers=num_layers)
 
     def test_directed_consistency_temporal_SBM_louvain(self):
         """Test parameter estimate consistency on a temporal SBM when the intralayer edges are directed."""

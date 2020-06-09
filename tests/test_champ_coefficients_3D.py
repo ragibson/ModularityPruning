@@ -51,8 +51,8 @@ class TestCHAMPCoefficients3D(unittest.TestCase):
                                     layer_part.quality(resolution_parameter=1.0))
             self.assertAlmostEqual(alternate_P_hat, P_hat, places=10)
 
-    def assert_partition_coefficient_correctness_unweighted_ER(self, num_nodes_per_layer, m, num_layers, directed,
-                                                               num_partitions, K_max):
+    def assert_partition_coefficient_correctness_unweighted_ER(self, num_nodes_per_layer=100, m=25000, num_layers=10,
+                                                               directed=False, num_partitions=10, K_max=10):
         G_intralayer, G_interlayer, layer_membership = generate_connected_multilayer_ER(
             num_nodes_per_layer=num_nodes_per_layer, m=m, num_layers=num_layers, directed=directed)
         partitions = generate_random_partitions(num_nodes=G_intralayer.vcount(), num_partitions=num_partitions,
@@ -64,62 +64,44 @@ class TestCHAMPCoefficients3D(unittest.TestCase):
     def test_partition_coefficient_correctness_undirected_unweighted_varying_num_nodes_per_layer(self):
         for num_nodes_per_layer in [50, 100, 250, 500]:
             self.assert_partition_coefficient_correctness_unweighted_ER(num_nodes_per_layer=num_nodes_per_layer,
-                                                                        m=50 * num_nodes_per_layer, num_layers=10,
-                                                                        directed=False, num_partitions=10, K_max=10)
+                                                                        m=50 * num_nodes_per_layer)
 
     def test_partition_coefficient_correctness_undirected_unweighted_varying_m(self):
         for m in [5000, 10000, 15000, 20000]:
-            self.assert_partition_coefficient_correctness_unweighted_ER(num_nodes_per_layer=100,
-                                                                        m=m, num_layers=10, directed=False,
-                                                                        num_partitions=10, K_max=10)
+            self.assert_partition_coefficient_correctness_unweighted_ER(m=m)
 
     def test_partition_coefficient_correctness_undirected_unweighted_varying_num_layers(self):
         for num_layers in [5, 10, 20, 30]:
-            self.assert_partition_coefficient_correctness_unweighted_ER(num_nodes_per_layer=100,
-                                                                        m=15000, num_layers=num_layers, directed=False,
-                                                                        num_partitions=10, K_max=10)
+            self.assert_partition_coefficient_correctness_unweighted_ER(num_layers=num_layers)
 
     def test_partition_coefficient_correctness_undirected_unweighted_varying_num_partitions(self):
         for num_partitions in [5, 10, 100, 250]:
-            self.assert_partition_coefficient_correctness_unweighted_ER(num_nodes_per_layer=100,
-                                                                        m=5000, num_layers=10, directed=False,
-                                                                        num_partitions=num_partitions, K_max=10)
+            self.assert_partition_coefficient_correctness_unweighted_ER(num_partitions=num_partitions)
 
     def test_partition_coefficient_correctness_undirected_unweighted_varying_K_max(self):
         for K_max in [2, 5, 10, 25]:
-            self.assert_partition_coefficient_correctness_unweighted_ER(num_nodes_per_layer=100,
-                                                                        m=5000, num_layers=10, directed=False,
-                                                                        num_partitions=10, K_max=K_max)
+            self.assert_partition_coefficient_correctness_unweighted_ER(K_max=K_max)
 
     def test_partition_coefficient_correctness_directed_unweighted_varying_num_nodes_per_layer(self):
         for num_nodes_per_layer in [50, 100, 250, 500]:
             self.assert_partition_coefficient_correctness_unweighted_ER(num_nodes_per_layer=num_nodes_per_layer,
-                                                                        m=100 * num_nodes_per_layer, num_layers=10,
-                                                                        directed=True, num_partitions=10, K_max=10)
+                                                                        m=100 * num_nodes_per_layer, directed=True)
 
     def test_partition_coefficient_correctness_directed_unweighted_varying_m(self):
         for m in [10000, 20000, 30000, 40000]:
-            self.assert_partition_coefficient_correctness_unweighted_ER(num_nodes_per_layer=100,
-                                                                        m=m, num_layers=10, directed=True,
-                                                                        num_partitions=10, K_max=10)
+            self.assert_partition_coefficient_correctness_unweighted_ER(m=m, directed=True)
 
     def test_partition_coefficient_correctness_directed_unweighted_varying_num_layers(self):
         for num_layers in [5, 10, 20, 30]:
-            self.assert_partition_coefficient_correctness_unweighted_ER(num_nodes_per_layer=100,
-                                                                        m=30000, num_layers=num_layers, directed=True,
-                                                                        num_partitions=10, K_max=10)
+            self.assert_partition_coefficient_correctness_unweighted_ER(num_layers=num_layers, directed=True)
 
     def test_partition_coefficient_correctness_directed_unweighted_varying_num_partitions(self):
         for num_partitions in [5, 10, 100, 250]:
-            self.assert_partition_coefficient_correctness_unweighted_ER(num_nodes_per_layer=100,
-                                                                        m=10000, num_layers=10, directed=True,
-                                                                        num_partitions=num_partitions, K_max=10)
+            self.assert_partition_coefficient_correctness_unweighted_ER(directed=True, num_partitions=num_partitions)
 
     def test_partition_coefficient_correctness_directed_unweighted_varying_K_max(self):
         for K_max in [2, 5, 10, 25]:
-            self.assert_partition_coefficient_correctness_unweighted_ER(num_nodes_per_layer=100,
-                                                                        m=10000, num_layers=10, directed=True,
-                                                                        num_partitions=10, K_max=K_max)
+            self.assert_partition_coefficient_correctness_unweighted_ER(directed=True, K_max=K_max)
 
     def test_partition_coefficient_correctness_interleaved_directedness(self):
         """Test partition coefficient correctness when directedness of interlayer and intralayer edges do not match."""
