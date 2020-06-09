@@ -1,5 +1,5 @@
-from .partition_utilities import all_degrees, membership_to_communities, in_degrees, out_degrees
-from .louvain_utilities import louvain_part_with_membership
+from .partition_utilities import all_degrees, in_degrees, out_degrees, membership_to_communities, \
+    membership_to_layered_communities
 from collections import defaultdict
 from champ import get_intersection
 import numpy as np
@@ -175,13 +175,6 @@ def partition_coefficients_2D_serial(G, partitions):
         P_hats = np.array([sum(sum(degree[v] for v in vs) ** 2 for vs in membership_to_communities(membership).values())
                            for membership in partitions]) / twom
 
-    # This appears to have been initially using louvain rather than performing the above calculation directly
-
-    # P_hats = np.array([
-    #     louvain_part_with_membership(G, part).quality(resolution_parameter=0.0) -
-    #     louvain_part_with_membership(G, part).quality(resolution_parameter=1.0) for part in partitions
-    # ])
-
     return A_hats, P_hats
 
 
@@ -237,42 +230,26 @@ def partition_coefficients_3D_serial(G_intralayer, G_interlayer, layer_vec, part
         A_hats = np.array([2 * sum([membership[u] == membership[v] for u, v in all_intralayer_edges])
                            for membership in partitions])
 
-    P_hats = []
     num_layers = max(layer_vec) + 1
-    # Note: layer_vec seems to need to be a numpy array here
-    if not isinstance(layer_vec, np.ndarray):
-        layer_vec = np.array(layer_vec)
+    ecount_per_layer = np.zeros(num_layers)
+    for e in G_intralayer.es:
+        ecount_per_layer[layer_vec[e.source]] += 1
 
-    # Just to be entirely sure our coefficients are correct in this case, we split into layers separately.
-    # This isn't strictly necessary (this can be made *much* more efficient), but makes the reasoning easier.
-    for membership in partitions:
-        P_hat = 0
-        part_obj = louvain_part_with_membership(G_intralayer, membership)
-        for layer in range(num_layers):
-            cind = np.where(layer_vec == layer)[0]
-            if len(cind) > 0:
-                subgraph = part_obj.graph.subgraph(cind)
-                submem = np.array(part_obj.membership)[cind]
-                layer_part = louvain_part_with_membership(subgraph, submem)
-                P_hat += layer_part.quality(resolution_parameter=0.0) - layer_part.quality(resolution_parameter=1.0)
-        P_hats.append(P_hat)
-
-    # This appears to have been an attempt to perform the above calculation directly instead of resorting to louvain
-
-    # degree = all_degrees(G_intralayer)
-    # twom_per_layer = [0] * num_layers
-    # for e in G_intralayer.es:
-    #     twom_per_layer[layer_vec[e.source]] += 2
-    # for membership in partitions:
-    #     strength = 0
-    #     for vs in membership_to_communities(membership).values():
-    #         layer_strengths = [0] * num_layers
-    #         for v in vs:
-    #             layer_strengths[layer_vec[v]] += degree[v]
-    #         strength += sum(layer_strengths[layer] ** 2 / twom_per_layer[layer] for layer in range(num_layers))
-    #     P_hats.append(strength)
-
-    P_hats = np.array(P_hats)
+    if G_intralayer.is_directed():
+        in_degree = in_degrees(G_intralayer)
+        out_degree = out_degrees(G_intralayer)
+        P_hats = np.array([
+            sum(sum(in_degree[v] for v in vs) * sum(out_degree[v] for v in vs) / ecount_per_layer[layer]
+                for (_, layer), vs in membership_to_layered_communities(membership, layer_vec).items())
+            for membership in partitions
+        ])
+    else:
+        degree = all_degrees(G_intralayer)
+        P_hats = np.array([
+            sum(sum(degree[v] for v in vs) ** 2 / (2 * ecount_per_layer[layer])
+                for (_, layer), vs in membership_to_layered_communities(membership, layer_vec).items())
+            for membership in partitions
+        ])
 
     # multiply by 2 only if undirected here
     if G_interlayer.is_directed():

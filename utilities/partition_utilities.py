@@ -29,6 +29,13 @@ def membership_to_communities(membership):
     return communities
 
 
+def membership_to_layered_communities(membership, layer_membership):
+    layered_communities = defaultdict(list)
+    for v, c in enumerate(membership):
+        layered_communities[(c, layer_membership[v])].append(v)
+    return layered_communities
+
+
 def num_communities(membership):
     n = len(set(membership))
     assert n == max(membership) + 1
