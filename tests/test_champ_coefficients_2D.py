@@ -1,4 +1,4 @@
-from shared_testing_functions import generate_connected_ER, generate_random_gammas, generate_random_partitions, \
+from shared_testing_functions import generate_connected_ER, generate_random_values, generate_random_partitions, \
     generate_igraph_famous
 from modularitypruning.champ_utilities import partition_coefficients_2D
 from modularitypruning.louvain_utilities import louvain_part_with_membership, repeated_louvain_from_gammas
@@ -7,9 +7,6 @@ import unittest
 
 
 class TestCHAMPCoefficients2D(unittest.TestCase):
-    # TODO: undirected & directed, weighted (coefficients and CHAMP domains)
-    # TODO: multilayer with undirected/directed/unweighted/weighted layers (coefficients and CHAMP domains)
-
     def assert_partition_coefficient_correctness(self, G, partitions, coefficients):
         A_hats, P_hats = coefficients
 
@@ -81,7 +78,7 @@ class TestCHAMPCoefficients2D(unittest.TestCase):
         """
 
         for G in generate_igraph_famous():
-            gammas = generate_random_gammas(100, gamma_start=0, gamma_end=5)
+            gammas = generate_random_values(100, start_value=0, end_value=5)
             partitions = repeated_louvain_from_gammas(G, gammas)
             coefficients = partition_coefficients_2D(G, partitions)
             self.assert_partition_coefficient_correctness(G, partitions, coefficients)

@@ -7,8 +7,6 @@ import unittest
 
 
 class TestCHAMPCoefficients3D(unittest.TestCase):
-    # TODO: coefficient correctness with weighted layers
-
     def assert_partition_coefficient_correctness(self, G_intralayer, G_interlayer, layer_membership,
                                                  partitions, coefficients):
         if not check_multilayer_louvain_capabilities(fatal=False):

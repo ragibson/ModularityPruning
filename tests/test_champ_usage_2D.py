@@ -1,4 +1,4 @@
-from shared_testing_functions import generate_connected_ER, generate_random_gammas, generate_random_partitions, \
+from shared_testing_functions import generate_connected_ER, generate_random_values, generate_random_partitions, \
     generate_igraph_famous
 from modularitypruning.champ_utilities import CHAMP_2D
 from modularitypruning.louvain_utilities import louvain_part_with_membership, repeated_louvain_from_gammas
@@ -7,9 +7,6 @@ import unittest
 
 
 class TestCHAMP2D(unittest.TestCase):
-    # TODO: undirected & directed, weighted (coefficients and CHAMP domains)
-    # TODO: multilayer with undirected/directed/unweighted/weighted layers (coefficients and CHAMP domains)
-
     def assert_best_partitions_match_champ_set(self, G, partitions, champ_ranges, gammas):
         membership_to_louvain_partition = {p: louvain_part_with_membership(G, p) for p in partitions}
 
@@ -33,7 +30,7 @@ class TestCHAMP2D(unittest.TestCase):
                                                gamma_start, gamma_end):
         G = generate_connected_ER(n=n, m=m, directed=directed)
         partitions = generate_random_partitions(num_nodes=n, num_partitions=num_partitions, K_max=K_max)
-        gammas = generate_random_gammas(num_gammas, gamma_start, gamma_end)
+        gammas = generate_random_values(num_gammas, gamma_start, gamma_end)
         champ_ranges = CHAMP_2D(G, partitions, gamma_start, gamma_end)
 
         self.assert_best_partitions_match_champ_set(G, partitions, champ_ranges, gammas)
@@ -101,7 +98,7 @@ class TestCHAMP2D(unittest.TestCase):
         """
 
         for G in generate_igraph_famous():
-            gammas = generate_random_gammas(100, gamma_start=0, gamma_end=5)
+            gammas = generate_random_values(100, start_value=0, end_value=5)
             partitions = repeated_louvain_from_gammas(G, gammas)
             champ_ranges = CHAMP_2D(G, partitions, gamma_0=0, gamma_f=5)
             self.assert_best_partitions_match_champ_set(G, partitions, champ_ranges, gammas)
