@@ -110,6 +110,8 @@ def estimate_multilayer_SBM_parameters(G_intralayer, G_interlayer, layer_vec, pa
         # guard for div by zero with single community partition
         # (in this case, all community assignments persist across layers)
         p = fsolve(f, np.array([0.5]))[0] if pers < 1.0 and K > 1 else 1.0
+        if p < 0:
+            p = 0
     else:
         # guard for div by zero with single community partition
         # (in this case, all community assignments persist across layers)
