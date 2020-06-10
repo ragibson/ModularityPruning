@@ -1,4 +1,4 @@
-from .shared_testing_functions import generate_random_partition
+from .shared_testing_functions import generate_random_partition, generate_multilayer_intralayer_SBM
 import igraph as ig
 from math import log
 from numpy import mean
@@ -7,45 +7,19 @@ from modularitypruning.louvain_utilities import repeated_louvain_from_gammas_ome
 from modularitypruning.parameter_estimation import iterative_multilayer_resolution_parameter_estimation
 from modularitypruning.parameter_estimation_utilities import gamma_omega_estimate
 from modularitypruning.partition_utilities import num_communities, all_degrees
-from random import random, randint, seed
+from random import seed
 import unittest
 
 
 class TestTemporalParameterEstimation(unittest.TestCase):
     def generate_temporal_SBM(self, copying_probability, p_in, p_out, first_layer_membership, num_layers):
-        num_nodes_per_layer = len(first_layer_membership)
-        community_labels_per_layer = [[0] * num_nodes_per_layer for _ in range(num_layers)]
-        community_labels_per_layer[0] = list(first_layer_membership)
-        K = num_communities(first_layer_membership)
-
-        # assign community labels in the higher layers
-        for layer in range(1, num_layers):
-            for v in range(num_nodes_per_layer):
-                if random() < copying_probability:  # copy community from last layer
-                    community_labels_per_layer[layer][v] = community_labels_per_layer[layer - 1][v]
-                else:  # assign random community
-                    community_labels_per_layer[layer][v] = randint(0, K - 1)
+        G_intralayer, layer_membership = generate_multilayer_intralayer_SBM(copying_probability, p_in, p_out,
+                                                                            first_layer_membership, num_layers)
 
         # connect each node to itself in the next layer
+        num_nodes_per_layer = len(first_layer_membership)
         interlayer_edges = [(num_nodes_per_layer * layer + v, num_nodes_per_layer * layer + v + num_nodes_per_layer)
                             for layer in range(num_layers - 1) for v in range(num_nodes_per_layer)]
-
-        # create intralayer edges according to an SBM
-        intralayer_edges = []
-        combined_community_labels = sum(community_labels_per_layer, [])
-        layer_membership = [i for i in range(num_layers) for _ in range(num_nodes_per_layer)]
-
-        for v in range(len(combined_community_labels)):
-            for u in range(v + 1, len(combined_community_labels)):
-                if layer_membership[v] == layer_membership[u]:
-                    if combined_community_labels[v] == combined_community_labels[u]:
-                        if random() < p_in:
-                            intralayer_edges.append((u, v))
-                    else:
-                        if random() < p_out:
-                            intralayer_edges.append((u, v))
-
-        G_intralayer = ig.Graph(intralayer_edges)
         G_interlayer = ig.Graph(interlayer_edges, directed=True)
 
         return G_intralayer, G_interlayer, layer_membership

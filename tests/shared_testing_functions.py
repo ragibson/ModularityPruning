@@ -1,5 +1,6 @@
 import igraph as ig
-from random import randint, uniform
+from modularitypruning.partition_utilities import num_communities
+from random import randint, random, uniform
 
 
 def generate_connected_ER(n, m, directed):
@@ -52,3 +53,37 @@ def generate_igraph_famous():
     """
 
     return [ig.Graph.Famous(name) for name in ['meredith', 'nonline', 'thomassen', 'tutte', 'zachary']]
+
+
+def generate_multilayer_intralayer_SBM(copying_probability, p_in, p_out, first_layer_membership, num_layers):
+    num_nodes_per_layer = len(first_layer_membership)
+    community_labels_per_layer = [[0] * num_nodes_per_layer for _ in range(num_layers)]
+    community_labels_per_layer[0] = list(first_layer_membership)
+    K = num_communities(first_layer_membership)
+
+    # assign community labels in the higher layers
+    for layer in range(1, num_layers):
+        for v in range(num_nodes_per_layer):
+            if random() < copying_probability:  # copy community from last layer
+                community_labels_per_layer[layer][v] = community_labels_per_layer[layer - 1][v]
+            else:  # assign random community
+                community_labels_per_layer[layer][v] = randint(0, K - 1)
+
+    # create intralayer edges according to an SBM
+    intralayer_edges = []
+    combined_community_labels = sum(community_labels_per_layer, [])
+    layer_membership = [i for i in range(num_layers) for _ in range(num_nodes_per_layer)]
+
+    for v in range(len(combined_community_labels)):
+        for u in range(v + 1, len(combined_community_labels)):
+            if layer_membership[v] == layer_membership[u]:
+                if combined_community_labels[v] == combined_community_labels[u]:
+                    if random() < p_in:
+                        intralayer_edges.append((u, v))
+                else:
+                    if random() < p_out:
+                        intralayer_edges.append((u, v))
+
+    G_intralayer = ig.Graph(intralayer_edges, directed=False)
+
+    return G_intralayer, layer_membership
