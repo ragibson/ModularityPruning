@@ -1,4 +1,4 @@
-from shared_testing_functions import generate_connected_ER, generate_random_values, generate_random_partitions, \
+from .shared_testing_functions import generate_connected_ER, generate_random_values, generate_random_partitions, \
     generate_igraph_famous
 from modularitypruning.champ_utilities import partition_coefficients_2D
 from modularitypruning.louvain_utilities import louvain_part_with_membership, repeated_louvain_from_gammas

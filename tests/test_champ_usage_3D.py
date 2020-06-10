@@ -1,4 +1,4 @@
-from shared_testing_functions import generate_connected_multilayer_ER, generate_random_values, \
+from .shared_testing_functions import generate_connected_multilayer_ER, generate_random_values, \
     generate_random_partitions
 from modularitypruning.champ_utilities import CHAMP_3D
 from modularitypruning.louvain_utilities import multilayer_louvain_part_with_membership, \

@@ -1,4 +1,4 @@
-from shared_testing_functions import generate_igraph_famous, generate_random_partition
+from .shared_testing_functions import generate_igraph_famous, generate_random_partition
 import igraph as ig
 from math import log
 from numpy import mean

@@ -1,4 +1,4 @@
-from shared_testing_functions import generate_connected_multilayer_ER, generate_random_partitions
+from .shared_testing_functions import generate_connected_multilayer_ER, generate_random_partitions
 from modularitypruning.champ_utilities import partition_coefficients_3D
 from modularitypruning.louvain_utilities import multilayer_louvain_part_with_membership, \
     check_multilayer_louvain_capabilities, louvain_part_with_membership
