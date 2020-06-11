@@ -109,26 +109,61 @@ def plot_figure1():
     xlims = [0.4, 3.0]
     ylims = [0.8, 1.275]
 
+    # Formatting:
+    #   title fontsize=16
+    #   axis label fontsize=20
+    #   tick labelsize=12
+    #   legend fontsize=14
+    #   tight layout
     plt.close()
     plt.rc('text', usetex=True)
     plt.rc('font', family='serif')
     plot_2d_domains_with_estimates(domains_with_estimates, xlims, ylims, flip_axes=True)
     plt.rc('text', usetex=True)
     plt.rc('font', family='serif')
-    plt.title("Lazega Law Firm Domains and (Gamma, Omega) Estimates", fontsize=14)
-    plt.xlabel(r"$\omega$", fontsize=14)
-    plt.ylabel(r"$\gamma$", fontsize=14)
-    plt.savefig("lazega_domains_and_estimates.pdf")
+    plt.title(r"Lazega Law Firm Domains and ($\omega$, $\gamma$) Estimates", fontsize=16)
+    plt.xlabel(r"$\omega$", fontsize=20)
+    plt.ylabel(r"$\gamma$", fontsize=20)
+    plt.gca().tick_params(axis='both', labelsize=12)
+    plt.tight_layout()
+    plt.savefig(f"lazega_domains_and_estimates.pdf")
 
+    # Formatting:
+    #   title fontsize=16
+    #   axis label fontsize=20
+    #   tick labelsize=12
+    #   legend fontsize=14
+    #   tight layout
     plt.close()
+    plt.figure()
     plt.rc('text', usetex=True)
     plt.rc('font', family='serif')
-    plot_2d_domains_with_estimates(stable_parts, xlims, ylims, flip_axes=True)
-    plt.rc('text', usetex=True)
-    plt.rc('font', family='serif')
-    plt.title("Lazega Law Firm Stable Partitions", fontsize=14)
-    plt.xlabel(r"$\omega$", fontsize=14)
-    plt.ylabel(r"$\gamma$", fontsize=14)
+    plot_2d_domains_with_estimates(stable_parts, xlims, ylims, plot_estimate_points=False, flip_axes=True)
+    plt.title("Lazega Law Firm Stable Partitions", fontsize=16)
+    plt.xlabel(r"$\omega$", fontsize=20)
+    plt.ylabel(r"$\gamma$", fontsize=20)
+    plt.gca().tick_params(axis='both', labelsize=12)
+
+    for K, marker, color in reversed([(2, "o", "C0"), (3, "^", "C1"), (4, "s", "C2")]):
+        domains = pickle.load(open(f"lazega_CHAMP{K}.p", "rb"))
+        domains_with_estimates = domains_to_gamma_omega_estimates(G_intralayer, G_interlayer, layer_vec, domains,
+                                                                  model='multiplex')
+
+        # Truncate infinite omega solutions to our maximum omega
+        domains_with_estimates = [(polyverts, membership, g_est, min(o_est, CHAMP_OMEGA_END - 1e-2))
+                                  for polyverts, membership, g_est, o_est in domains_with_estimates
+                                  if g_est is not None]
+        stable_parts = gamma_omega_estimates_to_stable_partitions(domains_with_estimates)
+
+        gamma_estimates = [g_est for polyverts, membership, g_est, o_est in stable_parts]
+        omega_estimates = [o_est for polyverts, membership, g_est, o_est in stable_parts]
+        plt.scatter(omega_estimates, gamma_estimates, marker=marker, color=color, s=60,
+                    label=f"stable, $K={K}$", linewidths=1, edgecolors="black")
+
+    handles, labels = plt.gca().get_legend_handles_labels()
+    labels, handles = zip(*sorted(zip(labels, handles), key=lambda t: t[0]))
+    plt.gca().legend(handles, labels, fontsize=14)
+    plt.tight_layout()
     plt.savefig("lazega_stable_partitions.pdf")
 
 
@@ -180,13 +215,24 @@ def plot_figure2():
     xlims = [0.4, 3.0]
     ylims = [0.8, 1.275]
 
+    # Formatting:
+    #   title fontsize=16
+    #   axis label fontsize=20
+    #   tick labelsize=12
+    #   legend fontsize=14
+    #   tight layout
     plt.close()
     plt.rc('text', usetex=True)
     plt.rc('font', family='serif')
-    plot_2d_domains_with_num_communities(domains_with_estimates, xlims, ylims, flip_axes=True, tick_step=1)
-    plt.title("Lazega Law Firm Domains with Number of Communities", fontsize=14)
-    plt.xlabel(r"$\omega$", fontsize=14)
-    plt.ylabel(r"$\gamma$", fontsize=14)
+    plot_2d_domains_with_num_communities(domains_with_estimates, xlims, ylims, flip_axes=True,
+                                         K_max=5,  # we have a tiny sliver of K=6 which messes up the colorbar
+                                         tick_step=1)
+    plt.title("Lazega Law Firm Domains with Number of Communities", fontsize=16)
+    plt.xlabel(r"$\omega$", fontsize=20)
+    plt.ylabel(r"$\gamma$", fontsize=20)
+    plt.gca().tick_params(axis='both', labelsize=12)
+    plt.tight_layout()
+    plt.gcf().set_size_inches(8.05, 4.8)  # longer width for cbar
     plt.savefig("lazega_domains_with_num_communities.pdf")
 
 

@@ -84,7 +84,7 @@ def plot_2d_domains(domains, xlim, ylim):
     plt.ylim(ylim)
 
 
-def plot_2d_domains_with_estimates(domains_with_estimates, xlim, ylim, flip_axes=True):
+def plot_2d_domains_with_estimates(domains_with_estimates, xlim, ylim, plot_estimate_points=True, flip_axes=True):
     """Plot partition dominance ranges in the (gamma, omega) plane, using the domains from CHAMP_3D with their gamma
     and omega estimates overlaid.
 
@@ -113,7 +113,8 @@ def plot_2d_domains_with_estimates(domains_with_estimates, xlim, ylim, flip_axes
                 centroid_x = min(xlim[1], max(xlim[0], centroid_x))
                 centroid_y = min(ylim[1], max(ylim[0], centroid_y))
 
-                ax.plot([omega_est], [gamma_est], c='black', marker='o', markersize=3)
+                if plot_estimate_points:
+                    ax.plot([omega_est], [gamma_est], c='black', marker='o', markersize=3)
                 ax.annotate("", xy=(omega_est, gamma_est), xytext=(centroid_x, centroid_y),
                             annotation_clip=True,
                             arrowprops=dict(alpha=0.75, linewidth=1.5, color="black",
@@ -130,7 +131,7 @@ def plot_2d_domains_with_estimates(domains_with_estimates, xlim, ylim, flip_axes
     plt.ylim(ylim)
 
 
-def plot_2d_domains_with_num_communities(domains_with_estimates, xlim, ylim, flip_axes=True, tick_step=2):
+def plot_2d_domains_with_num_communities(domains_with_estimates, xlim, ylim, flip_axes=True, K_max=None, tick_step=2):
     """Plot partition dominance ranges in the (gamma, omega) plane, using the domains from CHAMP_3D and coloring by the
     number of communities.
 
@@ -150,12 +151,16 @@ def plot_2d_domains_with_num_communities(domains_with_estimates, xlim, ylim, fli
             patches.append(polygon)
             Ks.append(num_communities(membership))
 
+    if K_max is not None:
+        Ks = [min(K, K_max) for K in Ks]
+
     p = PatchCollection(patches, cmap=cm, alpha=1.0, edgecolors='black', linewidths=2)
     p.set_array(np.array(Ks))
     ax.add_collection(p)
 
-    cbar = plt.colorbar(p, ticks=range(2, max(Ks) + 1, tick_step))
-    cbar.set_label("Number of Communities", fontsize=14, labelpad=15)
+    cbar = plt.colorbar(p, ticks=range(2, K_max + 1, tick_step))
+    cbar.ax.tick_params(labelsize=12)
+    cbar.set_label("Number of Communities", fontsize=16, labelpad=10)
 
     plt.xlim(xlim)
     plt.ylim(ylim)
