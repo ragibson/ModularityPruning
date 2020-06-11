@@ -203,7 +203,7 @@ def omega_function_from_model(model, omega_max, T):
     if model == 'multiplex':
         def update_omega(theta_in, theta_out, p, K):
             return multiplex_omega_estimate_from_parameters(theta_in, theta_out, p, K, T, omega_max=omega_max)
-    elif model == 'temporal' or model == 'multilayer':
+    elif model == 'temporal' or model == 'multilevel':
         def update_omega(theta_in, theta_out, p, K):
             return temporal_multilevel_omega_estimate_from_parameters(theta_in, theta_out, p, K, omega_max=omega_max)
     else:

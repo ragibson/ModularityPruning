@@ -1,8 +1,8 @@
 from .louvain_utilities import singlelayer_louvain, multilayer_louvain
 from .parameter_estimation_utilities import louvain_part_with_membership, estimate_singlelayer_SBM_parameters, \
     gamma_estimate_from_parameters, omega_function_from_model, estimate_multilayer_SBM_parameters
+from .partition_utilities import in_degrees
 import louvain
-import warnings
 
 
 def iterative_monolayer_resolution_parameter_estimation(G, gamma=1.0, tol=1e-2, max_iter=25, verbose=False,
@@ -82,14 +82,10 @@ def check_multilayer_graph_consistency(G_intralayer, G_interlayer, layer_vec, mo
     :param Nt: vector of nodes per layer
     """
 
-    if G_intralayer.is_directed() != G_interlayer.is_directed():
-        warnings.warn("Intralayer graph is {}, but Interlayer graph is {}."
-                      "".format("directed" if G_intralayer.is_directed() else "undirected",
-                                "directed" if G_interlayer.is_directed() else "undirected"),
-                      RuntimeWarning)
-
     rules = [T > 1,
              "Graph must have multiple layers",
+             G_interlayer.is_directed(),
+             "Interlayer graph should be directed",
              G_interlayer.vcount() == G_intralayer.vcount(),
              "Inter-layer and Intra-layer graphs must be of the same size",
              len(layer_vec) == G_intralayer.vcount(),
@@ -106,6 +102,8 @@ def check_multilayer_graph_consistency(G_intralayer, G_interlayer, layer_vec, mo
              "Temporal networks must have the same number of nodes in every layer",
              model != 'multilevel' or all(nt > 0 for nt in Nt),
              "All layers of a multilevel graph must be consecutive and nonempty",
+             model != 'multilevel' or all(in_degree <= 1 for in_degree in in_degrees(G_interlayer)),
+             "Multilevel networks should have at most one interlayer in-edge per node",
              model != 'multiplex' or all(nt == N for nt in Nt),
              "Multiplex networks must have the same number of nodes in every layer",
              model != 'multiplex' or G_interlayer.ecount() == N * T * (T - 1),
