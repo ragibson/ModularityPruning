@@ -11,7 +11,7 @@ from random import seed
 import unittest
 
 
-class TestTemporalParameterEstimation(unittest.TestCase):
+class TestTemporalAndMultilevelParameterEstimation(unittest.TestCase):
     def generate_temporal_SBM(self, copying_probability, p_in, p_out, first_layer_membership, num_layers):
         G_intralayer, layer_membership = generate_multilayer_intralayer_SBM(copying_probability, p_in, p_out,
                                                                             first_layer_membership, num_layers)
@@ -51,6 +51,14 @@ class TestTemporalParameterEstimation(unittest.TestCase):
                                                                                model='temporal')
 
         # check we converged close to the ground truth "correct" values
+        self.assertLess(abs(true_gamma - gamma), 0.05)
+        self.assertLess(abs(true_omega - omega), 0.1)
+
+        # check multilevel parameter estimation as well
+        # we never use this model, but it is a slight generalization of the temporal one
+        gamma, omega, _ = iterative_multilayer_resolution_parameter_estimation(G_intralayer, G_interlayer,
+                                                                               layer_membership, gamma=1.0, omega=1.0,
+                                                                               model='multilevel')
         self.assertLess(abs(true_gamma - gamma), 0.05)
         self.assertLess(abs(true_omega - omega), 0.1)
 
@@ -103,6 +111,17 @@ class TestTemporalParameterEstimation(unittest.TestCase):
             G_intralayer.to_directed()
             gamma_directed, omega_directed = gamma_omega_estimate(G_intralayer, G_interlayer, layer_membership,
                                                                   partition, model="temporal")
+
+            self.assertAlmostEqual(gamma_undirected, gamma_directed, places=10)
+            self.assertAlmostEqual(omega_undirected, omega_directed, places=10)
+
+            # check multilevel parameter estimation as well
+            gamma_undirected, omega_undirected = gamma_omega_estimate(G_intralayer, G_interlayer, layer_membership,
+                                                                      partition, model="multilevel")
+
+            G_intralayer.to_directed()
+            gamma_directed, omega_directed = gamma_omega_estimate(G_intralayer, G_interlayer, layer_membership,
+                                                                  partition, model="multilevel")
 
             self.assertAlmostEqual(gamma_undirected, gamma_directed, places=10)
             self.assertAlmostEqual(omega_undirected, omega_directed, places=10)
