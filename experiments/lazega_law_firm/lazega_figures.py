@@ -126,7 +126,7 @@ def plot_figure1():
     plt.ylabel(r"$\gamma$", fontsize=20)
     plt.gca().tick_params(axis='both', labelsize=12)
     plt.tight_layout()
-    plt.savefig(f"lazega_domains_and_estimates.pdf")
+    plt.savefig("lazega_domains_and_estimates.pdf")
 
     # Formatting:
     #   title fontsize=16
