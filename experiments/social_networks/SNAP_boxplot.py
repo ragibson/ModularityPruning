@@ -61,9 +61,15 @@ def read_graphs(idx=None):
                       'HR_edges.csv', 'tvshow_edges.csv',
                       'RO_edges.csv', 'athletes_edges.csv'}
 
+    missing_files = []
     for file in expected_files:
         if file not in social_networks_files:
-            raise FileNotFoundError(f"Expected to find {file}, but this file does not exist")
+            missing_files.append(file)
+
+    if missing_files:
+        raise FileNotFoundError(f"Missing SNAP social networks data files. Expected to find {missing_files}, "
+                                "but these file(s) do not exist. Download these from "
+                                "https://snap.stanford.edu/data/")
 
     for file in social_networks_files:
         if ".txt" in file:

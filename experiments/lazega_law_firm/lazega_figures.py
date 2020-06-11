@@ -27,9 +27,15 @@ def adjacency_from_dat(lines):
 
 
 def generate_lazega_igraph():
-    for expected_file in ["ELadv.dat", "ELfriend.dat", "ELwork.dat"]:
+    missing_files = []
+    for expected_file in ["ELadv.dat", "ELfriend.dat", "ELwork.dat", "ELattr.dat"]:
         if not os.path.exists(expected_file):
-            raise FileNotFoundError(f"Expected to find {expected_file}, but this file does not exist")
+            missing_files.append(expected_file)
+
+    if missing_files:
+        raise FileNotFoundError(f"Missing Lazega Law Firm data files. Expected to find {missing_files}, "
+                                "but these file(s) do not exist. Download these from "
+                                "https://www.stats.ox.ac.uk/~snijders/siena/Lazega_lawyers_data.htm")
 
     advice_adj = adjacency_from_dat(open("ELadv.dat", "r").readlines())
     friend_adj = adjacency_from_dat(open("ELfriend.dat", "r").readlines())
