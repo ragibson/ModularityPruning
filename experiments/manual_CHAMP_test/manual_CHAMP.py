@@ -7,6 +7,7 @@ from math import inf
 import matplotlib.pyplot as plt
 import numpy as np
 import pickle
+import lzma
 from time import time
 from champ import create_coefarray_from_partitions
 from champ import get_intersection as champ_get_intersection
@@ -102,7 +103,7 @@ def run_our_CHAMP_implementation(G_intralayer, G_interlayer, layer_vec, partitio
 
 
 if __name__ == "__main__":
-    G_intralayer, G_interlayer = pickle.load(open("example_multilayer_network.p", "rb"))
+    G_intralayer, G_interlayer = pickle.loads(lzma.decompress(pickle.load(open("compressed_network.p", "rb"))))
 
     if TEST_DIRECTED_INTRALAYER:
         G_intralayer.to_directed()
