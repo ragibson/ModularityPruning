@@ -153,6 +153,8 @@ def plot_2d_domains_with_num_communities(domains_with_estimates, xlim, ylim, fli
 
     if K_max is not None:
         Ks = [min(K, K_max) for K in Ks]
+    else:
+        K_max = max(Ks)
 
     p = PatchCollection(patches, cmap=cm, alpha=1.0, edgecolors='black', linewidths=2)
     p.set_array(np.array(Ks))
