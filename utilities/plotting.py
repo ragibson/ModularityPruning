@@ -1,5 +1,5 @@
 from .partition_utilities import num_communities, ami
-from random import shuffle
+from random import choice, shuffle
 import numpy as np
 import matplotlib
 from matplotlib.patches import Polygon
@@ -64,21 +64,48 @@ def plot_estimates(gamma_estimates):
                 #           length_includes_head=True, alpha=0.5, zorder=2, **{"overhang": 0.5})
 
 
-def plot_2d_domains(domains, xlim, ylim):
+def plot_2d_domains(domains, xlim, ylim, flip_axes=False, use_current_axes=False):
     """Plot partition dominance ranges in the (gamma, omega) plane, using the domains from CHAMP_3D.
 
-    Limits output to xlim and ylim dimensions. Note that the plotting here has x=omega and y=gamma."""
-    fig, ax = plt.subplots()
+    Limits output to xlim and ylim dimensions. Note that the plotting here has x=gamma and y=omega."""
+    if use_current_axes:
+        ax = plt.gca()
+    else:
+        fig, ax = plt.subplots()
     patches = []
 
     for polyverts, membership in domains:
+        if flip_axes:
+            polyverts = [(x[1], x[0]) for x in polyverts]
         polygon = Polygon(polyverts, True)
         patches.append(polygon)
 
     cnorm = matplotlib.colors.Normalize(vmin=0, vmax=len(domains))
     cmap = matplotlib.cm.get_cmap("Set1")
-    colors = [cmap(cnorm(i)) for i in range(len(domains))]
-    p = PatchCollection(patches, facecolors=colors, alpha=1.0, edgecolors='black', linewidths=2)
+    available_colors = {cmap(cnorm(i)) for i in range(len(domains))}
+
+    if len(available_colors) == len(domains):
+        colors = list(available_colors)
+        shuffle(colors)
+    else:
+        # ensure that no adjacent domains have the same color
+        # this can be sped up significantly if needed
+        colors = [None] * len(domains)
+        domain_polygons = [polyverts for polyverts, membership in domains]
+        for i, this_polyverts in enumerate(domain_polygons):
+            neighboring_domains = set()
+            for j, other_polyverts in enumerate(domain_polygons):
+                if i == j:
+                    continue
+                for this_vertex in this_polyverts:
+                    for other_vertex in other_polyverts:
+                        if np.linalg.norm(this_vertex - other_vertex) < 1e-10:
+                            neighboring_domains.add(j)
+
+            colors[i] = choice([color for color in available_colors if all(color != colors[neighboring]
+                                                                           for neighboring in neighboring_domains)])
+
+    p = PatchCollection(patches, facecolors=colors, alpha=1.0, edgecolors='black', linewidths=1.5)
     ax.add_collection(p)
     plt.xlim(xlim)
     plt.ylim(ylim)
@@ -120,15 +147,8 @@ def plot_2d_domains_with_estimates(domains_with_estimates, xlim, ylim, plot_esti
                             arrowprops=dict(alpha=0.75, linewidth=1.5, color="black",
                                             arrowstyle="->, head_width=0.5, head_length=0.5"))
 
-    cnorm = matplotlib.colors.Normalize(vmin=0, vmax=len(domains_with_estimates))
-    cmap = matplotlib.cm.get_cmap("Set1")
-    colors = [cmap(cnorm(i)) for i in range(len(domains_with_estimates))]
-    shuffle(colors)
-
-    p = PatchCollection(patches, facecolors=colors, alpha=1.0, edgecolors='black', linewidths=1.5)
-    ax.add_collection(p)
-    plt.xlim(xlim)
-    plt.ylim(ylim)
+    plot_2d_domains([(polyverts, membership) for polyverts, membership, _, _ in domains_with_estimates], xlim, ylim,
+                    flip_axes=flip_axes, use_current_axes=True)
 
 
 def plot_2d_domains_with_num_communities(domains_with_estimates, xlim, ylim, flip_axes=True, K_max=None, tick_step=2):
