@@ -1,5 +1,6 @@
 from .partition_utilities import num_communities, ami
-from random import choice, shuffle
+from collections import defaultdict
+from random import sample, shuffle
 import numpy as np
 import matplotlib
 from matplotlib.patches import Polygon
@@ -89,21 +90,22 @@ def plot_2d_domains(domains, xlim, ylim, flip_axes=False, use_current_axes=False
         shuffle(colors)
     else:
         # ensure that no adjacent domains have the same color
-        # this can be sped up significantly if needed
         colors = [None] * len(domains)
         domain_polygons = [polyverts for polyverts, membership in domains]
+
+        vertex_to_neighbor_domain_indices = defaultdict(set)
+        for i, polyverts in enumerate(domain_polygons):
+            for v in polyverts:
+                # it turns out that scipy's halfspace intersection (using Qhull) maintains
+                # exact float equality for vertices that are meant to be identical
+                vertex_to_neighbor_domain_indices[tuple(v)].add(i)
+
         for i, this_polyverts in enumerate(domain_polygons):
             neighboring_domains = set()
-            for j, other_polyverts in enumerate(domain_polygons):
-                if i == j:
-                    continue
-                for this_vertex in this_polyverts:
-                    for other_vertex in other_polyverts:
-                        if np.linalg.norm(this_vertex - other_vertex) < 1e-10:
-                            neighboring_domains.add(j)
-
-            colors[i] = choice([color for color in available_colors if all(color != colors[neighboring]
-                                                                           for neighboring in neighboring_domains)])
+            for v in this_polyverts:
+                neighboring_domains.update(vertex_to_neighbor_domain_indices[tuple(v)])
+            neighbor_colors = {colors[i] for i in neighboring_domains}
+            colors[i] = sample(available_colors.difference(neighbor_colors), 1)[0]
 
     p = PatchCollection(patches, facecolors=colors, alpha=1.0, edgecolors='black', linewidths=1.5)
     ax.add_collection(p)
