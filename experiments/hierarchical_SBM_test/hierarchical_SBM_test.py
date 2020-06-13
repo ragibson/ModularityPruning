@@ -57,7 +57,7 @@ def plot_CHAMP_gamma_estimates(gamma_estimates):
     plt.rc('text', usetex=True)
     plt.rc('font', family='serif')
     plot_estimates(gamma_estimates)
-    plt.title("Domains of Optimality and Gamma Estimates", fontsize=14)
+    plt.title(r"Domains of Optimality and $\gamma$ Estimates", fontsize=14)
     plt.xlabel(r"$\gamma$", fontsize=14)
     plt.ylabel("Number of communities", fontsize=14)
 

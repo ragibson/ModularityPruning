@@ -33,7 +33,7 @@ if __name__ == "__main__":
 
     p1 = plt.scatter(xs, ys1, marker='o')
     p2 = plt.scatter(xs, ys2, marker='+')
-    plt.legend((p1, p2), ("True Gamma", "Estimated Gamma"))
+    plt.legend((p1, p2), (r"True $\gamma$", r"Estimated $\gamma$"))
     plt.show()
 
     # Karate club with 0 <= starting gamma < 2

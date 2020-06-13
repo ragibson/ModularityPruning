@@ -122,7 +122,6 @@ def run_pamfil_iteration():
 
 def run_easy_regime_louvain():
     G_intralayer, G_interlayer, layer_vec, ground_truth_comms = pickle.load(open("easy_regime_multilayer.p", "rb"))
-    # TODO: Need to check bounds this was actually run over
     return repeated_parallel_louvain_from_gammas_omegas(G_intralayer, G_interlayer, layer_vec,
                                                         gammas=np.linspace(CHAMP_GAMMA_START, CHAMP_GAMMA_END, 225),
                                                         omegas=np.linspace(CHAMP_OMEGA_START, CHAMP_OMEGA_END, 225))
@@ -151,7 +150,7 @@ def plot_easy_regime_iteration():
     plt.scatter([ground_truth_omega], [ground_truth_gamma], s=50, color='blue', edgecolor='black', linewidths=1,
                 marker='o')
 
-    plt.title("Synthetic Network (Gamma, Omega) Estimates from Louvain", fontsize=14)
+    plt.title(r"Synthetic Network ($\omega$, $\gamma$) Estimates from Louvain", fontsize=14)
     plt.xlabel(r"$\omega$", fontsize=14)
     plt.ylabel(r"$\gamma$", fontsize=14)
     plt.xlim([ITERATION_OMEGA_START, ITERATION_OMEGA_END])
@@ -169,7 +168,7 @@ def plot_easy_regime_domains():
     plt.rc('font', family='serif')
     plot_2d_domains_with_estimates(domains_with_estimates, [ITERATION_OMEGA_START, ITERATION_OMEGA_END],
                                    [ITERATION_GAMMA_START, ITERATION_GAMMA_END], flip_axes=True)
-    plt.title("Synthetic Network Domains and (Gamma, Omega) Estimates", fontsize=14)
+    plt.title(r"Synthetic Network Domains and ($\omega$, $\gamma$) Estimates", fontsize=14)
     plt.xlabel(r"$\omega$", fontsize=14)
     plt.ylabel(r"$\gamma$", fontsize=14)
     plt.savefig("synthetic_network_with_gamma_omega_estimates.pdf")
@@ -238,7 +237,7 @@ def plot_easy_regime_domains_restricted_communities():
                                    [ITERATION_GAMMA_START, ITERATION_GAMMA_END], flip_axes=True)
     plt.rc('text', usetex=True)
     plt.rc('font', family='serif')
-    plt.title("Synthetic Network Domains and (Gamma, Omega) Estimates, $K=2$", fontsize=14)
+    plt.title(r"Synthetic Network Domains and ($\omega$, $\gamma$) Estimates, $K=2$", fontsize=14)
     plt.xlabel(r"$\omega$", fontsize=14)
     plt.ylabel(r"$\gamma$", fontsize=14)
     plt.savefig("synthetic_network_with_2-community_gamma_omega_estimates.pdf")

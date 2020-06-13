@@ -62,21 +62,23 @@ if __name__ == "__main__":
     for method in ["louvain", "2-spinglass"]:
         gamma_0s, gamma_fs = run_estimation_until_convergence(method)
 
-        plt.figure(figsize=(5, 5))
+        plt.figure()
         plt.rc('text', usetex=True)
         plt.rc('font', family='serif')
         plt.xlim([0.2, 3.1])
         plt.ylim([0.2, 3.1])
-        plt.ylabel("Initial Gamma", size=14)
-        plt.xlabel("Final Gamma", size=14)
+        plt.ylabel(r"Initial $\gamma$", size=14)
+        plt.xlabel(r"Final $\gamma$", size=14)
 
         plot_one_step_estimation(method)
 
         if method == "louvain":
             plt.scatter(gamma_fs, gamma_0s, alpha=0.1, s=15)
             plt.title(r"$\gamma$ Estimation on the Karate Club with Louvain", fontsize=14)
+            plt.tight_layout()
             plt.savefig("karate_club_gamma_estimation_louvain.pdf")
         else:
             plt.scatter(gamma_fs, gamma_0s, alpha=1.0, s=15)
             plt.title(r"$\gamma$ Estimation on the Karate Club with Spinglass", fontsize=14)
+            plt.tight_layout()
             plt.savefig("karate_club_gamma_estimation_spinglass.pdf")

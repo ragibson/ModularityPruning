@@ -48,7 +48,7 @@ def plot_gamma_estimates(all_parts):
     plt.rc('text', usetex=True)
     plt.rc('font', family='serif')
     plot_estimates(gamma_estimates)
-    plt.title("Karate Club CHAMP Domains of Optimality and Gamma Estimates", fontsize=14)
+    plt.title(r"Karate Club CHAMP Domains of Optimality and $\gamma$ Estimates", fontsize=14)
     plt.xlabel(r"$\gamma$", fontsize=14)
     plt.ylabel("Number of communities", fontsize=14)
     plt.savefig("karate_club_CHAMP_gamma_estimates.pdf")
