@@ -5,6 +5,9 @@ partitions that are significant from the perspective of stochastic block model
 inference. This method works for single-layer and multi-layer networks, as well
 as for restricting focus to a fixed number of communities when desired.
 
+See the [documentation](https://readthedocs.org/projects/modularitypruning/) for
+more information.
+
 ## Installation
 This project is on [PyPI](https://pypi.org/project/modularitypruning/) and can
 be installed with
@@ -49,8 +52,6 @@ This prints
 which is the stable 4-community split of the Karate Club network.
 
 ## More Information
-
-More package documentation is available in the [functions README](functions_README.md).
 
 The [TODO README](TODO.md) and [performance README](performance_README.md) 
 may also be of interest.
