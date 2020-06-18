@@ -5,8 +5,8 @@ partitions that are significant from the perspective of stochastic block model
 inference. This method works for single-layer and multi-layer networks, as well
 as for restricting focus to a fixed number of communities when desired.
 
-See the [documentation](https://readthedocs.org/projects/modularitypruning/) for
-more information.
+See the [documentation](https://modularitypruning.readthedocs.io/en/latest/)
+for more information.
 
 ## Installation
 This project is on [PyPI](https://pypi.org/project/modularitypruning/) and can
