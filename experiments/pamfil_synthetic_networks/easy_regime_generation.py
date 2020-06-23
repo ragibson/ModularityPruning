@@ -27,11 +27,15 @@ CHAMP_GAMMA_END = 2.0
 CHAMP_OMEGA_START = 0.0
 CHAMP_OMEGA_END = 2.0
 
+LOUVAIN_GAMMA_START = 0.0
+LOUVAIN_GAMMA_END = 2.0
+LOUVAIN_OMEGA_START = 0.0
+LOUVAIN_OMEGA_END = 2.0
 
-def generate_synthetic_network():
-    eta = 0.7  # copying probability
-    epsilon = 0.4  # p_in/p_out ratio
-    p_in = 20 / 75
+
+def generate_synthetic_network(eta=0.7, epsilon=0.4, desired_gamma=0.94, desired_omega=0.98):
+    # eta is copying probability, epsilon is p_in/p_out ratio
+    p_in = 32 / (1 + epsilon) / 75  # mean degree ~32
     p_out = epsilon * p_in
 
     n_per_layer = 150
@@ -77,7 +81,7 @@ def generate_synthetic_network():
 
         ground_truth_gamma, ground_truth_omega = gamma_omega_estimate(G_intralayer, G_interlayer, layer_vec, comm_vec)
 
-        if abs(ground_truth_gamma - 0.94) < 5e-3 and abs(ground_truth_omega - 0.98) < 5e-3:
+        if abs(ground_truth_gamma - desired_gamma) < 5e-3 and abs(ground_truth_omega - desired_omega) < 5e-3:
             print(f"Accepted graph generation with ground truth (omega, gamma) = "
                   f"({ground_truth_omega:.3f}, {ground_truth_gamma:.3f})")
             break
@@ -85,8 +89,8 @@ def generate_synthetic_network():
     return G_intralayer, G_interlayer, layer_vec, comm_vec
 
 
-def run_pamfil_iteration():
-    G_intralayer, G_interlayer, layer_vec, _ = pickle.load(open("easy_regime_multilayer.p", "rb"))
+def run_pamfil_iteration(graph_filename):
+    G_intralayer, G_interlayer, layer_vec, _ = pickle.load(open(graph_filename, "rb"))
 
     def one_step(gamma, omega):
         try:
@@ -120,17 +124,17 @@ def run_pamfil_iteration():
     return values
 
 
-def run_easy_regime_louvain():
-    G_intralayer, G_interlayer, layer_vec, ground_truth_comms = pickle.load(open("easy_regime_multilayer.p", "rb"))
+def run_louvain_on_grid(graph_filename):
+    G_intralayer, G_interlayer, layer_vec, ground_truth_comms = pickle.load(open(graph_filename, "rb"))
     return repeated_parallel_louvain_from_gammas_omegas(G_intralayer, G_interlayer, layer_vec,
-                                                        gammas=np.linspace(CHAMP_GAMMA_START, CHAMP_GAMMA_END, 225),
-                                                        omegas=np.linspace(CHAMP_OMEGA_START, CHAMP_OMEGA_END, 225))
+                                                        gammas=np.linspace(LOUVAIN_GAMMA_START, LOUVAIN_GAMMA_END, 225),
+                                                        omegas=np.linspace(LOUVAIN_OMEGA_START, LOUVAIN_OMEGA_END, 225))
 
 
-def plot_easy_regime_iteration():
-    G_intralayer, G_interlayer, layer_vec, ground_truth_comms = pickle.load(open("easy_regime_multilayer.p", "rb"))
+def plot_pamfil_iteration(graph_filename, iteration_filename):
+    G_intralayer, G_interlayer, layer_vec, ground_truth_comms = pickle.load(open(graph_filename, "rb"))
 
-    values = pickle.load(open("easy_regime_test_results.p", "rb"))
+    values = pickle.load(open(iteration_filename, "rb"))
     # values.sort(key=lambda x: 1000 * x[0] + x[1])
 
     plt.close()
@@ -155,12 +159,11 @@ def plot_easy_regime_iteration():
     plt.ylabel(r"$\gamma$", fontsize=14)
     plt.xlim([ITERATION_OMEGA_START, ITERATION_OMEGA_END])
     plt.ylim([ITERATION_GAMMA_START, ITERATION_GAMMA_END])
-    plt.savefig("synthetic_network_pamfil_iteration.pdf")
 
 
-def plot_easy_regime_domains():
+def plot_domains(domains_filename):
     # Prune partitions with CHAMP and get parameter estimates
-    domains_with_estimates = pickle.load(open("synthetic_champ_domains_with_estimates.p", "rb"))
+    domains_with_estimates = pickle.load(open(domains_filename, "rb"))
 
     # Plot domains of optimality with parameter estimates
     plt.close()
@@ -171,13 +174,12 @@ def plot_easy_regime_domains():
     plt.title(r"Synthetic Network Domains and ($\omega$, $\gamma$) Estimates", fontsize=14)
     plt.xlabel(r"$\omega$", fontsize=14)
     plt.ylabel(r"$\gamma$", fontsize=14)
-    plt.savefig("synthetic_network_with_gamma_omega_estimates.pdf")
 
 
-def plot_easy_regime_domains_with_ami_and_Ks():
+def plot_domains_with_amis(graph_filename, domains_filename):
     # Import graph and CHAMP's pruned partitions with estimates
-    G_intralayer, G_interlayer, _, ground_truth = pickle.load(open("easy_regime_multilayer.p", "rb"))
-    domains_with_estimates = pickle.load(open("synthetic_champ_domains_with_estimates.p", "rb"))
+    G_intralayer, G_interlayer, _, ground_truth = pickle.load(open(graph_filename, "rb"))
+    domains_with_estimates = pickle.load(open(domains_filename, "rb"))
 
     plt.close()
     plt.rc('text', usetex=True)
@@ -187,7 +189,11 @@ def plot_easy_regime_domains_with_ami_and_Ks():
     plt.title("AMI of Domains with Ground Truth", fontsize=14)
     plt.xlabel(r"$\omega$", fontsize=14)
     plt.ylabel(r"$\gamma$", fontsize=14)
-    plt.savefig("synthetic_network_domains_with_ground_truth_ami.pdf")
+
+
+def plot_domains_with_Ks(domains_filename):
+    # Import graph and CHAMP's pruned partitions with estimates
+    domains_with_estimates = pickle.load(open(domains_filename, "rb"))
 
     plt.close()
     plt.rc('text', usetex=True)
@@ -197,13 +203,12 @@ def plot_easy_regime_domains_with_ami_and_Ks():
     plt.title("Domains with Number of Communities", fontsize=14)
     plt.xlabel(r"$\omega$", fontsize=14)
     plt.ylabel(r"$\gamma$", fontsize=14)
-    plt.savefig("synthetic_network_domains_with_num_communities.pdf")
 
 
-def generate_domains_with_estimates(restrict_communities=None):
+def generate_domains_with_estimates(graph_filename, louvain_filename, restrict_communities=None):
     # Import graph and partitions
-    G_intralayer, G_interlayer, layer_vec, ground_truth = pickle.load(open("easy_regime_multilayer.p", "rb"))
-    all_parts = pickle.load(open("easy_regime_50K_louvain.p", "rb"))
+    G_intralayer, G_interlayer, layer_vec, ground_truth = pickle.load(open(graph_filename, "rb"))
+    all_parts = pickle.load(open(louvain_filename, "rb"))
 
     if restrict_communities:
         all_parts = {p for p in all_parts if num_communities(p) == restrict_communities}
@@ -226,8 +231,8 @@ def generate_domains_with_estimates(restrict_communities=None):
     return domains_with_estimates
 
 
-def plot_easy_regime_domains_restricted_communities():
-    domains_with_estimates = pickle.load(open("synthetic_champ_2-community_domains_with_estimates.p", "rb"))
+def plot_domains_restricted_communities(restricted_domains_filename):
+    domains_with_estimates = pickle.load(open(restricted_domains_filename, "rb"))
 
     # Plot domains of optimality with parameter estimates
     plt.close()
@@ -240,44 +245,60 @@ def plot_easy_regime_domains_restricted_communities():
     plt.title(r"Synthetic Network Domains and ($\omega$, $\gamma$) Estimates, $K=2$", fontsize=14)
     plt.xlabel(r"$\omega$", fontsize=14)
     plt.ylabel(r"$\gamma$", fontsize=14)
-    plt.savefig("synthetic_network_with_2-community_gamma_omega_estimates.pdf")
 
 
 # def print_num_stable_stables_restricted_communities():
 #     # Import graph and CHAMP's pruned partitions with estimates
-#     domains_with_estimates = pickle.load(open("synthetic_champ_2-community_domains_with_estimates.p", "rb"))
+#     domains_with_estimates = pickle.load(open(restricted_domains_filename, "rb"))
 #
 #     print(len(domains_with_estimates))
 #     print(len(gamma_omega_estimates_to_stable_partitions(domains_with_estimates)))
 
 
 if __name__ == "__main__":
-    if not os.path.exists("easy_regime_multilayer.p"):
+    graph_filename = "easy_regime_multilayer.p"
+    iteration_filename = "easy_regime_test_results.p"
+    louvain_filename = "easy_regime_50K_louvain.p"
+    domains_filename = "synthetic_champ_domains_with_estimates.p"
+    restricted_domains_filename = "synthetic_champ_2-community_domains_with_estimates.p"
+
+    if not os.path.exists(graph_filename):
         print("Generating synthetic network...")
         G_intralayer, G_interlayer, layer_vec, comm_vec = generate_synthetic_network()
-        pickle.dump((G_intralayer, G_interlayer, layer_vec, comm_vec), open("easy_regime_multilayer.p", "wb"))
+        pickle.dump((G_intralayer, G_interlayer, layer_vec, comm_vec), open(graph_filename, "wb"))
 
-    if not os.path.exists("easy_regime_test_results.p"):
+    if not os.path.exists(iteration_filename):
         print("Running pamfil iteration...")
-        values = run_pamfil_iteration()
-        pickle.dump(values, open("easy_regime_test_results.p", "wb"))
+        values = run_pamfil_iteration(graph_filename)
+        pickle.dump(values, open(iteration_filename, "wb"))
 
-    if not os.path.exists("easy_regime_50K_louvain.p"):
+    if not os.path.exists(louvain_filename):
         print("Running easy regime Louvain...")
-        all_parts = run_easy_regime_louvain()
-        pickle.dump(all_parts, open("easy_regime_50K_louvain.p", "wb"))
+        all_parts = run_louvain_on_grid(graph_filename)
+        pickle.dump(all_parts, open(louvain_filename, "wb"))
 
-    if not os.path.exists("synthetic_champ_domains_with_estimates.p"):
+    if not os.path.exists(domains_filename):
         print("Generating CHAMP domains with estimates...")
-        domains_with_estimates = generate_domains_with_estimates()
-        pickle.dump(domains_with_estimates, open("synthetic_champ_domains_with_estimates.p", "wb"))
+        domains_with_estimates = generate_domains_with_estimates(graph_filename, louvain_filename)
+        pickle.dump(domains_with_estimates, open(domains_filename, "wb"))
 
-    if not os.path.exists("synthetic_champ_2-community_domains_with_estimates.p"):
+    if not os.path.exists(restricted_domains_filename):
         print("Generating CHAMP domains with estimates when K=2...")
-        domains_with_estimates = generate_domains_with_estimates(restrict_communities=2)
-        pickle.dump(domains_with_estimates, open("synthetic_champ_2-community_domains_with_estimates.p", "wb"))
+        domains_with_estimates = generate_domains_with_estimates(graph_filename, louvain_filename,
+                                                                 restrict_communities=2)
+        pickle.dump(domains_with_estimates, open(restricted_domains_filename, "wb"))
 
-    plot_easy_regime_iteration()
-    plot_easy_regime_domains()
-    plot_easy_regime_domains_with_ami_and_Ks()
-    plot_easy_regime_domains_restricted_communities()
+    plot_pamfil_iteration(graph_filename, iteration_filename)
+    plt.savefig("synthetic_network_pamfil_iteration.pdf")
+
+    plot_domains(domains_filename)
+    plt.savefig("synthetic_network_with_gamma_omega_estimates.pdf")
+
+    plot_domains_with_amis(graph_filename, domains_filename)
+    plt.savefig("synthetic_network_domains_with_ground_truth_ami.pdf")
+
+    plot_domains_with_Ks(domains_filename)
+    plt.savefig("synthetic_network_domains_with_num_communities.pdf")
+
+    plot_domains_restricted_communities(restricted_domains_filename)
+    plt.savefig("synthetic_network_with_2-community_gamma_omega_estimates.pdf")
