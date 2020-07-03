@@ -124,7 +124,7 @@ def find_maximum_gammas():
                     break
 
                 current_gamma = gamma(omega_in, omega_out)
-                if current_gamma is not None:
+                if current_gamma is not None and not np.isnan(current_gamma):
                     max_gamma = max(max_gamma, current_gamma)
                     total += gamma(omega_in, omega_out)
                     count += 1
@@ -173,8 +173,8 @@ def generate_SNAP_boxplot():
     plt.rc('text', usetex=True)
     plt.rc('font', family='serif')
     plt.figure(figsize=(10, 5))
-    plt.plot(Ks, est_means, '-', label=r"$\gamma_{mean}$")
-    plt.plot(Ks, est_maxs, '-', label=r"$\gamma_{max}$")
+    plt.plot(Ks, est_means, '-', label=r"$\gamma_{\mathrm{mean}}$")
+    plt.plot(Ks, est_maxs, '-', label=r"$\gamma_{\mathrm{max}}$")
     plt.boxplot(boxplots, sym='+', flierprops={"markersize": 5}, medianprops={"color": "black"}, positions=Ks)
     plt.title(r"Empirical $\gamma$ Estimates from SNAP Networks as $K$ Varies", fontsize=14)
     plt.ylabel(r"$\gamma$", fontsize=14)
