@@ -161,7 +161,6 @@ def generate_SNAP_boxplot():
     est_means, est_maxs = pickle.load(open("maximum_gammas.p", "rb"))
     est_means = est_means[2:]
     est_maxs = est_maxs[2:]
-    print(est_maxs[0])
     assert abs(est_maxs[0] - 1.0) < 1e-4
 
     boxplot_results = pickle.load(open("boxplot_results.p", "rb"))
@@ -191,6 +190,7 @@ def generate_SNAP_boxplot():
     for i in range(0, len(xticks), 4):
         xticks[i].label1.set_visible(True)
 
+    plt.tight_layout()
     plt.savefig("empirical_gamma_max.pdf")
 
 
@@ -199,7 +199,7 @@ if __name__ == "__main__":
 
     run_louvain_if_necessary()
 
-    if True or not os.path.exists("maximum_gammas.p"):
+    if not os.path.exists("maximum_gammas.p"):
         print("Finding maximum gammas...")
         find_maximum_gammas()
 
