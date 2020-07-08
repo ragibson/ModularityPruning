@@ -53,5 +53,6 @@ which is the stable 4-community split of the Karate Club network.
 
 ## More Information
 
-The [TODO README](TODO.md) and [performance README](performance_README.md) 
-may also be of interest.
+The [TODO items](TODO.md) and
+[figure generation runtimes](figure_generation_runtimes.md) READMEs may also be
+of interest.

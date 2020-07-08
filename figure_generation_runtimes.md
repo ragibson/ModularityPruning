@@ -1,4 +1,4 @@
-## Performance pass of implementation
+## Figure Generation Runtimes
 
 On a machine with
 

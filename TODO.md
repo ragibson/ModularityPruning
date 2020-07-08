@@ -1,10 +1,10 @@
 ## TODO items
 
-- [ ] Add citations/acknowledgements to README
-- [ ] Add examples to documentation
-- [ ] Add plotting information to documentation
+- [ ] Add plotting information (with examples) to documentation
 - [ ] Add multilayer documentation
+- [ ] Add forthcoming citations/acknowledgements to README
 
+## Potential Future Work
 
 - [ ] Implement handling of weighted graphs
 - [ ] Add support for Leiden algorithm for maximizing modularity
