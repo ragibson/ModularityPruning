@@ -68,7 +68,7 @@ def get_interior_point(halfspaces, initial_num_sampled=50):
 
 
 def CHAMP_2D(G, all_parts, gamma_0, gamma_f, single_threaded=False):
-    """Calculates the pruned set of partitions from CHAMP on ``gamma_0`` :math:`\leq \gamma \leq` ``gamma_f``.
+    r"""Calculates the pruned set of partitions from CHAMP on ``gamma_0`` :math:`\leq \gamma \leq` ``gamma_f``.
 
     See https://doi.org/10.3390/a10030093 for more details.
 

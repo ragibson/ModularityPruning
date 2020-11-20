@@ -9,7 +9,7 @@ import warnings
 
 
 def estimate_singlelayer_SBM_parameters(G, partition, m=None):
-    """Estimate singlelayer SBM parameters from a graph and a partition.
+    r"""Estimate singlelayer SBM parameters from a graph and a partition.
 
     See https://doi.org/10.1103/PhysRevE.94.052315 for more details.
 

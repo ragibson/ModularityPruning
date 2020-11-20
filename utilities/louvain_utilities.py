@@ -25,7 +25,7 @@ def sorted_tuple(t):
 
 
 def singlelayer_louvain(G, gamma, return_partition=False):
-    """Run the Louvain modularity maximization algorithm at a single :math:`\gamma` value.
+    r"""Run the Louvain modularity maximization algorithm at a single :math:`\gamma` value.
 
     :param G: graph of interest
     :type G: igraph.Graph
@@ -130,7 +130,7 @@ def repeated_louvain_from_gammas(G, gammas):
 
 
 def repeated_parallel_louvain_from_gammas(G, gammas, show_progress=True, chunk_dispatch=True):
-    """Runs the Louvain modularity maximization algorithm at each provided :math:`\gamma` value, using all CPU cores.
+    r"""Runs the Louvain modularity maximization algorithm at each provided :math:`\gamma` value, using all CPU cores.
 
     :param G: graph of interest
     :type G: igraph.Graph
