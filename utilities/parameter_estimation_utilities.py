@@ -9,12 +9,18 @@ import warnings
 
 
 def estimate_singlelayer_SBM_parameters(G, partition, m=None):
-    """Estimates singlelayer SBM parameters from a graph and a partition
+    """Estimate singlelayer SBM parameters from a graph and a partition.
 
-    :param G: graph
-    :param partition: partition
+    See https://doi.org/10.1103/PhysRevE.94.052315 for more details.
+
+    :param G: graph of interest
+    :type G: igraph.Graph
+    :param partition: partition of interest
+    :type partition: louvain.RBConfigurationVertexPartition
     :param m: total edge weight of graph (if None, will be computed)
-    :return: omega_in, omega_out
+    :type m: float
+    :return: SBM parameter estimates :math:`(\omega_{in}, \omega_{out})`
+    :rtype: tuple[float, float]
     """
 
     if m is None:
@@ -121,7 +127,18 @@ def estimate_multilayer_SBM_parameters(G_intralayer, G_interlayer, layer_vec, pa
 
 
 def gamma_estimate(G, partition):
-    """Returns the gamma estimate for a graph and a partition"""
+    """Compute the "correct" value of gamma where modularity maximization becomes equivalent to maximum likelihood
+    methods on a degree-corrected, planted partition stochastic block model.
+
+    See https://doi.org/10.1103/PhysRevE.94.052315 for more details.
+
+    :param G: graph of interest
+    :type G: igraph.Graph
+    :param partition: partition of interest
+    :type partition: tuple[int] or louvain.RBConfigurationVertexPartition
+    :return: gamma estimate
+    :rtype: float
+    """
 
     if 'weight' not in G.es:
         G.es['weight'] = [1.0] * G.vcount()
@@ -134,7 +151,15 @@ def gamma_estimate(G, partition):
 
 
 def gamma_estimate_from_parameters(omega_in, omega_out):
-    """Returns the gamma estimate for SBM parameters"""
+    """Compute the "correct" value of gamma as in :meth:`~modularitypruning.parameter_estimation_utilities.gamma_estimate` from SBM parameters.
+
+    :param omega_in: within-community edge propensity of a degree-corrected, planted partition SBM
+    :type omega_in: float
+    :param omega_out: within-community edge propensity of a degree-corrected, planted partition SBM
+    :type omega_out: float
+    :return: gamma estimate
+    :rtype: float
+    """
 
     if omega_in == 0 or omega_out == 0:
         return None  # degenerate partition, this could reasonably be taken to be 0
@@ -281,11 +306,14 @@ def gamma_omega_estimate(G_intralayer, G_interlayer, layer_vec, membership, omeg
 
 
 def ranges_to_gamma_estimates(G, ranges):
-    """Compute gamma estimates from ranges of dominance.
+    """Compute gamma estimates as in :meth:`~modularitypruning.parameter_estimation_utilities.gamma_estimate`, given domains of optimality from :meth:`~modularitypruning.champ_utilities.CHAMP_2D`.
 
-    :param G: input graph
-    :param ranges: list of (gamma_start, gamma_end, membership) tuples
-    :return: list of [(gamma_start, gamma_end, membership, gamma_estimate), ...]
+    :param G: graph of interest
+    :type G: igraph.Graph
+    :param ranges: list of ``(gamma_start, gamma_end, membership)`` tuples as returned from :meth:`~modularitypruning.champ_utilities.CHAMP_2D`
+    :type ranges: list of tuple[float, float, tuple[int]]
+    :return: a copy of input ranges with the corresponding gamma estimate appended to each tuple
+    :rtype: list of tuple[float, float, tuple[int], float]
     """
 
     return [(gamma_start, gamma_end, part, gamma_estimate(G, part)) for
@@ -293,10 +321,16 @@ def ranges_to_gamma_estimates(G, ranges):
 
 
 def gamma_estimates_to_stable_partitions(gamma_estimates):
-    """Computes the stable partitions from gamma estimates.
+    """Computes the stable partitions (i.e. those whose gamma estimates are within their domains of optimality), given
+    domains of optimality and gamma estimates from :meth:`ranges_to_gamma_estimates`.
 
-    :param gamma_estimates: list of (gamma_start, gamma_end, membership, gamma_estimate) tuples
-    :return: the memberships of the partitions where gamma_start <= gamma_estimate <= gamma_end
+    See **[CITATION FORTHCOMING]** for more details.
+
+    :param gamma_estimates: list of ``(gamma_start, gamma_end, membership, gamma_estimate)`` tuples as returned from
+                            :meth:`~modularitypruning.champ_utilities.CHAMP_2D`
+    :type gamma_estimates: list[tuple]
+    :return: list of community membership tuples of the stable partitions
+    :rtype: list of tuple[int]
     """
 
     return [membership for gamma_start, gamma_end, membership, gamma_estimate in gamma_estimates
@@ -355,16 +389,26 @@ def gamma_omega_estimates_to_stable_partitions(domains_with_estimates):
 
 def prune_to_stable_partitions(G, parts, gamma_start, gamma_end, restrict_num_communities=None,
                                single_threaded=False):
-    """Runs our full pruning pipeline on a singlelayer network.
+    """Runs our full pruning pipeline on a singlelayer network. Returns the pruned list of stable partitions.
+
+    See **[CITATION FORTHCOMING]** for more details.
 
     :param G: graph of interest
+    :type G: igraph.Graph
     :param parts: partitions to prune
+    :type parts: list[tuple]
     :param gamma_start: starting gamma value for CHAMP
+    :type gamma_start: float
     :param gamma_end: ending gamma value for CHAMP
+    :type gamma_end: float
     :param restrict_num_communities: if not None, only use input partitions of this many communities
-    :param single_threaded: if True, run the CHAMP step without parallelization
-    :return: pruned set of stable partitions
+    :type restrict_num_communities: int or None
+    :param single_threaded: if True, run the CHAMP step in serial
+    :type single_threaded: bool
+    :return: list of community membership tuples
+    :rtype: tuple[int]
     """
+
     if not G.is_connected():
         warnings.warn("The pruning pipeline has not been thoroughly tested on disconnected graphs. If you run into "
                       "problems, consider using the largest connected component of your graph.")

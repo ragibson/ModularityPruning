@@ -7,17 +7,28 @@ import louvain
 
 def iterative_monolayer_resolution_parameter_estimation(G, gamma=1.0, tol=1e-2, max_iter=25, verbose=False,
                                                         method="louvain"):
-    """
-    Monolayer variant of ALG. 1 from "Relating modularity maximization and stochastic block models in multilayer
-    networks." The nested functions here are just used to match the pseudocode in the paper.
+    """Monolayer variant of ALG. 1 from "Relating modularity maximization and stochastic block models in multilayer
+    networks." This is intended to determine an "optimal" value for gamma by repeatedly maximizing modularity and
+    estimating new values for the resolution parameter.
 
-    :param G: input graph
-    :param gamma: starting gamma value
+    See https://doi.org/10.1137/18M1231304 for more details.
+
+    :param G: graph of interest
+    :type G: igraph.Graph
+    :param gamma: initialization gamma value
+    :type gamma: float
     :param tol: convergence tolerance
+    :type tol: float
     :param max_iter: maximum number of iterations
+    :type max_iter: int
     :param verbose: whether or not to print verbose output
+    :type verbose: bool
     :param method: community detection method to use
-    :return: gamma to which the iteration converged and the resulting partition
+    :type method: str
+    :return:
+        - gamma to which the iteration converged
+        - the resulting partition
+    :rtype: tuple[float, louvain.RBConfigurationVertexPartition]
     """
 
     if 'weight' not in G.es:

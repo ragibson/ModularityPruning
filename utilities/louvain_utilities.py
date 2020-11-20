@@ -11,13 +11,31 @@ LOW_MEMORY_THRESHOLD = 1e9  # 1 GB
 
 @functools.lru_cache(maxsize=1000)
 def sorted_tuple(t):
-    """Converts a tuple :t: to a canonical form (labels' first occurrences are sorted)."""
+    """Converts a tuple to a canonical form in which the labels' first occurrences are sorted (e.g. label 0 will always
+    occur before label 1 in the tuple).
+
+    :param t: community membership of a partition
+    :type t: tuple[int]
+    :return: a canonical representation of the membership tuple
+    :rtype: tuple[int]
+    """
 
     sort_map = {x[0]: i for i, x in enumerate(sorted(zip(*np.unique(t, return_index=True)), key=lambda x: x[1]))}
     return tuple(sort_map[x] for x in t)
 
 
 def singlelayer_louvain(G, gamma, return_partition=False):
+    """Run the Louvain modularity maximization algorithm at a single :math:`\gamma` value.
+
+    :param G: graph of interest
+    :type G: igraph.Graph
+    :param gamma: gamma (resolution parameter) to run Louvain at
+    :type gamma: float
+    :param return_partition: if True, return a louvain partition. Otherwise, return a community membership tuple
+    :type return_partition: bool
+    :return: partition from louvain
+    :rtype: tuple[int] or louvain.RBConfigurationVertexPartition
+    """
     if 'weight' not in G.es:
         G.es['weight'] = [1.0] * G.ecount()
 
@@ -112,15 +130,19 @@ def repeated_louvain_from_gammas(G, gammas):
 
 
 def repeated_parallel_louvain_from_gammas(G, gammas, show_progress=True, chunk_dispatch=True):
-    """
-    Runs louvain at each gamma in :gammas:, using all CPU cores available.
+    """Runs the Louvain modularity maximization algorithm at each provided :math:`\gamma` value, using all CPU cores.
 
-    :param G: input graph
-    :param gammas: list of gammas (resolution parameters) to run louvain at
-    :param show_progress: if True, render a progress bar
+    :param G: graph of interest
+    :type G: igraph.Graph
+    :param gammas: list of gammas (resolution parameters) to run Louvain at
+    :type gammas: list[float]
+    :param show_progress: if True, render a progress bar. This will only work if ``chunk_dispatch`` is also True
+    :type show_progress: bool
     :param chunk_dispatch: if True, dispatch parallel work in chunks. Setting this to False may increase performance,
                            but can lead to out-of-memory issues
-    :return: a set of all unique partitions encountered
+    :type chunk_dispatch: bool
+    :return: a set of all unique partitions returned by the Louvain algorithm
+    :rtype: set of tuple[int]
     """
 
     pool = Pool(processes=cpu_count())

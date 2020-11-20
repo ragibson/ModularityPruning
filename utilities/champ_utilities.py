@@ -68,14 +68,26 @@ def get_interior_point(halfspaces, initial_num_sampled=50):
 
 
 def CHAMP_2D(G, all_parts, gamma_0, gamma_f, single_threaded=False):
-    """Calculates the pruned set of partitions from CHAMP on gamma_0 <= gamma <= gamma_f
+    """Calculates the pruned set of partitions from CHAMP on ``gamma_0`` :math:`\leq \gamma \leq` ``gamma_f``.
+
+    See https://doi.org/10.3390/a10030093 for more details.
 
     :param G: graph of interest
+    :type G: igraph.Graph
     :param all_parts: partitions to prune
-    :param gamma_0: starting gamma value
-    :param gamma_f: ending gamma value
-    :param single_threaded: if True, run without parallelization
-    :return: list of [(domain_gamma_start, domain_gamma_end, membership), ...]
+    :type all_parts: list[tuple] or set[tuple]
+    :param gamma_0: starting gamma value for CHAMP
+    :type gamma_0: float
+    :param gamma_f: ending gamma value for CHAMP
+    :type gamma_f: float
+    :param single_threaded: if True, run in serial. Otherwise, use all CPU cores to run in parallel
+    :type single_threaded: bool
+    :return: list of tuples for the somewhere optimal partitions, containing (in-order)
+
+        - starting gamma value for the partition's domain of optimality
+        - ending gamma value for the partition's domain of optimality
+        - community membership tuple for the partition
+    :rtype: list of tuple[float, float, tuple[int]]
     """
 
     # TODO: remove this filter once scipy updates their library

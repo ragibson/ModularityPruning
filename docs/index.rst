@@ -13,9 +13,10 @@ This method works for single-layer and multi-layer networks, as well as for rest
 communities when desired.
 
 .. toctree::
-   installation
-   basic_example
-   usage
+   source/installation
+   source/basic_example
+   source/usage
+   source/multilayer_usage
    :maxdepth: 2
    :caption: Contents:
 
