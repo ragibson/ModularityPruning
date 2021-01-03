@@ -1,6 +1,7 @@
-from .louvain_utilities import louvain_part_with_membership, sorted_tuple
-from .champ_utilities import CHAMP_2D
+from .louvain_utilities import louvain_part_with_membership, sorted_tuple, check_multilayer_louvain_capabilities
+from .champ_utilities import CHAMP_2D, CHAMP_3D
 from .partition_utilities import num_communities
+import igraph as ig
 import louvain
 from math import log
 import numpy as np
@@ -350,7 +351,7 @@ def domains_to_gamma_omega_estimates(G_intralayer, G_interlayer, layer_vec, doma
     return domains_with_estimates
 
 
-def gamma_omega_estimates_to_stable_partitions(domains_with_estimates):
+def gamma_omega_estimates_to_stable_partitions(domains_with_estimates, return_membership_only=False):
     """Computes the stable partitions from (gamma, omega) estimates.
 
     Returns the memberships of the partitions where (gamma_estimate, omega_estimate) lies within the domain of
@@ -382,7 +383,10 @@ def gamma_omega_estimates_to_stable_partitions(domains_with_estimates):
 
         if all(x for x in left_or_rights) or all(not x for x in left_or_rights):
             # if the (gamma, omega) estimate is on the same side of all polygon edges, it lies within the domain
-            stable_partitions.append((polyverts, membership, gamma_est, omega_est))
+            if return_membership_only:
+                stable_partitions.append(membership)
+            else:
+                stable_partitions.append((polyverts, membership, gamma_est, omega_est))
 
     return stable_partitions
 
@@ -396,7 +400,7 @@ def prune_to_stable_partitions(G, parts, gamma_start, gamma_end, restrict_num_co
     :param G: graph of interest
     :type G: igraph.Graph
     :param parts: partitions to prune
-    :type parts: list[tuple]
+    :type parts: iterable[tuple]
     :param gamma_start: starting gamma value for CHAMP
     :type gamma_start: float
     :param gamma_end: ending gamma value for CHAMP
@@ -406,7 +410,7 @@ def prune_to_stable_partitions(G, parts, gamma_start, gamma_end, restrict_num_co
     :param single_threaded: if True, run the CHAMP step in serial
     :type single_threaded: bool
     :return: list of community membership tuples
-    :rtype: tuple[int]
+    :rtype: list[tuple[int]]
     """
 
     if not G.is_connected():
@@ -433,5 +437,82 @@ def prune_to_stable_partitions(G, parts, gamma_start, gamma_end, restrict_num_co
     ranges = CHAMP_2D(G, parts, gamma_start, gamma_end, single_threaded=single_threaded)
     gamma_estimates = ranges_to_gamma_estimates(G, ranges)
     stable_parts = gamma_estimates_to_stable_partitions(gamma_estimates)
+
+    return stable_parts
+
+
+def prune_to_multilayer_stable_partitions(G_intralayer, G_interlayer, layer_vec, model,
+                                          parts, gamma_start, gamma_end, omega_start, omega_end,
+                                          restrict_num_communities=None, single_threaded=False):
+    """Runs our full pruning pipeline on a multilayer network. Returns the pruned list of stable partitions.
+
+    See **[CITATION FORTHCOMING]** for more details.
+
+    :param G_intralayer: intralayer graph of interest
+    :type G_intralayer: igraph.Graph
+    :param G_interlayer: interlayer graph of interest
+    :type G_interlayer: igraph.Graph
+    :param layer_vec: list of each vertex's layer membership
+    :type layer_vec: list[int]
+    :param model: network layer topology (temporal, multilevel, multiplex)
+    :type model: str
+    :param parts: partitions to prune
+    :type parts: iterable[tuple]
+    :param gamma_start: starting gamma value for CHAMP
+    :type gamma_start: float
+    :param gamma_end: ending gamma value for CHAMP
+    :type gamma_end: float
+    :param omega_start: starting omega value for CHAMP
+    :type omega_start: float
+    :param omega_end: ending omega value for CHAMP
+    :type omega_end: float
+    :param restrict_num_communities: if not None, only use input partitions of this many communities
+    :type restrict_num_communities: int or None
+    :param single_threaded: if True, run the CHAMP step in serial
+    :type single_threaded: bool
+    :return: list of community membership tuples
+    :rtype: list[tuple[int]]
+    """
+    check_multilayer_louvain_capabilities()
+
+    if single_threaded:
+        raise NotImplementedError("Single-threaded multilayer CHAMP was never implemented. This would be fairly easy"
+                                  "to add, so please raise an issue if this feature is desired.")
+
+    # check graph is connected (cannot just check intra/interlayer graphs since they will both be disconnected)
+    G_combined = ig.Graph(edges=[(e.source, e.target) for e in G_intralayer.es] +
+                                [(e.source, e.target) for e in G_interlayer.es])
+    if not G_combined.is_connected() or G_combined.vcount() != G_interlayer.vcount():
+        warnings.warn("The pruning pipeline has not been thoroughly tested on disconnected graphs. If you run into "
+                      "problems, consider using the largest connected component of your graph.")
+
+    if (G_intralayer.is_weighted() and any(x != 1.0 for x in G_intralayer.es['weight'])) or (
+            G_interlayer.is_weighted() and any(x != 1.0 for x in G_interlayer.es['weight'])):
+        warnings.warn("The pruning pipeline does not fully handle weighted graphs and will proceed as though the input "
+                      "graph is unweighted.")
+
+    if isinstance(parts, louvain.RBConfigurationVertexPartitionWeightedLayers):
+        # convert to (canonically represented) membership vectors if necessary
+        parts = {sorted_tuple(part.membership) for part in parts}
+    else:
+        # assume parts contains membership vectors
+        parts = {sorted_tuple(part) for part in parts}
+
+    if restrict_num_communities is not None:
+        parts = {part for part in parts if num_communities(part) == restrict_num_communities}
+
+    if len(parts) == 0:
+        return []
+
+    domains = CHAMP_3D(G_intralayer, G_interlayer, layer_vec, parts, gamma_start, gamma_end,
+                       omega_start, omega_end)
+    domains_with_estimates = domains_to_gamma_omega_estimates(G_intralayer, G_interlayer, layer_vec, domains, model)
+
+    # Truncate infinite omega solutions to our maximum omega
+    domains_with_estimates = [(polyverts, membership, g_est, min(o_est, omega_end - 1e-3))
+                              for polyverts, membership, g_est, o_est in domains_with_estimates
+                              if g_est is not None]
+
+    stable_parts = gamma_omega_estimates_to_stable_partitions(domains_with_estimates, return_membership_only=True)
 
     return stable_parts
