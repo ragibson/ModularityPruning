@@ -31,5 +31,5 @@ setup(
     ],
     python_requires='>=3.6, <4',
     install_requires=['champ', 'louvain', 'matplotlib', 'numpy', 'psutil', 'python-igraph',
-                      'scipy', 'seaborn', 'sklearn']
+                      'scipy<1.6.0', 'seaborn', 'sklearn']
 )
