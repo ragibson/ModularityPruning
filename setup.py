@@ -27,9 +27,11 @@ setup(
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3 :: Only',
         'License :: OSI Approved :: MIT License'
     ],
     python_requires='>=3.6, <4',
-    install_requires=['champ', 'louvain', 'matplotlib', 'numpy<1.20', 'psutil', 'python-igraph',
-                      'scipy<1.6.0', 'seaborn', 'sklearn']
+    install_requires=['champ', 'louvain', 'matplotlib', 'numpy', 'psutil', 'python-igraph',
+                      'scipy', 'seaborn', 'sklearn']
 )
