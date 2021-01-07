@@ -15,6 +15,7 @@ communities when desired.
 .. toctree::
    source/installation
    source/basic_example
+   source/basic_multilayer_example
    source/usage
    source/multilayer_usage
    :maxdepth: 2

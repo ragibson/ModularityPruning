@@ -1,5 +1,5 @@
-Basic Example
-=============
+Basic Singlelayer Example
+=========================
 
 The simplest entry point to the package is the `prune_to_stable_partitions` function.
 
@@ -29,3 +29,6 @@ This prints
    [(0, 0, 0, 0, 1, 1, 1, 0, 2, 2, 1, 0, 0, 0, 2, 2, 1, 0, 2, 0, 2, 0, 2, 3, 3, 3, 2, 3, 3, 2, 2, 3, 2, 2)]
 
 which is the stable 4-community split of the Karate Club network.
+
+It is often useful to set `restrict_num_communities` in order to restrict focus to a specific number of communities.
+For the Karate Club, `restrict_num_communities=2` yields the more standard, 2-community split.

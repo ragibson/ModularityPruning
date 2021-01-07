@@ -180,6 +180,9 @@ def multiplex_omega_estimate_from_parameters(theta_in, theta_out, p, K, T, omega
     :return: omega estimate
     """
 
+    if p == 0:
+        return 0
+
     # if p is 1, the optimal omega is infinite (here, omega_max)
     if p >= 1.0 or theta_in == 1.0:
         return omega_max
@@ -199,6 +202,9 @@ def temporal_multilevel_omega_estimate_from_parameters(theta_in, theta_out, p, K
     :param omega_max: maximum allowed value for omega
     :return: omega estimate
     """
+
+    if p == 0:
+        return 0
 
     if theta_out == 0:
         return log(1 + p * K / (1 - p)) / (2 * log(theta_in)) if p < 1.0 else omega_max
