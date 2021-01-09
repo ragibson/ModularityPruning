@@ -85,13 +85,13 @@ In an example run, we find the following two stable partitions:
   0 0 0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 1 1 1 2 2 2 2 2 2 2 2 2 2 0 0 0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 1 1 1 2 2 2 2 2 2 2 2 2 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
   0 0 0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 1 1 1 2 2 2 2 2 2 2 2 2 2 0 0 0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 1 1 1 2 2 2 2 2 2 2 2 2 2 0 0 0 1 1 1 2 0 0 2 1 1 0 2 2 1 0 2 1 1 0 0 2 0 2 1 0 2 0 2
 
-Here, we can see that modularitypruning essentially identifies the ground membership vector (the first partition
+Here, we can see that modularitypruning essentially identifies the ground truth membership vector (the first partition
 output) and a second partition that follows the ground truth for the first two layers, but splits the third into
 roughly equal size communities.
 
 This is perhaps reasonable since the final layer has no significant community structure whatsoever (it is comprised of
 a single community).
 
-As in the singlelayer case, it is often useful to set `restrict_num_communities` in order to restrict focus to a
+As in the singlelayer case, it is often useful to set ``restrict_num_communities`` in order to restrict focus to a
 specific number of communities. However, the community structure is so strong in this example that we find similar
 results without this restriction.

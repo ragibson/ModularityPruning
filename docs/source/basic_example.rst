@@ -1,7 +1,7 @@
 Basic Singlelayer Example
 =========================
 
-The simplest entry point to the package is the `prune_to_stable_partitions` function.
+The simplest entry point to the package is the ``prune_to_stable_partitions`` function.
 
 See :doc:`usage` for complete documentation on this function, but a simple example of its usage is
 
@@ -30,5 +30,5 @@ This prints
 
 which is the stable 4-community split of the Karate Club network.
 
-It is often useful to set `restrict_num_communities` in order to restrict focus to a specific number of communities.
-For the Karate Club, `restrict_num_communities=2` yields the more standard, 2-community split.
+It is often useful to set ``restrict_num_communities`` in order to restrict focus to a specific number of communities.
+For the Karate Club, ``restrict_num_communities=2`` yields the more standard, 2-community split.
