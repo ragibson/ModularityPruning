@@ -4,6 +4,8 @@ Usage
 Note that this documentation page only includes the functions intended for single-layer network analysis. We expect
 that this will be the most common use case for our package, but the package also supports multi-layer networks.
 
+For multi-layer usage, see :doc:`multilayer_usage`.
+
 .. _modularitypruning:
 
 modularitypruning

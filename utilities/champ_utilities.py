@@ -131,12 +131,36 @@ def CHAMP_2D(G, all_parts, gamma_0, gamma_f, single_threaded=False):
 
 
 def CHAMP_3D(G_intralayer, G_interlayer, layer_vec, all_parts, gamma_0, gamma_f, omega_0, omega_f):
-    """Calculates the CHAMP set at :gamma_0: <= gamma <= :gamma_f: and :omega_0: <= omega <= :omega_f:
+    r"""Calculates the pruned set of partitions from CHAMP on ``gamma_0`` :math:`\leq \gamma \leq` ``gamma_f`` and
+    ``omega_0`` :math:`\leq \omega \leq` ``omega_f``.
 
-    Defers to the original CHAMP implementation for most of the halfspace intersection for now.
+    See https://doi.org/10.3390/a10030093 for more details.
 
-    Returns a list of [(list of polygon vertices in (gamma, omega) plane, membership), ...]"""
-    # TODO: we resort to the original CHAMP implementation, so gamma_0 and omega_0 have no effect for now
+    NOTE: This defers to the original CHAMP implementation for most of the halfspace intersection for now, so
+    ``gamma_0`` and ``omega_0`` have no effect.
+
+    :param G_intralayer: intralayer graph of interest
+    :type G_intralayer: igraph.Graph
+    :param G_interlayer: interlayer graph of interest
+    :type G_interlayer: igraph.Graph
+    :param layer_vec: list of each vertex's layer membership
+    :type layer_vec: list[int]
+    :param all_parts: partitions to prune
+    :type all_parts: iterable[tuple]
+    :param gamma_0: unused (should be the starting gamma value for CHAMP, but the original implementation seems to take this as equal to zero)
+    :type gamma_0: float
+    :param gamma_f: ending gamma value for CHAMP
+    :type gamma_f: float
+    :param omega_0: unused (should be the starting omega value for CHAMP, but the original implementation seems to take this as equal to zero)
+    :type omega_0: float
+    :param omega_f: ending omega value for CHAMP
+    :type omega_f: float
+    :return: list of tuples for the somewhere optimal partitions, containing (in-order)
+
+        - list of polygon vertices in (gamma, omega) plane for the partition's domain of optimality
+        - community membership tuple for the partition
+    :rtype: list of tuple[list[float], tuple[int]]
+    """
 
     all_parts = list(all_parts)
     A_hats, P_hats, C_hats = partition_coefficients_3D(G_intralayer, G_interlayer, layer_vec, all_parts)

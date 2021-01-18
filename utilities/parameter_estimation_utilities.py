@@ -49,16 +49,26 @@ def estimate_multilayer_SBM_parameters(G_intralayer, G_interlayer, layer_vec, pa
                                        Nt=None, m_t=None):
     """Estimates multilayer SBM parameters from a graph and a partition
 
-    :param G_intralayer: input graph containing all intra-layer edges
-    :param G_interlayer: input graph containing all inter-layer edges
-    :param layer_vec: vector of each vertex's layer membership
+    :param G_intralayer: intralayer graph of interest
+    :type G_intralayer: igraph.Graph
+    :param G_interlayer: interlayer graph of interest
+    :type G_interlayer: igraph.Graph
+    :param layer_vec: list of each vertex's layer membership
+    :type layer_vec: list[int]
     :param partition: partition of interest
+    :type partition: louvain.RBConfigurationVertexPartitionWeightedLayers
     :param model: network layer topology (temporal, multilevel, multiplex)
-    :param N: number of nodes per layer
-    :param T: number of layers in input graph
-    :param Nt: vector of nodes per layer
-    :param m_t: vector of total edge weights per layer
+    :type model: str
+    :param N: number of nodes per layer (automatically computed if None)
+    :type N: int
+    :param T: number of layers in input graph (automatically computed if None)
+    :type T: int
+    :param Nt: vector of nodes per layer (automatically computed if None)
+    :type Nt: int
+    :param m_t: vector of total edge weights per layer (automatically computed if None)
+    :type m_t: int
     :return: theta_in, theta_out, p, K
+    :rtype: float, float, float, int
     """
 
     if 'weight' not in G_intralayer.es:
@@ -172,12 +182,19 @@ def multiplex_omega_estimate_from_parameters(theta_in, theta_out, p, K, T, omega
     """Returns the omega estimate for a multiplex multilayer model
 
     :param theta_in: SBM parameter
+    :type theta_in: float
     :param theta_out: SBM parameter
+    :type theta_out: float
     :param p: SBM parameter
+    :type p: float
     :param K: number of blocks in SBM
+    :type K: int
     :param T: number of layers in SBM
+    :type T: int
     :param omega_max: maximum allowed value for omega
+    :type omega_max: float
     :return: omega estimate
+    :rtype: float
     """
 
     if p == 0:
@@ -196,11 +213,17 @@ def temporal_multilevel_omega_estimate_from_parameters(theta_in, theta_out, p, K
     """Returns the omega estimate for a temporal or multilevel multilayer model
 
     :param theta_in: SBM parameter
+    :type theta_in: float
     :param theta_out: SBM parameter
+    :type theta_out: float
     :param p: SBM parameter
+    :type p: float
     :param K: number of blocks in SBM
+    :type K: int
     :param omega_max: maximum allowed value for omega
+    :type omega_max: float
     :return: omega estimate
+    :rtype: float
     """
 
     if p == 0:
@@ -232,6 +255,20 @@ def categorical_persistence(G_interlayer, community, N, T):
 
 
 def omega_function_from_model(model, omega_max, T):
+    """Returns an appropriate function (depending on the model) for computing omega from multilayer SBM parameters
+
+    Specifically, it will return versions of
+    :meth:`temporal_multilevel_omega_estimate_from_parameters` or :meth:`multiplex_omega_estimate_from_parameters`.
+
+    :param model: network layer topology (temporal, multilevel, multiplex)
+    :type model: str
+    :param omega_max: maximum allowed value for omega
+    :type omega_max: float
+    :param T: number of layers in input graph (automatically computed if None)
+    :type T: int
+    :return: an "update_omega" function
+    :rtype: function
+    """
     if model == 'multiplex':
         def update_omega(theta_in, theta_out, p, K):
             return multiplex_omega_estimate_from_parameters(theta_in, theta_out, p, K, T, omega_max=omega_max)
@@ -286,17 +323,28 @@ def gamma_omega_estimate(G_intralayer, G_interlayer, layer_vec, membership, omeg
                          N=None, T=None, Nt=None, m_t=None):
     """Returns the (gamma, omega) estimate for a multilayer network and a partition
 
-    :param G_intralayer: intralayer graph
-    :param G_interlayer: interlayer graph
-    :param layer_vec: layer membership vector
+    :param G_intralayer: intralayer graph of interest
+    :type G_intralayer: igraph.Graph
+    :param G_interlayer: interlayer graph of interest
+    :type G_interlayer: igraph.Graph
+    :param layer_vec: list of each vertex's layer membership
+    :type layer_vec: list[int]
     :param membership: partition membership vector
+    :type membership: tuple[int]
     :param omega_max: maximum allowed value for omega
+    :type omega_max: float
     :param model: network layer topology (temporal, multilevel, multiplex)
-    :param N: number of nodes per layer
-    :param T: number of layers in input graph
-    :param Nt: vector of nodes per layer
-    :param m_t: vector of total edge weights per layer
-    :return: gamma_estimate, omega_estimate
+    :type model: str
+    :param N: number of nodes per layer (automatically computed if None)
+    :type N: int
+    :param T: number of layers in input graph (automatically computed if None)
+    :type T: int
+    :param Nt: vector of nodes per layer (automatically computed if None)
+    :type Nt: int
+    :param m_t: vector of total edge weights per layer (automatically computed if None)
+    :type m_t: int
+    :return: gamma estimate, omega estimate
+    :rtype: float, float
     """
     if T is None:
         T = max(layer_vec) + 1  # layer  count
@@ -345,9 +393,21 @@ def gamma_estimates_to_stable_partitions(gamma_estimates):
 
 
 def domains_to_gamma_omega_estimates(G_intralayer, G_interlayer, layer_vec, domains, model='temporal'):
-    """Compute (gamma, omega) estimates from domains of dominance.
+    """Compute (gamma, omega) estimates as in :meth:`~modularitypruning.parameter_estimation_utilities.gamma_omega_estimate`, given domains of optimality from :meth:`~modularitypruning.champ_utilities.CHAMP_3D`.
 
-    Returns a list of [(polygon vertices, membership, gamma_estimate, omega_estimate), ...]"""
+    :param G_intralayer: intralayer graph of interest
+    :type G_intralayer: igraph.Graph
+    :param G_interlayer: interlayer graph of interest
+    :type G_interlayer: igraph.Graph
+    :param layer_vec: list of each vertex's layer membership
+    :type layer_vec: list[int]
+    :param domains: list of ``(domain_vertices, membership)`` tuples as returned from :meth:`~modularitypruning.champ_utilities.CHAMP_3D`
+    :type domains: list of tuple[list[float], tuple[int]]
+    :param model: network layer topology (temporal, multilevel, multiplex)
+    :type model: str
+    :return: a copy of input domains with the corresponding gamma and omega estimates appended to each tuple
+    :rtype: list of tuple[list[float], tuple[int], float, float]
+    """
 
     domains_with_estimates = []
     for polyverts, membership in domains:
@@ -358,10 +418,18 @@ def domains_to_gamma_omega_estimates(G_intralayer, G_interlayer, layer_vec, doma
 
 
 def gamma_omega_estimates_to_stable_partitions(domains_with_estimates, return_membership_only=False):
-    """Computes the stable partitions from (gamma, omega) estimates.
+    """Computes the stable partitions (i.e. those whose resolution parameter estimates are within their domains of
+    optimality), given domains of optimality and (gamma, omega) estimates from
+    :meth:`domains_to_gamma_omega_estimates`.
 
-    Returns the memberships of the partitions where (gamma_estimate, omega_estimate) lies within the domain of
-    optimality."""
+    See **[CITATION FORTHCOMING]** for more details.
+
+    :param domains_with_estimates: list of ``(domain_vertices, membership, gamma_estimate, omega_estimate)`` tuples as
+        returned from :meth:`~modularitypruning.champ_utilities.CHAMP_3D`
+    :type domains_with_estimates: list[tuple]
+    :return: list of community membership tuples of the stable partitions
+    :rtype: list of tuple[int]
+    """
 
     def left_or_right(x1, y1, x2, y2, x, y):
         """Returns whether the point (x,y) is to the left or right of the line between (x1, y1) and (x2, y2)."""

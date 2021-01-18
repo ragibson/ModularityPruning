@@ -133,18 +133,33 @@ def iterative_multilayer_resolution_parameter_estimation(G_intralayer, G_interla
     Multilayer variant of ALG. 1 from "Relating modularity maximization and stochastic block models in multilayer
     networks." The nested functions here are just used to match the pseudocode in the paper.
 
-    :param G_intralayer: input graph containing all intra-layer edges
-    :param G_interlayer: input graph containing all inter-layer edges
-    :param layer_vec: vector of each vertex's layer membership
+    :param G_intralayer: intralayer graph of interest
+    :type G_intralayer: igraph.Graph
+    :param G_interlayer: interlayer graph of interest
+    :type G_interlayer: igraph.Graph
+    :param layer_vec: list of each vertex's layer membership
+    :type layer_vec: list[int]
     :param gamma: starting gamma value
+    :type gamma: float
     :param omega: starting omega value
+    :type omega: float
     :param gamma_tol: convergence tolerance for gamma
+    :type gamma_tol: float
     :param omega_tol: convergence tolerance for omega
-    :param max_iter: maximum number of iterations
+    :type omega_tol: float
     :param omega_max: maximum allowed value for omega
+    :type omega_max: float
+    :param max_iter: maximum number of iterations
+    :type max_iter: int
     :param model: network layer topology (temporal, multilevel, multiplex)
+    :type model: str
     :param verbose: whether or not to print verbose output
-    :return: gamma, omega to which the iteration converged and the resulting partition
+    :type verbose: bool
+    :return:
+        - gamma to which the iteration converged
+        - omega to which the iteration converged
+        - the resulting partition
+    :rtype: tuple[float, float, tuple[int]]
     """
 
     if 'weight' not in G_intralayer.es:

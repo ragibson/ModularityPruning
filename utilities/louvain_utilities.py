@@ -67,6 +67,26 @@ def check_multilayer_louvain_capabilities(fatal=True):
 
 
 def multilayer_louvain(G_intralayer, G_interlayer, layer_vec, gamma, omega, optimiser=None, return_partition=False):
+    r"""Run the Louvain modularity maximization algorithm at a single (:math:`\gamma, \omega`) value.
+
+    :param G_intralayer: intralayer graph of interest
+    :type G_intralayer: igraph.Graph
+    :param G_interlayer: interlayer graph of interest
+    :type G_interlayer: igraph.Graph
+    :param layer_vec: list of each vertex's layer membership
+    :type layer_vec: list[int]
+    :param gamma: gamma (intralayer resolution parameter) to run Louvain at
+    :type gamma: float
+    :param omega: omega (interlayer resolution parameter) to run Louvain at
+    :type omega: float
+    :param optimiser: if not None, use passed-in (potentially custom) louvain optimiser
+    :type optimiser: louvain.Optimiser
+    :param return_partition: if True, return a louvain partition. Otherwise, return a community membership tuple
+    :type return_partition: bool
+    :return: partition from louvain
+    :rtype: tuple[int] or louvain.RBConfigurationVertexPartitionWeightedLayers
+    """
+
     # RBConfigurationVertexPartitionWeightedLayers implements a multilayer version of "standard" modularity (i.e.
     # the Reichardt and Bornholdt's Potts model with configuration null model).
     check_multilayer_louvain_capabilities()
@@ -185,17 +205,25 @@ def repeated_louvain_from_gammas_omegas(G_intralayer, G_interlayer, layer_vec, g
 def repeated_parallel_louvain_from_gammas_omegas(G_intralayer, G_interlayer, layer_vec, gammas, omegas,
                                                  show_progress=True, chunk_dispatch=True):
     """
-    Runs louvain at each gamma and omega in :gammas: and :omegas:, using all CPU cores available.
+    Runs louvain at each gamma and omega in ``gammas`` and ``omegas``, using all CPU cores available.
 
-    :param G_intralayer: input graph containing all intra-layer edges
-    :param G_interlayer: input graph containing all inter-layer edges
-    :param layer_vec: vector of each vertex's layer membership
+    :param G_intralayer: intralayer graph of interest
+    :type G_intralayer: igraph.Graph
+    :param G_interlayer: interlayer graph of interest
+    :type G_interlayer: igraph.Graph
+    :param layer_vec: list of each vertex's layer membership
+    :type layer_vec: list[int]
     :param gammas: list of gammas to run louvain at
+    :type gammas: list[float]
     :param omegas: list of omegas to run louvain at
+    :type omegas: list[float]
     :param show_progress: if True, render a progress bar
+    :type show_progress: bool
     :param chunk_dispatch: if True, dispatch parallel work in chunks. Setting this to False may increase performance,
                            but can lead to out-of-memory issues
+    :type chunk_dispatch: bool
     :return: a set of all unique partitions encountered
+    :rtype: set of tuple[int]
     """
 
     resolution_parameter_points = [(gamma, omega) for gamma in gammas for omega in omegas]
