@@ -71,7 +71,7 @@ def plot_stable_partitions(all_parts):
 
             for i, p in enumerate(stable_parts):
                 ig.plot(louvain.RBConfigurationVertexPartition(G, initial_membership=p),
-                        f"karate_club_{K}_stable{i}.png", bbox=(1000, 1000), layout=layout)
+                        f"karate_club_{K}_stable{i}.png", bbox=(600, 600), layout=layout)
 
 
 if __name__ == "__main__":
