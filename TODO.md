@@ -1,6 +1,5 @@
 ## TODO items
 
-- [ ] Add plotting information (with examples) to documentation
 - [ ] Add forthcoming citations/acknowledgements to README
 
 ## Potential Future Work

@@ -15,7 +15,11 @@ def plot_adjacency(adj):
 
 
 def plot_estimates(gamma_estimates):
-    """Plot partition dominance ranges with gamma estimates."""
+    """Plot partition dominance ranges with gamma estimates.
+
+    :param gamma_estimates: gamma estimates as returned from
+        :meth:`~modularitypruning.plotting.ranges_to_gamma_estimates`
+    """
 
     ax = plt.gca()
     num_parts = len(gamma_estimates)
@@ -68,7 +72,12 @@ def plot_estimates(gamma_estimates):
 def plot_2d_domains(domains, xlim, ylim, flip_axes=False, use_current_axes=False):
     """Plot partition dominance ranges in the (gamma, omega) plane, using the domains from CHAMP_3D.
 
-    Limits output to xlim and ylim dimensions. Note that the plotting here has x=gamma and y=omega."""
+    Limits output to xlim and ylim dimensions. Note that the plotting here has x=gamma and y=omega.
+
+    :param domains: CHAMP domains as returned from :meth:`~modularitypruning.champ_utilities.CHAMP_3D`.
+    :param xlim: plotting x limits
+    :param ylim: plotting y limits
+    """
     if use_current_axes:
         ax = plt.gca()
     else:
@@ -117,7 +126,13 @@ def plot_2d_domains_with_estimates(domains_with_estimates, xlim, ylim, plot_esti
     """Plot partition dominance ranges in the (gamma, omega) plane, using the domains from CHAMP_3D with their gamma
     and omega estimates overlaid.
 
-    Limits output to xlim and ylim dimensions. Note that the plotting here has x=omega and y=gamma."""
+    Limits output to xlim and ylim dimensions. Note that the plotting here has x=omega and y=gamma.
+
+    :param domains_with_estimates: CHAMP domains and resolution parameter estimates as returned from
+        :meth:`~modularitypruning.parameter_estimation_utilities.domains_to_gamma_omega_estimates`.
+    :param xlim: plotting x limits
+    :param ylim: plotting y limits
+    """
     assert flip_axes
     fig, ax = plt.subplots()
     patches = []
@@ -134,6 +149,8 @@ def plot_2d_domains_with_estimates(domains_with_estimates, xlim, ylim, plot_esti
 
         if gamma_est is not None and omega_est is not None:
             width = xlim[1] - xlim[0]
+
+            # prune arrows too far outside plotting range to avoid excess visual noise
             if centroid_x < xlim[0] - 0.05 * width or centroid_x > xlim[1] + 0.05 * width:
                 continue
 
@@ -222,7 +239,13 @@ def plot_2d_domains_with_ami(domains_with_estimates, ground_truth, xlim, ylim, f
 
 
 def plot_multiplex_community(membership, layer_vec):
-    """Plot multiplex community membership"""
+    """Plot a visualization of multiplex community membership
+
+    :param membership: partition membership vector
+    :type membership: tuple[int]
+    :param layer_vec: list of each vertex's layer membership
+    :type layer_vec: list[int]
+    """
     T = max(layer_vec) + 1
     N = len(membership) // T
     communities_per_layer = np.zeros((N, T))

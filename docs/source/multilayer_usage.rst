@@ -67,4 +67,4 @@ These functions provide utilities related to the parameter estimation of `Newman
 modularitypruning.plotting
 --------------------------
 
-Documentation and examples forthcoming.
+See :doc:`plotting_examples`.

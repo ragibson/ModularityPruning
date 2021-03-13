@@ -522,6 +522,11 @@ def prune_to_multilayer_stable_partitions(G_intralayer, G_interlayer, layer_vec,
 
     See **[CITATION FORTHCOMING]** for more details.
 
+    NOTE: This method truncates omega estimates to ``omega_end - 1e-3`` in order to properly identify stable partitions
+    with infinite interlayer coupling estimates (e.g. when all membership labels persist across layers). If
+    ``omega_end`` is set too low, such partitions may be incorrectly identified as stable. As such, you should be
+    somewhat wary of the returned partitions with zero community structure differences across layers.
+
     :param G_intralayer: intralayer graph of interest
     :type G_intralayer: igraph.Graph
     :param G_interlayer: interlayer graph of interest

@@ -18,6 +18,7 @@ communities when desired.
    source/basic_multilayer_example
    source/usage
    source/multilayer_usage
+   source/plotting_examples
    :maxdepth: 2
    :caption: Contents:
 
