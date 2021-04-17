@@ -3,7 +3,7 @@ import functools
 from scipy.optimize import minimize_scalar
 import matplotlib.pyplot as plt
 from math import log
-from utilities.progress import Progress
+from modularitypruning.progress import Progress
 
 
 def f(K, x):
@@ -43,8 +43,8 @@ def plot_gamma_max(Ks):
     plt.figure()
     plt.plot(Ks, maxes)
     plt.xlabel('$K$', fontsize=12)
-    plt.ylabel(r'$\gamma$ max', fontsize=12)
-    plt.title(r"$\gamma$ max vs. $K$")
+    plt.ylabel(r'$\gamma_{max}$', fontsize=12)
+    plt.title(r"$\gamma_{max}$ vs. $K$")
     plt.gca().ticklabel_format(style='plain')
     plt.tight_layout()
     plt.savefig("gamma_max_plot_to_K=1M.pdf")
@@ -54,13 +54,15 @@ def plot_gamma_max_derivatives(Ks):
     plt.close()
     fig, ax = plt.subplots(ncols=3, figsize=(15, 4))
     ax[0].plot(Ks[1:], [fprime_estimate(K) for K in Ks[1:]])
-    ax[0].set_title(r"$f'$ approximation: $\frac{f(K+1)-f(K-1)}{2}$", fontsize=12)
+    ax[0].set_title(r"$\gamma_{max}$ $f'$ approximation: $\frac{f(K+1)-f(K-1)}{2}$", fontsize=12)
     ax[0].set_xscale('log')
     ax[1].plot(Ks[1:], [fprime2_estimate(K) for K in Ks[1:]])
-    ax[1].set_title(r"$f''$ approximation: $\frac{f(K+1)-2f(K)+f(K-1)}{1}$", fontsize=12)
+    ax[1].plot(Ks[1:], [0] * len(Ks[1:]), linestyle="dashed", color="black", alpha=0.75)
+    ax[1].set_title(r"$\gamma_{max}$ $f''$ approximation: $\frac{f(K+1)-2f(K)+f(K-1)}{1}$", fontsize=12)
     ax[1].set_xscale('log')
     ax[2].plot(Ks[2:], [fprime2_estimate(K) for K in Ks[2:]])
-    ax[2].set_title(r"$f'''$ approximation: $\frac{f(K+2)-2f(K+1)+2f(K-1)-f(K-2)}{2}$", fontsize=12)
+    ax[2].plot(Ks[2:], [0] * len(Ks[2:]), linestyle="dashed", color="black", alpha=0.75)
+    ax[2].set_title(r"$\gamma_{max}$ $f'''$ approximation: $\frac{f(K+2)-2f(K+1)+2f(K-1)-f(K-2)}{2}$", fontsize=12)
     ax[2].set_xscale('log')
 
     for axis in ax:
@@ -73,16 +75,17 @@ def plot_gamma_max_derivatives(Ks):
 def plot_gamma_max_tangent_examples():
     # tangent at K=100, plot to K=250
     Ks = list(range(2, 251))
-    tangent_slope = fprime_estimate(K=100)
-    tangent_intercept = gamma_max(K=100) - tangent_slope * 100
+    tangent_location = 100
+    tangent_slope = fprime_estimate(K=tangent_location)
+    tangent_intercept = gamma_max(K=tangent_location) - tangent_slope * tangent_location
 
     plt.close()
-    plt.plot(Ks, [gamma_max(K) for K in Ks], label=r"$\gamma$ max")
+    plt.plot(Ks, [gamma_max(K) for K in Ks], label=r"$\gamma_{max}$")
     plt.plot(Ks, [tangent_intercept + tangent_slope * K for K in Ks], linestyle="dashed",
              label=f"${tangent_intercept:.4f}+{tangent_slope:.4f}K$")
     plt.xlabel('$K$', fontsize=12)
-    plt.ylabel(r'$\gamma$ max', fontsize=12)
-    plt.title(r"$\gamma$ max vs. $K$")
+    plt.ylabel(r'$\gamma_{max}$', fontsize=12)
+    plt.title(rf"$\gamma_{{max}}$ vs. $K$, example tangent at $K={tangent_location}$")
     plt.gca().ticklabel_format(style='plain')
     plt.legend()
     plt.tight_layout()
@@ -90,16 +93,17 @@ def plot_gamma_max_tangent_examples():
 
     # tangent at K=1000, plot to K=5000
     Ks = list(range(2, 5001))
-    tangent_slope = fprime_estimate(K=1000)
-    tangent_intercept = gamma_max(K=1000) - tangent_slope * 1000
+    tangent_location = 1000
+    tangent_slope = fprime_estimate(K=tangent_location)
+    tangent_intercept = gamma_max(K=tangent_location) - tangent_slope * tangent_location
 
     plt.close()
     plt.plot(Ks, [gamma_max(K) for K in Ks], label=r"$\gamma$ max")
     plt.plot(Ks, [tangent_intercept + tangent_slope * K for K in Ks], linestyle="dashed",
              label=f"${tangent_intercept:.4f}+{tangent_slope:.4f}K$")
     plt.xlabel('$K$', fontsize=12)
-    plt.ylabel(r'$\gamma$ max', fontsize=12)
-    plt.title(r"$\gamma$ max vs. $K$")
+    plt.ylabel(r'$\gamma_{max}$', fontsize=12)
+    plt.title(rf"$\gamma_{{max}}$ vs. $K$, example tangent at $K={tangent_location}$")
     plt.gca().ticklabel_format(style='plain')
     plt.legend()
     plt.tight_layout()
