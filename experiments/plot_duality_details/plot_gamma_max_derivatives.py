@@ -52,7 +52,7 @@ def plot_gamma_max(Ks):
 
 def plot_gamma_max_derivatives(Ks):
     plt.close()
-    fig, ax = plt.subplots(ncols=3, figsize=(18, 4))
+    fig, ax = plt.subplots(nrows=3, figsize=(6, 12))
     ax[0].plot(Ks[1:], [fprime_estimate(K) for K in Ks[1:]])
     ax[0].set_title(r"$\gamma_{max}$ $f'$ approximation: $\frac{f(K+1)-f(K-1)}{2}$", fontsize=14)
     ax[0].set_xscale('log')
