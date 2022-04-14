@@ -32,6 +32,12 @@ setup(
         'License :: OSI Approved :: MIT License'
     ],
     python_requires='>=3.7, <4',
-    install_requires=['champ', 'louvain', 'matplotlib', 'numpy', 'psutil', 'python-igraph',
-                      'scipy', 'seaborn', 'sklearn']
+    install_requires=['champ', 'louvain', 'matplotlib',
+                      "numpy<1.22.0; python_version<'3.8'",
+                      "numpy; python_version>='3.8'",
+                      'psutil', 'python-igraph',
+                      "scipy<1.8; python_version<'3.8'",
+                      "scipy; python_version>='3.8'",
+                      'seaborn', 'sklearn']
+
 )
