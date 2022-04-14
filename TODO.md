@@ -1,7 +1,3 @@
-## TODO items
-
-- [ ] Add forthcoming citations/acknowledgements to README
-
 ## Potential Future Work
 
 - [ ] Implement handling of weighted graphs

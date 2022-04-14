@@ -9,7 +9,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name='modularitypruning',
-    version='1.1.2',
+    version='1.1.3',
     package_dir={'modularitypruning': 'utilities'},
     packages=['modularitypruning'],
     url='https://github.com/ragibson/ModularityPruning',
@@ -24,14 +24,14 @@ setup(
         'Development Status :: 5 - Production/Stable',
         'Topic :: Scientific/Engineering :: Information Analysis',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3 :: Only',
         'License :: OSI Approved :: MIT License'
     ],
-    python_requires='>=3.6, <4',
+    python_requires='>=3.7, <4',
     install_requires=['champ', 'louvain', 'matplotlib', 'numpy', 'psutil', 'python-igraph',
                       'scipy', 'seaborn', 'sklearn']
 )

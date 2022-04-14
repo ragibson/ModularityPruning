@@ -379,7 +379,7 @@ def gamma_estimates_to_stable_partitions(gamma_estimates):
     """Computes the stable partitions (i.e. those whose gamma estimates are within their domains of optimality), given
     domains of optimality and gamma estimates from :meth:`ranges_to_gamma_estimates`.
 
-    See **[CITATION FORTHCOMING]** for more details.
+    See https://doi.org/10.21203/rs.3.rs-1551680/v1 for more details.
 
     :param gamma_estimates: list of ``(gamma_start, gamma_end, membership, gamma_estimate)`` tuples as returned from
                             :meth:`~modularitypruning.champ_utilities.CHAMP_2D`
@@ -422,7 +422,7 @@ def gamma_omega_estimates_to_stable_partitions(domains_with_estimates, return_me
     optimality), given domains of optimality and (gamma, omega) estimates from
     :meth:`domains_to_gamma_omega_estimates`.
 
-    See **[CITATION FORTHCOMING]** for more details.
+    See https://doi.org/10.21203/rs.3.rs-1551680/v1 for more details.
 
     :param domains_with_estimates: list of ``(domain_vertices, membership, gamma_estimate, omega_estimate)`` tuples as
         returned from :meth:`~modularitypruning.champ_utilities.CHAMP_3D`
@@ -469,7 +469,7 @@ def prune_to_stable_partitions(G, parts, gamma_start, gamma_end, restrict_num_co
                                single_threaded=False):
     """Runs our full pruning pipeline on a singlelayer network. Returns the pruned list of stable partitions.
 
-    See **[CITATION FORTHCOMING]** for more details.
+    See https://doi.org/10.21203/rs.3.rs-1551680/v1 for more details.
 
     :param G: graph of interest
     :type G: igraph.Graph
@@ -520,7 +520,7 @@ def prune_to_multilayer_stable_partitions(G_intralayer, G_interlayer, layer_vec,
                                           restrict_num_communities=None, single_threaded=False):
     """Runs our full pruning pipeline on a multilayer network. Returns the pruned list of stable partitions.
 
-    See **[CITATION FORTHCOMING]** for more details.
+    See https://doi.org/10.21203/rs.3.rs-1551680/v1 for more details.
 
     NOTE: This method truncates omega estimates to ``omega_end - 1e-3`` in order to properly identify stable partitions
     with infinite interlayer coupling estimates (e.g. when all membership labels persist across layers). If
