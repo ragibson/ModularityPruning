@@ -24,20 +24,14 @@ setup(
         'Development Status :: 5 - Production/Stable',
         'Topic :: Scientific/Engineering :: Information Analysis',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3 :: Only',
         'License :: OSI Approved :: MIT License'
     ],
-    python_requires='>=3.7, <4',
-    install_requires=['champ', 'louvain', 'matplotlib',
-                      "numpy<1.22.0; python_version<'3.8'",
-                      "numpy; python_version>='3.8'",
-                      'psutil', 'python-igraph',
-                      "scipy<1.8; python_version<'3.8'",
-                      "scipy; python_version>='3.8'",
-                      'seaborn', 'sklearn']
+    python_requires='>=3.8, <4',
+    install_requires=['champ', 'louvain', 'matplotlib', "numpy", 'psutil',
+                      'python-igraph', "scipy", 'seaborn', 'sklearn']
 
 )
