@@ -38,7 +38,7 @@ jobs:
 
           # the following don't seem to be handled correctly in pip dependency
           # checking for the Python 3.10 GitHub Action?
-          pip install igraph louvain matplotlib numpy pybind11 pythran scipy
+          pip install igraph louvain matplotlib numpy pandas pybind11 pythran scipy
 
           python setup.py install
       - name: Lint with flake8
