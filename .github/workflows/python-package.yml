@@ -5,7 +5,7 @@ name: Python package
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master, remove-champ-dependency ]
   pull_request:
     branches: [ master ]
 
@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.8", "3.9"]  # leidenalg breaks Python>3.9 at the moment
+        python-version: ["3.8", "3.9", "3.10"]
 
     steps:
       - uses: actions/checkout@v3
@@ -38,8 +38,7 @@ jobs:
 
           # the following don't seem to be handled correctly in pip dependency
           # checking for the Python 3.10 GitHub Action?
-          # we don't even use pandas, but champ forces it
-          pip install igraph leidenalg louvain matplotlib numpy pandas pybind11 pythran scipy
+          pip install igraph louvain matplotlib numpy pybind11 pythran scipy
 
           python setup.py install
       - name: Lint with flake8

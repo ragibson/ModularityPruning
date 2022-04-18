@@ -1,11 +1,17 @@
 from setuptools import setup
-from os import path
+import os
 
-here = path.abspath(path.dirname(__file__))
+here = os.path.abspath(os.path.dirname(__file__))
 
 # Get the long description from the README file
-with open(path.join(here, 'README.md'), encoding='utf-8') as f:
+with open(os.path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
+
+dependencies = ['champ', 'louvain', 'matplotlib', "numpy", 'psutil',
+                'python-igraph', "scipy", 'seaborn', 'sklearn']
+
+if "INCLUDE_CHAMP" not in os.environ:
+    dependencies.remove('champ')
 
 setup(
     name='modularitypruning',
@@ -31,7 +37,5 @@ setup(
         'License :: OSI Approved :: MIT License'
     ],
     python_requires='>=3.8, <4',
-    install_requires=['champ', 'louvain', 'matplotlib', "numpy", 'psutil',
-                      'python-igraph', "scipy", 'seaborn', 'sklearn']
-
+    install_requires=dependencies
 )

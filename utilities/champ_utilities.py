@@ -1,7 +1,7 @@
+from .champ_TO_REMOVE import get_intersection
 from .partition_utilities import all_degrees, in_degrees, out_degrees, membership_to_communities, \
     membership_to_layered_communities
 from collections import defaultdict
-from champ import get_intersection
 import numpy as np
 from numpy import VisibleDeprecationWarning
 from numpy.random import choice
