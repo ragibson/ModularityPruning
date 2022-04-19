@@ -1,4 +1,3 @@
-from .champ_TO_REMOVE import get_intersection
 from .partition_utilities import all_degrees, in_degrees, out_degrees, membership_to_communities, \
     membership_to_layered_communities
 from collections import defaultdict
@@ -32,7 +31,8 @@ def get_interior_point(halfspaces, initial_num_sampled=50):
     normals, offsets = np.split(halfspaces, [-1], axis=1)
 
     # in our singlelayer case, the last two halfspaces are boundary halfspaces
-    interior_hs, boundaries = np.split(halfspaces, [-2], axis=0)
+    # for multilayer, the last three are boundaries
+    interior_hs, boundaries = np.split(halfspaces, [-normals.shape[1]], axis=0)
 
     while True:  # retry until success
         # randomly sample some of the halfspaces
@@ -90,10 +90,6 @@ def CHAMP_2D(G, all_parts, gamma_0, gamma_f, single_threaded=False):
     :rtype: list of tuple[float, float, tuple[int]]
     """
 
-    # TODO: remove this filter once scipy updates their library
-    # scipy.linprog currently uses deprecated numpy behavior, so we suppress this warning to avoid output clutter
-    warnings.filterwarnings("ignore", category=VisibleDeprecationWarning)
-
     if len(all_parts) == 0:
         return []
 
@@ -103,6 +99,7 @@ def CHAMP_2D(G, all_parts, gamma_0, gamma_f, single_threaded=False):
     partition_coefficients = partition_coefficients_2D(G, all_parts, single_threaded=single_threaded)
     A_hats, P_hats = partition_coefficients
 
+    # add on boundaries: Q < top, gamma < right
     top = max(A_hats - P_hats * gamma_0)  # Could potentially be optimized
     right = gamma_f  # Could potentially use the max intersection x value
     halfspaces = np.vstack((halfspaces_from_coefficients_2D(*partition_coefficients),
@@ -136,9 +133,6 @@ def CHAMP_3D(G_intralayer, G_interlayer, layer_vec, all_parts, gamma_0, gamma_f,
 
     See https://doi.org/10.3390/a10030093 for more details.
 
-    NOTE: This defers to the original CHAMP implementation for most of the halfspace intersection for now, so
-    ``gamma_0`` and ``omega_0`` have no effect.
-
     :param G_intralayer: intralayer graph of interest
     :type G_intralayer: igraph.Graph
     :param G_interlayer: interlayer graph of interest
@@ -147,11 +141,11 @@ def CHAMP_3D(G_intralayer, G_interlayer, layer_vec, all_parts, gamma_0, gamma_f,
     :type layer_vec: list[int]
     :param all_parts: partitions to prune
     :type all_parts: iterable[tuple]
-    :param gamma_0: unused (should be the starting gamma value for CHAMP, but the original implementation seems to take this as equal to zero)
+    :param gamma_0: starting gamma value for CHAMP
     :type gamma_0: float
     :param gamma_f: ending gamma value for CHAMP
     :type gamma_f: float
-    :param omega_0: unused (should be the starting omega value for CHAMP, but the original implementation seems to take this as equal to zero)
+    :param omega_0: starting omega value for CHAMP
     :type omega_0: float
     :param omega_f: ending omega value for CHAMP
     :type omega_f: float
@@ -162,13 +156,45 @@ def CHAMP_3D(G_intralayer, G_interlayer, layer_vec, all_parts, gamma_0, gamma_f,
     :rtype: list of tuple[list[float], tuple[int]]
     """
 
+    if len(all_parts) == 0:
+        return []
+
     all_parts = list(all_parts)
-    A_hats, P_hats, C_hats = partition_coefficients_3D(G_intralayer, G_interlayer, layer_vec, all_parts)
-    champ_coef_array = np.vstack((A_hats, P_hats, C_hats)).T
+    num_partitions = len(all_parts)
+
+    partition_coefficients = partition_coefficients_3D(G_intralayer, G_interlayer, layer_vec, all_parts)
+    A_hats, P_hats, C_hats = partition_coefficients
+
+    # add on boundaries: Q < top, gamma < front, omega > left
+    top = max(A_hats - P_hats * gamma_0 + C_hats * omega_f)  # Could potentially be optimized
+    front = gamma_f  # Could potentially use the max intersection x value
+    left = omega_0  # Could potentially use the max intersection y value
+    halfspaces = np.vstack((halfspaces_from_coefficients_3D(*partition_coefficients),
+                            (np.array([[0, 0, 1, -top], [1.0, 0, 0, -front], [0, -1.0, 0, left]]))))
 
     for attempt in range(1, 10):
         try:
-            champ_domains = get_intersection(champ_coef_array, max_pt=(omega_f, gamma_f))
+            # Could potentially scale axes so Chebyshev center is better for problem
+            interior_point = get_interior_point(halfspaces)
+            hs = HalfspaceIntersection(halfspaces, interior_point)
+
+            # scipy does not support facets by halfspace directly, so we must compute them
+            facets_by_halfspace = defaultdict(list)
+            for v, idx in zip(hs.intersections, hs.dual_facets):
+                assert np.isfinite(v).all()
+                for i in idx:
+                    if i < num_partitions:
+                        facets_by_halfspace[i].append(v)
+
+            domains = []
+            for i, intersections in facets_by_halfspace.items():
+                # drop quality dimension / project into (gamma, omega) plane
+                intersections = [x[:2] for x in intersections]
+                # sort the domain's points counter-clockwise around the centroid
+                centroid = np.mean(intersections, axis=0)
+                intersections.sort(key=lambda x: np.arctan2(x[0] - centroid[0], x[1] - centroid[1]))
+                domains.append((intersections, all_parts[i]))
+
             break
         except:  # noqa TODO: I think this is generally QhullError, but this needs to be checked
             continue
@@ -178,7 +204,6 @@ def CHAMP_3D(G_intralayer, G_interlayer, layer_vec, all_parts, gamma_0, gamma_f,
         assert False, "CHAMP failed, " \
                       "perhaps break your input partitions into smaller subsets and then combine with CHAMP?"
 
-    domains = [([x[:2] for x in polyverts], all_parts[part_idx]) for part_idx, polyverts in champ_domains.items()]
     return domains
 
 
@@ -244,9 +269,19 @@ def halfspaces_from_coefficients_2D(A_hats, P_hats):
 
     Q >= -P_hat*gamma + A_hat
     -Q - P_hat*gamma + A_hat <= 0
-    (-P_hat, -1) * (Q, gamma) + A_hat <= 0
+    (-P_hat, -1) * (gamma, Q) + A_hat <= 0
     """
     return np.vstack((-P_hats, -np.ones_like(P_hats), A_hats)).T
+
+
+def halfspaces_from_coefficients_3D(A_hats, P_hats, C_hats):
+    """Converts partitions' coefficients to halfspace normal, offset
+
+    Q >= C_hat*omega - P_hat*gamma + A_hat
+    -Q + C_hat*omega - P_hat*gamma + A_hat <= 0
+    (-P_hat, C_hat, -1) * (gamma, omega, Q) + A_hat <= 0
+    """
+    return np.vstack((-P_hats, C_hats, -np.ones_like(P_hats), A_hats)).T
 
 
 def partition_coefficients_3D_serial(G_intralayer, G_interlayer, layer_vec, partitions):
