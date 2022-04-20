@@ -12,13 +12,14 @@ from scipy.optimize import linprog, OptimizeWarning
 import warnings
 
 
-def get_interior_point(halfspaces, initial_num_sampled=50):
+def get_interior_point(halfspaces, initial_num_sampled=50, full_retry_limit=10):
     """
     Find interior point of halfspaces (needed to perform halfspace intersection)
 
     :param halfspaces: list of halfspaces
     :param initial_num_sampled: initial number of halfspaces sampled for the linear program. If the resulting point is
                                 not interior to all halfspaces, this value is doubled and the procedure is retried.
+    :param full_retry_limit: number of times to retry upon encountering numerical issues with all halfspaces.
     :return: an approximation to the point most interior to the halfspace intersection polyhedron (Chebyshev center)
     """
 
@@ -30,9 +31,16 @@ def get_interior_point(halfspaces, initial_num_sampled=50):
 
     normals, offsets = np.split(halfspaces, [-1], axis=1)
 
-    # in our singlelayer case, the last two halfspaces are boundary halfspaces
-    # for multilayer, the last three are boundaries
-    interior_hs, boundaries = np.split(halfspaces, [-normals.shape[1]], axis=0)
+    # in our singlelayer case, the last four halfspaces are boundary halfspaces (a square)
+    # for multilayer, the last six are boundaries (a cube)
+    if normals.shape[1] == 2:
+        interior_hs, boundaries = np.split(halfspaces, [-4], axis=0)
+    elif normals.shape[1] == 3:
+        interior_hs, boundaries = np.split(halfspaces, [-6], axis=0)
+    else:
+        raise ValueError(f"get_interior_point received unhandled dimension {normals.shape[1]}!")
+
+    num_retries = 0
 
     while True:  # retry until success
         # randomly sample some of the halfspaces
@@ -48,21 +56,31 @@ def get_interior_point(halfspaces, initial_num_sampled=50):
 
         res = linprog(c, A_ub=A, b_ub=b, bounds=(-np.inf, np.inf), method='interior-point')
 
-        if res.status == 0 and res.success:
+        # check solution if optimization succeeded, even with difficulties
+        #     res.status codes
+        #     0 : Optimization terminated successfully.
+        #     1 : Iteration limit reached.
+        #     2 : Problem appears to be infeasible.
+        #     3 : Problem appears to be unbounded.
+        #     4 : Numerical difficulties encountered.
+        if res.success or res.status in {0, 1, 4}:
             intpt = res.x[:-1]  # res.x contains [interior_point, distance to enclosing polyhedron]
 
             # ensure that the computed point is actually interior to all halfspaces
             if (np.dot(normals, intpt) + np.transpose(offsets) < 0).all():
                 break
+        elif res.status in {2, 3}:
+            # if we ever fail, the linear program seems impossible
+            raise ValueError("get_interior_point problem is impossible or degenerate!")
 
-        # res.status codes
-        # 1: "Interior point calculation: scipy.optimize.linprog exceeded iteration limit"
-        # 2: "Interior point calculation: scipy.optimize.linprog problem is infeasible"
-        # 3: "Interior point calculation: scipy.optimize.linprog problem is unbounded"
+        if num_retries > full_retry_limit:
+            raise ValueError("get_interior_point is unable to find a well-conditioned solution, "
+                             "but the problem does not appear impossible or degenerate?")
 
-        # if we failed while sampling all halfspaces, the linear program seems impossible
-        assert initial_num_sampled < len(interior_hs), "get_interior_point problem is impossible or degenerate!"
-        initial_num_sampled *= 2  # try again and sample more halfspaces this time
+        if initial_num_sampled >= len(interior_hs):
+            num_retries += 1
+        else:
+            initial_num_sampled *= 2  # try again and sample more halfspaces this time
 
     return intpt
 
@@ -99,11 +117,12 @@ def CHAMP_2D(G, all_parts, gamma_0, gamma_f, single_threaded=False):
     partition_coefficients = partition_coefficients_2D(G, all_parts, single_threaded=single_threaded)
     A_hats, P_hats = partition_coefficients
 
-    # add on boundaries: Q < top, gamma < right
+    # add on boundaries: bottom < Q < top, gamma_0 < gamma < gamma_f
     top = max(A_hats - P_hats * gamma_0)  # Could potentially be optimized
-    right = gamma_f  # Could potentially use the max intersection x value
+    bottom = min(A_hats - P_hats * gamma_f)  # Could potentially be optimized
     halfspaces = np.vstack((halfspaces_from_coefficients_2D(*partition_coefficients),
-                            np.array([[0, 1, -top], [1, 0, -right]])))
+                            np.array([[0, 1, -top], [0, -1, bottom],
+                                      [1, 0, -gamma_f], [-1, 0, gamma_0]])))
 
     # Could potentially scale axes so Chebyshev center is better for problem
     interior_point = get_interior_point(halfspaces)
@@ -165,44 +184,34 @@ def CHAMP_3D(G_intralayer, G_interlayer, layer_vec, all_parts, gamma_0, gamma_f,
     partition_coefficients = partition_coefficients_3D(G_intralayer, G_interlayer, layer_vec, all_parts)
     A_hats, P_hats, C_hats = partition_coefficients
 
-    # add on boundaries: Q < top, gamma < front, omega > left
+    # add on boundaries: bottom < Q < top, gamma_0 < gamma < gamma_f, omega_0 < omega < omega_f
     top = max(A_hats - P_hats * gamma_0 + C_hats * omega_f)  # Could potentially be optimized
-    front = gamma_f  # Could potentially use the max intersection x value
-    left = omega_0  # Could potentially use the max intersection y value
+    bottom = min(A_hats - P_hats * gamma_f + C_hats * omega_0)  # Could potentially be optimized
     halfspaces = np.vstack((halfspaces_from_coefficients_3D(*partition_coefficients),
-                            (np.array([[0, 0, 1, -top], [1.0, 0, 0, -front], [0, -1.0, 0, left]]))))
+                            (np.array([[0, 0, 1, -top], [0, 0, -1, bottom],
+                                       [1, 0, 0, -gamma_f], [-1, 0, 0, gamma_0],
+                                       [0, 1, 0, -omega_f], [0, -1, 0, omega_0]]))))
 
-    for attempt in range(1, 10):
-        try:
-            # Could potentially scale axes so Chebyshev center is better for problem
-            interior_point = get_interior_point(halfspaces)
-            hs = HalfspaceIntersection(halfspaces, interior_point)
+    # Could potentially scale axes so Chebyshev center is better for problem
+    interior_point = get_interior_point(halfspaces)
+    hs = HalfspaceIntersection(halfspaces, interior_point)
 
-            # scipy does not support facets by halfspace directly, so we must compute them
-            facets_by_halfspace = defaultdict(list)
-            for v, idx in zip(hs.intersections, hs.dual_facets):
-                assert np.isfinite(v).all()
-                for i in idx:
-                    if i < num_partitions:
-                        facets_by_halfspace[i].append(v)
+    # scipy does not support facets by halfspace directly, so we must compute them
+    facets_by_halfspace = defaultdict(list)
+    for v, idx in zip(hs.intersections, hs.dual_facets):
+        assert np.isfinite(v).all()
+        for i in idx:
+            if i < num_partitions:
+                facets_by_halfspace[i].append(v)
 
-            domains = []
-            for i, intersections in facets_by_halfspace.items():
-                # drop quality dimension / project into (gamma, omega) plane
-                intersections = [x[:2] for x in intersections]
-                # sort the domain's points counter-clockwise around the centroid
-                centroid = np.mean(intersections, axis=0)
-                intersections.sort(key=lambda x: np.arctan2(x[0] - centroid[0], x[1] - centroid[1]))
-                domains.append((intersections, all_parts[i]))
-
-            break
-        except:  # noqa TODO: I think this is generally QhullError, but this needs to be checked
-            continue
-    else:
-        # If this actually occurs, it's best to break your input partitions into smaller subsets
-        # Then, repeatedly combine the somewhere dominant (or "admissible") domains with CHAMP
-        assert False, "CHAMP failed, " \
-                      "perhaps break your input partitions into smaller subsets and then combine with CHAMP?"
+    domains = []
+    for i, intersections in facets_by_halfspace.items():
+        # drop quality dimension / project into (gamma, omega) plane
+        intersections = [x[:2] for x in intersections]
+        # sort the domain's points counter-clockwise around the centroid
+        centroid = np.mean(intersections, axis=0)
+        intersections.sort(key=lambda x: np.arctan2(x[0] - centroid[0], x[1] - centroid[1]))
+        domains.append((intersections, all_parts[i]))
 
     return domains
 
