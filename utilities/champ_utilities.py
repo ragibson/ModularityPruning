@@ -12,7 +12,7 @@ from scipy.optimize import linprog, OptimizeWarning
 import warnings
 
 
-def get_interior_point(halfspaces, initial_num_sampled=50, full_retry_limit=10):
+def get_interior_point(halfspaces, initial_num_sampled=50, full_retry_limit=1):
     """
     Find interior point of halfspaces (needed to perform halfspace intersection)
 
@@ -124,6 +124,9 @@ def CHAMP_2D(G, all_parts, gamma_0, gamma_f, single_threaded=False):
                             np.array([[0, 1, -top], [0, -1, bottom],
                                       [1, 0, -gamma_f], [-1, 0, gamma_0]])))
 
+    # normalize halfspaces to try to improve ill-conditioned linear programs
+    halfspaces = halfspaces / np.linalg.norm(halfspaces, axis=1, keepdims=True)
+
     # Could potentially scale axes so Chebyshev center is better for problem
     interior_point = get_interior_point(halfspaces)
     hs = HalfspaceIntersection(halfspaces, interior_point)
@@ -191,6 +194,9 @@ def CHAMP_3D(G_intralayer, G_interlayer, layer_vec, all_parts, gamma_0, gamma_f,
                             (np.array([[0, 0, 1, -top], [0, 0, -1, bottom],
                                        [1, 0, 0, -gamma_f], [-1, 0, 0, gamma_0],
                                        [0, 1, 0, -omega_f], [0, -1, 0, omega_0]]))))
+
+    # normalize halfspaces to try to improve ill-conditioned linear programs
+    halfspaces = halfspaces / np.linalg.norm(halfspaces, axis=1, keepdims=True)
 
     # Could potentially scale axes so Chebyshev center is better for problem
     interior_point = get_interior_point(halfspaces)
