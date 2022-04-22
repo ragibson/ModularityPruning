@@ -12,7 +12,7 @@ from scipy.optimize import linprog, OptimizeWarning
 import warnings
 
 
-def get_interior_point(halfspaces, initial_num_sampled=50, full_retry_limit=1):
+def get_interior_point(halfspaces, initial_num_sampled=50, full_retry_limit=10):
     """
     Find interior point of halfspaces (needed to perform halfspace intersection)
 

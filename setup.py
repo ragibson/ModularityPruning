@@ -7,17 +7,6 @@ here = os.path.abspath(os.path.dirname(__file__))
 with open(os.path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
-dependencies = ['champ', 'louvain', 'matplotlib',
-                "numpy<1.22.0; python_version<'3.8'",
-                "numpy; python_version>='3.8'",
-                'psutil', 'python-igraph',
-                "scipy<1.8; python_version<'3.8'",
-                "scipy; python_version>='3.8'",
-                'seaborn', 'sklearn']
-
-if "INCLUDE_CHAMP" not in os.environ:
-    dependencies.remove('champ')
-
 setup(
     name='modularitypruning',
     version='1.1.3',
@@ -43,5 +32,12 @@ setup(
         'License :: OSI Approved :: MIT License'
     ],
     python_requires='>=3.7, <4',
-    install_requires=dependencies
+    install_requires=["champ; python_version<'3.10'",
+                      'louvain', 'matplotlib',
+                      "numpy<1.22.0; python_version<'3.8'",
+                      "numpy; python_version>='3.8'",
+                      'psutil', 'python-igraph',
+                      "scipy<1.8; python_version<'3.8'",
+                      "scipy; python_version>='3.8'",
+                      'seaborn', 'sklearn']
 )
