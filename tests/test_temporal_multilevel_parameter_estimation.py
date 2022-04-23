@@ -1,4 +1,5 @@
-from .shared_testing_functions import generate_random_partition, generate_multilayer_intralayer_SBM
+from .shared_testing_functions import assert_almost_equal_or_both_none_or_nan, generate_random_partition, \
+    generate_multilayer_intralayer_SBM
 import igraph as ig
 from math import log
 from numpy import mean
@@ -112,8 +113,8 @@ class TestTemporalAndMultilevelParameterEstimation(unittest.TestCase):
             gamma_directed, omega_directed = gamma_omega_estimate(G_intralayer, G_interlayer, layer_membership,
                                                                   partition, model="temporal")
 
-            self.assertAlmostEqual(gamma_undirected, gamma_directed, places=10)
-            self.assertAlmostEqual(omega_undirected, omega_directed, places=10)
+            assert_almost_equal_or_both_none_or_nan(self, gamma_undirected, gamma_directed, places=10)
+            assert_almost_equal_or_both_none_or_nan(self, omega_undirected, omega_directed, places=10)
 
             # check multilevel parameter estimation as well
             gamma_undirected, omega_undirected = gamma_omega_estimate(G_intralayer, G_interlayer, layer_membership,
@@ -123,8 +124,8 @@ class TestTemporalAndMultilevelParameterEstimation(unittest.TestCase):
             gamma_directed, omega_directed = gamma_omega_estimate(G_intralayer, G_interlayer, layer_membership,
                                                                   partition, model="multilevel")
 
-            self.assertAlmostEqual(gamma_undirected, gamma_directed, places=10)
-            self.assertAlmostEqual(omega_undirected, omega_directed, places=10)
+            assert_almost_equal_or_both_none_or_nan(self, gamma_undirected, gamma_directed, places=10)
+            assert_almost_equal_or_both_none_or_nan(self, omega_undirected, omega_directed, places=10)
 
 
 if __name__ == "__main__":

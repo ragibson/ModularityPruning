@@ -1,4 +1,4 @@
-from .shared_testing_functions import generate_igraph_famous, generate_random_partition
+from .shared_testing_functions import assert_almost_equal_or_both_none_or_nan, generate_igraph_famous, generate_random_partition
 import igraph as ig
 from math import log
 from numpy import mean
@@ -45,7 +45,7 @@ class TestMonolayerParameterEstimation(unittest.TestCase):
             G.to_directed()
             gamma_directed = gamma_estimate(G, random_membership)
 
-            self.assertAlmostEqual(gamma_undirected, gamma_directed, places=10)
+            assert_almost_equal_or_both_none_or_nan(self, gamma_undirected, gamma_directed, places=10)
 
 
 if __name__ == "__main__":

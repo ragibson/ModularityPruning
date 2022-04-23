@@ -2,7 +2,6 @@ from .partition_utilities import all_degrees, in_degrees, out_degrees, membershi
     membership_to_layered_communities
 from collections import defaultdict
 import numpy as np
-from numpy import VisibleDeprecationWarning
 from numpy.random import choice
 from math import floor
 from multiprocessing import Pool, cpu_count

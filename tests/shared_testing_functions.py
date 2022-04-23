@@ -1,4 +1,5 @@
 import igraph as ig
+from math import isnan
 from modularitypruning.partition_utilities import num_communities
 from random import randint, random, uniform
 
@@ -87,3 +88,12 @@ def generate_multilayer_intralayer_SBM(copying_probability, p_in, p_out, first_l
     G_intralayer = ig.Graph(intralayer_edges, directed=False)
 
     return G_intralayer, layer_membership
+
+
+def assert_almost_equal_or_both_none_or_nan(self, first, second, places=10):
+    if first is None:
+        self.assertIsNone(second)  # isnan only accepts floats
+    elif isnan(first):
+        self.assertTrue(isnan(second))  # NaN is != NaN according to IEEE-754
+    else:
+        self.assertAlmostEqual(first, second, places=places)
