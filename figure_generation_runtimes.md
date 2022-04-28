@@ -12,6 +12,7 @@ the figure generation runtimes that exceed ~5 seconds are as follows.
 | [karate_club_gamma_estimates](experiments/karate_club_gamma_estimates/karate_club_gamma_estimates.py) | ~50 s | No
 | [karate_club_estimates_per_community](experiments/karate_club_gamma_estimates/karate_club_estimates_per_community.py) | ~40 s | No
 | [plot_champ_example](experiments/example_figures/plot_champ_example.py) | ~10 s | No
+| [modularity_nonmonotonic_K](experiments/modularity_nonmonotonic_K/modularity_nonmonotonic_K.py) | ~1 m | No
 | [karate_club_test](experiments/karate_club_test/karate_club_test.py) | ~5 m | No
 | [plot_gamma_max_derivatives](experiments/plot_duality_details/plot_gamma_max_derivatives.py) | ~5 m | No
 | [easy_regime_generation](experiments/pamfil_synthetic_networks/easy_regime_generation.py) | ~55 m | Yes
