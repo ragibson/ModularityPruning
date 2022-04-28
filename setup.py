@@ -9,7 +9,7 @@ with open(os.path.join(here, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name='modularitypruning',
-    version='1.2.0',
+    version='1.2.1',
     package_dir={'modularitypruning': 'utilities'},
     packages=['modularitypruning'],
     url='https://github.com/ragibson/ModularityPruning',
@@ -37,7 +37,9 @@ setup(
                       "numpy<1.22.0; python_version<'3.8'",
                       "numpy; python_version>='3.8'",
                       'psutil', 'python-igraph',
+                      "scikit-learn; python_version>='3.8'",
+                      "scikit-learn<1.1; python_version<'3.8'",
                       "scipy<1.8; python_version<'3.8'",
                       "scipy; python_version>='3.8'",
-                      'seaborn', 'sklearn']
+                      'seaborn']
 )
