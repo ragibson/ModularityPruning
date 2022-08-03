@@ -467,7 +467,9 @@ def gamma_omega_estimates_to_stable_partitions(domains_with_estimates, return_me
 
 def prune_to_stable_partitions(G, parts, gamma_start, gamma_end, restrict_num_communities=None,
                                single_threaded=False):
-    """Runs our full pruning pipeline on a singlelayer network. Returns the pruned list of stable partitions.
+    """
+    Runs our full pruning pipeline on a singlelayer network. Returns the pruned list of stable partitions whose
+    parameter estimates are within the provided ``gamma_start`` and ``gamma_end`` bounds.
 
     See https://doi.org/10.21203/rs.3.rs-1551680/v1 for more details.
 
@@ -518,7 +520,10 @@ def prune_to_stable_partitions(G, parts, gamma_start, gamma_end, restrict_num_co
 def prune_to_multilayer_stable_partitions(G_intralayer, G_interlayer, layer_vec, model,
                                           parts, gamma_start, gamma_end, omega_start, omega_end,
                                           restrict_num_communities=None, single_threaded=False):
-    """Runs our full pruning pipeline on a multilayer network. Returns the pruned list of stable partitions.
+    """
+    Runs our full pruning pipeline on a multilayer network. Returns the pruned list of stable partitions whose
+    parameter estimates are within the provided ``gamma_start``, ``gamma_end``, ``omega_start``, and ``omega_end``
+    bounds.
 
     See https://doi.org/10.21203/rs.3.rs-1551680/v1 for more details.
 
