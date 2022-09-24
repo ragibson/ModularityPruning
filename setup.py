@@ -36,7 +36,8 @@ setup(
                       'louvain', 'matplotlib',
                       "numpy<1.22.0; python_version<'3.8'",
                       "numpy; python_version>='3.8'",
-                      'psutil', 'python-igraph',
+                      # TODO: louvain and leidenalg crash on python-igraph>=0.10
+                      'psutil', 'python-igraph<0.10',
                       "scikit-learn; python_version>='3.8'",
                       "scikit-learn<1.1; python_version<'3.8'",
                       "scipy<1.8; python_version<'3.8'",
