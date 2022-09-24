@@ -6,7 +6,7 @@ inference. This method works for single-layer and multi-layer networks, as well
 as for restricting focus to a fixed number of communities when desired.
 
 See the [documentation](https://modularitypruning.readthedocs.io/en/latest/)
-or the preprint at https://doi.org/10.21203/rs.3.rs-1551680/v1 for more
+or the journal article at https://doi.org/10.1038/s41598-022-20142-6 for more
 information.
 
 ## Installation

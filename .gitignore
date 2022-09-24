@@ -1,3 +1,6 @@
+# PyCharm IDE files
+.idea
+
 # Temporary/saved files from Python scripts
 *.p
 *.out
