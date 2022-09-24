@@ -162,7 +162,9 @@ def gamma_estimate(G, partition):
 
 
 def gamma_estimate_from_parameters(omega_in, omega_out):
-    """Compute the "correct" value of gamma as in :meth:`~modularitypruning.parameter_estimation_utilities.gamma_estimate` from SBM parameters.
+    """
+    Compute the "correct" value of gamma as in
+    :meth:`~modularitypruning.parameter_estimation_utilities.gamma_estimate` from SBM parameters.
 
     :param omega_in: within-community edge propensity of a degree-corrected, planted partition SBM
     :type omega_in: float
@@ -361,11 +363,14 @@ def gamma_omega_estimate(G_intralayer, G_interlayer, layer_vec, membership, omeg
 
 
 def ranges_to_gamma_estimates(G, ranges):
-    """Compute gamma estimates as in :meth:`~modularitypruning.parameter_estimation_utilities.gamma_estimate`, given domains of optimality from :meth:`~modularitypruning.champ_utilities.CHAMP_2D`.
+    """
+    Compute gamma estimates as in :meth:`~modularitypruning.parameter_estimation_utilities.gamma_estimate`, given
+    domains of optimality from :meth:`~modularitypruning.champ_utilities.CHAMP_2D`.
 
     :param G: graph of interest
     :type G: igraph.Graph
-    :param ranges: list of ``(gamma_start, gamma_end, membership)`` tuples as returned from :meth:`~modularitypruning.champ_utilities.CHAMP_2D`
+    :param ranges: list of ``(gamma_start, gamma_end, membership)`` tuples as returned from
+                   :meth:`~modularitypruning.champ_utilities.CHAMP_2D`
     :type ranges: list of tuple[float, float, tuple[int]]
     :return: a copy of input ranges with the corresponding gamma estimate appended to each tuple
     :rtype: list of tuple[float, float, tuple[int], float]
@@ -393,7 +398,10 @@ def gamma_estimates_to_stable_partitions(gamma_estimates):
 
 
 def domains_to_gamma_omega_estimates(G_intralayer, G_interlayer, layer_vec, domains, model='temporal'):
-    """Compute (gamma, omega) estimates as in :meth:`~modularitypruning.parameter_estimation_utilities.gamma_omega_estimate`, given domains of optimality from :meth:`~modularitypruning.champ_utilities.CHAMP_3D`.
+    """
+    Compute (gamma, omega) estimates as in
+    :meth:`~modularitypruning.parameter_estimation_utilities.gamma_omega_estimate`, given domains of optimality from
+    :meth:`~modularitypruning.champ_utilities.CHAMP_3D`.
 
     :param G_intralayer: intralayer graph of interest
     :type G_intralayer: igraph.Graph
@@ -401,7 +409,8 @@ def domains_to_gamma_omega_estimates(G_intralayer, G_interlayer, layer_vec, doma
     :type G_interlayer: igraph.Graph
     :param layer_vec: list of each vertex's layer membership
     :type layer_vec: list[int]
-    :param domains: list of ``(domain_vertices, membership)`` tuples as returned from :meth:`~modularitypruning.champ_utilities.CHAMP_3D`
+    :param domains: list of ``(domain_vertices, membership)`` tuples as returned from
+                    :meth:`~modularitypruning.champ_utilities.CHAMP_3D`
     :type domains: list of tuple[list[float], tuple[int]]
     :param model: network layer topology (temporal, multilevel, multiplex)
     :type model: str

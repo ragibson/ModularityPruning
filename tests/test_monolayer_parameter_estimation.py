@@ -1,4 +1,5 @@
-from .shared_testing_functions import assert_almost_equal_or_both_none_or_nan, generate_igraph_famous, generate_random_partition
+from .shared_testing_functions import assert_almost_equal_or_both_none_or_nan, generate_igraph_famous, \
+    generate_random_partition
 import igraph as ig
 from math import log
 from numpy import mean

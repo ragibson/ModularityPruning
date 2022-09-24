@@ -34,10 +34,10 @@ import numpy as np
 
 def plot_and_exit(G, ranges):
     layout = ig.Graph.layout_fruchterman_reingold(G, niter=1000)
-    print(f"plotting network...")
+    print("plotting network...")
     ig.plot(G, layout=layout).save("network.png")
 
-    print(f"plotting CHAMP domains and gamma estimates...")
+    print("plotting CHAMP domains and gamma estimates...")
     gamma_estimates = ranges_to_gamma_estimates(G, ranges)
     plt.rc('text', usetex=True)
     plt.rc('font', family='serif')
