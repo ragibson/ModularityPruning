@@ -40,7 +40,7 @@ setup(
                       'psutil', 'python-igraph<0.10',
                       "scikit-learn; python_version>='3.8'",
                       "scikit-learn<1.1; python_version<'3.8'",
-                      "scipy<1.8; python_version<'3.8'",
-                      "scipy; python_version>='3.8'",
+                      "scipy>=1.7, <1.8; python_version<'3.8'",
+                      "scipy>=1.7; python_version>='3.8'",
                       'seaborn']
 )

@@ -53,7 +53,7 @@ def get_interior_point(halfspaces, initial_num_sampled=50, full_retry_limit=10):
         A = np.hstack((sampled_hs[:, :-1], norm_vector))
         b = -sampled_hs[:, -1:]
 
-        res = linprog(c, A_ub=A, b_ub=b, bounds=(-np.inf, np.inf), method='interior-point')
+        res = linprog(c, A_ub=A, b_ub=b, bounds=(-np.inf, np.inf), method='highs-ipm')
 
         # check solution if optimization succeeded, even with difficulties
         #     res.status codes
