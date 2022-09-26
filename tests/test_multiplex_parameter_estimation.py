@@ -3,7 +3,7 @@ from .shared_testing_functions import assert_almost_equal_or_both_none_or_nan, g
 import igraph as ig
 from math import log
 from numpy import mean
-from modularitypruning.louvain_utilities import repeated_louvain_from_gammas_omegas, \
+from modularitypruning.leiden_utilities import repeated_louvain_from_gammas_omegas, \
     check_multilayer_louvain_capabilities
 from modularitypruning.parameter_estimation import iterative_multilayer_resolution_parameter_estimation
 from modularitypruning.parameter_estimation_utilities import gamma_omega_estimate

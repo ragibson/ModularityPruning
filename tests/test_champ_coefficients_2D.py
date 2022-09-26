@@ -1,7 +1,7 @@
 from .shared_testing_functions import generate_connected_ER, generate_random_values, generate_random_partitions, \
     generate_igraph_famous
 from modularitypruning.champ_utilities import partition_coefficients_2D
-from modularitypruning.louvain_utilities import louvain_part_with_membership, repeated_louvain_from_gammas
+from modularitypruning.leiden_utilities import leiden_part_with_membership, repeated_leiden_from_gammas
 from random import seed
 import unittest
 
@@ -11,7 +11,7 @@ class TestCHAMPCoefficients2D(unittest.TestCase):
         A_hats, P_hats = coefficients
 
         for membership, A_hat, P_hat in zip(partitions, A_hats, P_hats):
-            louvain_part = louvain_part_with_membership(G, membership)
+            louvain_part = leiden_part_with_membership(G, membership)
 
             # Q(gamma=0) = sum_{ij} A_{ij} delta(c_i, c_j) = A_hat
             louvain_A_hat = louvain_part.quality(resolution_parameter=0)
@@ -65,19 +65,19 @@ class TestCHAMPCoefficients2D(unittest.TestCase):
             self.assert_partition_coefficient_correctness_unweighted_ER(directed=True, num_partitions=100, K_max=K_max)
 
     def test_partition_coefficient_correctness_igraph_famous_louvain(self):
-        """Test partition coefficient correctness on various famous graphs while obtaining partitions via Louvain.
+        """Test partition coefficient correctness on various famous graphs while obtaining partitions via Leiden.
 
         The correctness is checked for the original undirected and (symmetric) directed variants.
         """
 
         for G in generate_igraph_famous():
             gammas = generate_random_values(100, start_value=0, end_value=5)
-            partitions = repeated_louvain_from_gammas(G, gammas)
+            partitions = repeated_leiden_from_gammas(G, gammas)
             coefficients = partition_coefficients_2D(G, partitions)
             self.assert_partition_coefficient_correctness(G, partitions, coefficients)
 
             G.to_directed()  # check the directed version of the graph as well
-            partitions = repeated_louvain_from_gammas(G, gammas)
+            partitions = repeated_leiden_from_gammas(G, gammas)
             coefficients = partition_coefficients_2D(G, partitions)
             self.assert_partition_coefficient_correctness(G, partitions, coefficients)
 

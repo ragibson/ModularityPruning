@@ -1,14 +1,14 @@
 from .shared_testing_functions import generate_connected_ER, generate_random_values, generate_random_partitions, \
     generate_igraph_famous
 from modularitypruning.champ_utilities import CHAMP_2D
-from modularitypruning.louvain_utilities import louvain_part_with_membership, repeated_louvain_from_gammas
+from modularitypruning.leiden_utilities import leiden_part_with_membership, repeated_leiden_from_gammas
 from random import seed
 import unittest
 
 
 class TestCHAMP2D(unittest.TestCase):
     def assert_best_partitions_match_champ_set(self, G, partitions, champ_ranges, gammas):
-        membership_to_louvain_partition = {p: louvain_part_with_membership(G, p) for p in partitions}
+        membership_to_louvain_partition = {p: leiden_part_with_membership(G, p) for p in partitions}
 
         for gamma in gammas:
             best_partition_quality = max(membership_to_louvain_partition[p].quality(resolution_parameter=gamma)
@@ -76,19 +76,19 @@ class TestCHAMP2D(unittest.TestCase):
             self.assert_champ_correctness_unweighted_ER(directed=True, gamma_start=gamma_start, gamma_end=gamma_end)
 
     def test_champ_correctness_igraph_famous_louvain(self):
-        """Test CHAMP correctness on various famous graphs while obtaining partitions via Louvain.
+        """Test CHAMP correctness on various famous graphs while obtaining partitions via Leiden.
 
         The correctness of the CHAMP domains are checked for the original undirected and (symmetric) directed variants.
         """
 
         for G in generate_igraph_famous():
             gammas = generate_random_values(100, start_value=0, end_value=5)
-            partitions = repeated_louvain_from_gammas(G, gammas)
+            partitions = repeated_leiden_from_gammas(G, gammas)
             champ_ranges = CHAMP_2D(G, partitions, gamma_0=0, gamma_f=5)
             self.assert_best_partitions_match_champ_set(G, partitions, champ_ranges, gammas)
 
             G.to_directed()  # check the directed version of the graph as well
-            partitions = repeated_louvain_from_gammas(G, gammas)
+            partitions = repeated_leiden_from_gammas(G, gammas)
             champ_ranges = CHAMP_2D(G, partitions, gamma_0=0, gamma_f=5)
             self.assert_best_partitions_match_champ_set(G, partitions, champ_ranges, gammas)
 

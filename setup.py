@@ -33,7 +33,7 @@ setup(
     ],
     python_requires='>=3.7, <4',
     install_requires=["champ; python_version<'3.10'",
-                      'louvain', 'matplotlib',
+                      'leidenalg', 'louvain', 'matplotlib',
                       "numpy<1.22.0; python_version<'3.8'",
                       "numpy; python_version>='3.8'",
                       # TODO: louvain and leidenalg crash on python-igraph>=0.10

@@ -25,6 +25,8 @@ These functions provide access to the `CHAMP <https://doi.org/10.3390/a10030093>
 modularitypruning.louvain_utilities
 -----------------------------------
 
+TODO: this documentation needs to be updated to Leiden (and reference the transparent aliases).
+
 These functions provide access to the `Louvain <https://doi.org/10.1088%2F1742-5468%2F2008%2F10%2FP10008>`_ modularity
 maximization algorithm and some related utilities. The implementation here is provided by `louvain-igraph
 <https://github.com/vtraag/louvain-igraph>`_.

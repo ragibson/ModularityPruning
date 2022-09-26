@@ -1,8 +1,9 @@
-from .louvain_utilities import singlelayer_louvain, multilayer_louvain
-from .parameter_estimation_utilities import louvain_part_with_membership, estimate_singlelayer_SBM_parameters, \
+from .leiden_utilities import singlelayer_leiden, multilayer_louvain
+from .parameter_estimation_utilities import leiden_part_with_membership, estimate_singlelayer_SBM_parameters, \
     gamma_estimate_from_parameters, omega_function_from_model, estimate_multilayer_SBM_parameters
 from .partition_utilities import in_degrees
-import louvain
+import leidenalg
+import louvain  # TODO: continue removing louvain usages
 
 
 def iterative_monolayer_resolution_parameter_estimation(G, gamma=1.0, tol=1e-2, max_iter=25, verbose=False,
@@ -28,7 +29,7 @@ def iterative_monolayer_resolution_parameter_estimation(G, gamma=1.0, tol=1e-2, 
     :return:
         - gamma to which the iteration converged
         - the resulting partition
-    :rtype: tuple[float, louvain.RBConfigurationVertexPartition]
+    :rtype: tuple[float, leidenalg.RBConfigurationVertexPartition]
     """
 
     if 'weight' not in G.es:
@@ -37,11 +38,11 @@ def iterative_monolayer_resolution_parameter_estimation(G, gamma=1.0, tol=1e-2, 
 
     if method == "louvain":
         def maximize_modularity(resolution_param):
-            return singlelayer_louvain(G, resolution_param, return_partition=True)
+            return singlelayer_leiden(G, resolution_param, return_partition=True)
     elif method == "2-spinglass":
         def maximize_modularity(resolution_param):
             membership = G.community_spinglass(spins=2, gamma=resolution_param).membership
-            return louvain_part_with_membership(G, membership)
+            return leiden_part_with_membership(G, membership)
     else:
         raise ValueError(f"Community detection method {method} not supported")
 

@@ -1,7 +1,7 @@
 from .shared_testing_functions import generate_connected_multilayer_ER, generate_random_partitions
 from modularitypruning.champ_utilities import partition_coefficients_3D
-from modularitypruning.louvain_utilities import multilayer_louvain_part_with_membership, \
-    check_multilayer_louvain_capabilities, louvain_part_with_membership
+from modularitypruning.leiden_utilities import multilayer_louvain_part_with_membership, \
+    check_multilayer_louvain_capabilities, leiden_part_with_membership
 from random import seed
 import unittest
 
@@ -46,7 +46,7 @@ class TestCHAMPCoefficients3D(unittest.TestCase):
                 layer_subgraph = G_intralayer.subgraph(this_layer_indices)
                 layer_community_membership = [community for i, community in enumerate(membership)
                                               if layer_membership[i] == layer]
-                layer_part = louvain_part_with_membership(layer_subgraph, layer_community_membership)
+                layer_part = leiden_part_with_membership(layer_subgraph, layer_community_membership)
                 alternate_P_hat += (layer_part.quality(resolution_parameter=0.0) -
                                     layer_part.quality(resolution_parameter=1.0))
             self.assertAlmostEqual(alternate_P_hat, P_hat, places=10)
