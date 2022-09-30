@@ -18,15 +18,15 @@ An example on the Karate Club network is as follows.
   import matplotlib.pyplot as plt
   from modularitypruning.champ_utilities import CHAMP_2D
   from modularitypruning.parameter_estimation_utilities import ranges_to_gamma_estimates
-  from modularitypruning.louvain_utilities import repeated_parallel_louvain_from_gammas
+  from modularitypruning.leiden_utilities import repeated_parallel_leiden_from_gammas
   from modularitypruning.plotting import plot_estimates
   import numpy as np
 
   # get Karate Club graph in igraph
   G = ig.Graph.Famous("Zachary")
 
-  # run louvain 100K times on this graph from gamma=0 to gamma=2 (takes ~2-3 seconds)
-  partitions = repeated_parallel_louvain_from_gammas(G, np.linspace(0, 2, 10 ** 5))
+  # run leiden 100K times on this graph from gamma=0 to gamma=2 (takes ~2-3 seconds)
+  partitions = repeated_parallel_leiden_from_gammas(G, np.linspace(0, 2, 10 ** 5))
 
   # run CHAMP to obtain the dominant partitions along with their regions of optimality
   ranges = CHAMP_2D(G, partitions, gamma_0=0.0, gamma_f=2.0)
@@ -57,22 +57,18 @@ An example on a realization of multilayer synthetic network in :doc:`../source/b
 .. code-block:: python
 
   from modularitypruning.champ_utilities import CHAMP_3D
-  from modularitypruning.louvain_utilities import (repeated_parallel_louvain_from_gammas_omegas,
-                                                   check_multilayer_louvain_capabilities)
+  from modularitypruning.leiden_utilities import repeated_parallel_leiden_from_gammas_omegas
   from modularitypruning.parameter_estimation_utilities import domains_to_gamma_omega_estimates
   from modularitypruning.plotting import plot_2d_domains_with_estimates
   import matplotlib.pyplot as plt
   import numpy as np
 
-  # fail if version of louvain does not support multilayer optimization
-  check_multilayer_louvain_capabilities()
-
-  # run louvain on a uniform grid (10K samples) of gamma and omega (takes ~3 seconds)
+  # run leiden on a uniform grid (10K samples) of gamma and omega (takes ~3 seconds)
   gamma_range = (0.5, 1.5)
   omega_range = (0, 2)
-  parts = repeated_parallel_louvain_from_gammas_omegas(G_intralayer, G_interlayer, layer_vec,
-                                                       gammas=np.linspace(*gamma_range, 100),
-                                                       omegas=np.linspace(*omega_range, 100))
+  parts = repeated_parallel_leiden_from_gammas_omegas(G_intralayer, G_interlayer, layer_vec,
+                                                      gammas=np.linspace(*gamma_range, 100),
+                                                      omegas=np.linspace(*omega_range, 100))
 
   # run CHAMP to obtain the dominant partitions along with their regions of optimality
   domains = CHAMP_3D(G_intralayer, G_interlayer, layer_vec, parts,

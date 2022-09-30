@@ -45,28 +45,24 @@ all communities into one in the final layer.
   G_intralayer = ig.Graph(intralayer_edges)
   G_interlayer = ig.Graph(interlayer_edges, directed=True)
 
-Now that we have a multilayer network, we can run louvain across a grid of gamma and omega values and prune the
+Now that we have a multilayer network, we can run leidenalg across a grid of gamma and omega values and prune the
 resulting partitions down to a small subset of stable partitions.
 
 .. code-block:: python
 
   from modularitypruning import prune_to_multilayer_stable_partitions
-  from modularitypruning.louvain_utilities import (repeated_louvain_from_gammas_omegas,
-                                                   check_multilayer_louvain_capabilities)
+  from modularitypruning.leiden_utilities import repeated_leiden_from_gammas_omegas
   import numpy as np
 
-  # fail if version of louvain does not support multilayer optimization
-  check_multilayer_louvain_capabilities()
-
-  # run louvain on a uniform 32x32 grid (1024 samples) of gamma and omega in [0, 2]
+  # run leidenalg on a uniform 32x32 grid (1024 samples) of gamma and omega in [0, 2]
   gamma_range = (0, 2)
   omega_range = (0, 2)
-  louvain_gammas = np.linspace(*gamma_range, 32)
-  louvain_omegas = np.linspace(*omega_range, 32)
+  leiden_gammas = np.linspace(*gamma_range, 32)
+  leiden_omegas = np.linspace(*omega_range, 32)
 
-  parts = repeated_louvain_from_gammas_omegas(G_intralayer, G_interlayer, layer_vec,
-                                              gammas=louvain_gammas,
-                                              omegas=louvain_omegas)
+  parts = repeated_leiden_from_gammas_omegas(G_intralayer, G_interlayer, layer_vec,
+                                             gammas=leiden_gammas,
+                                             omegas=leiden_omegas)
 
   # prune to the stable partitions from (gamma=0, omega=0) to (gamma=2, omega=2)
   stable_parts = prune_to_multilayer_stable_partitions(G_intralayer, G_interlayer, layer_vec,
