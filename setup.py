@@ -24,23 +24,13 @@ setup(
         'Development Status :: 5 - Production/Stable',
         'Topic :: Scientific/Engineering :: Information Analysis',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3 :: Only',
         'License :: OSI Approved :: MIT License'
     ],
-    python_requires='>=3.7, <4',
-    install_requires=["champ; python_version<'3.10'",
-                      'louvain', 'matplotlib',
-                      "numpy<1.22.0; python_version<'3.8'",
-                      "numpy; python_version>='3.8'",
-                      # TODO: louvain and leidenalg crash on python-igraph>=0.10
-                      'psutil', 'python-igraph<0.10',
-                      "scikit-learn; python_version>='3.8'",
-                      "scikit-learn<1.1; python_version<'3.8'",
-                      "scipy<1.8; python_version<'3.8'",
-                      "scipy; python_version>='3.8'",
-                      'seaborn']
+    python_requires='>=3.8, <4',
+    install_requires=['leidenalg', 'matplotlib', "numpy", 'psutil', 'python-igraph',
+                      "scikit-learn", "scipy>=1.7", 'seaborn']
 )

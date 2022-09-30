@@ -1,8 +1,8 @@
-from .louvain_utilities import louvain_part_with_membership, sorted_tuple, check_multilayer_louvain_capabilities
+from .leiden_utilities import leiden_part_with_membership, sorted_tuple
 from .champ_utilities import CHAMP_2D, CHAMP_3D
 from .partition_utilities import num_communities
 import igraph as ig
-import louvain
+import leidenalg
 from math import log
 import numpy as np
 from scipy.optimize import fsolve
@@ -17,7 +17,7 @@ def estimate_singlelayer_SBM_parameters(G, partition, m=None):
     :param G: graph of interest
     :type G: igraph.Graph
     :param partition: partition of interest
-    :type partition: louvain.RBConfigurationVertexPartition
+    :type partition: leidenalg.RBConfigurationVertexPartition
     :param m: total edge weight of graph (if None, will be computed)
     :type m: float
     :return: SBM parameter estimates :math:`(\omega_{in}, \omega_{out})`
@@ -27,7 +27,7 @@ def estimate_singlelayer_SBM_parameters(G, partition, m=None):
     if m is None:
         m = sum(G.es['weight'])
 
-    assert isinstance(partition, louvain.RBConfigurationVertexPartition)
+    assert isinstance(partition, leidenalg.RBConfigurationVertexPartition)
     community = partition.membership
 
     m_in = sum(e['weight'] * (community[e.source] == community[e.target]) for e in G.es)
@@ -56,7 +56,7 @@ def estimate_multilayer_SBM_parameters(G_intralayer, G_interlayer, layer_vec, pa
     :param layer_vec: list of each vertex's layer membership
     :type layer_vec: list[int]
     :param partition: partition of interest
-    :type partition: louvain.RBConfigurationVertexPartitionWeightedLayers
+    :type partition: leidenalg.RBConfigurationVertexPartition
     :param model: network layer topology (temporal, multilevel, multiplex)
     :type model: str
     :param N: number of nodes per layer (automatically computed if None)
@@ -146,7 +146,7 @@ def gamma_estimate(G, partition):
     :param G: graph of interest
     :type G: igraph.Graph
     :param partition: partition of interest
-    :type partition: tuple[int] or louvain.RBConfigurationVertexPartition
+    :type partition: tuple[int] or leidenalg.RBConfigurationVertexPartition
     :return: gamma estimate
     :rtype: float
     """
@@ -154,8 +154,8 @@ def gamma_estimate(G, partition):
     if 'weight' not in G.es:
         G.es['weight'] = [1.0] * G.vcount()
 
-    if not isinstance(partition, louvain.RBConfigurationVertexPartition):
-        partition = louvain_part_with_membership(G, partition)
+    if not isinstance(partition, leidenalg.RBConfigurationVertexPartition):
+        partition = leiden_part_with_membership(G, partition)
 
     omega_in, omega_out = estimate_singlelayer_SBM_parameters(G, partition)
     return gamma_estimate_from_parameters(omega_in, omega_out)
@@ -351,7 +351,7 @@ def gamma_omega_estimate(G_intralayer, G_interlayer, layer_vec, membership, omeg
     if T is None:
         T = max(layer_vec) + 1  # layer  count
 
-    partition = louvain_part_with_membership(G_intralayer, membership)
+    partition = leiden_part_with_membership(G_intralayer, membership)
     theta_in, theta_out, p, K = estimate_multilayer_SBM_parameters(G_intralayer, G_interlayer, layer_vec, partition,
                                                                    model, N=N, T=T, Nt=Nt, m_t=m_t)
     update_omega = omega_function_from_model(model, omega_max, T=T)
@@ -506,7 +506,7 @@ def prune_to_stable_partitions(G, parts, gamma_start, gamma_end, restrict_num_co
         warnings.warn("The pruning pipeline does not fully handle weighted graphs and will proceed as though the input "
                       "graph is unweighted.")
 
-    if isinstance(parts, louvain.RBConfigurationVertexPartition):
+    if isinstance(parts, leidenalg.RBConfigurationVertexPartition):
         # convert to (canonically represented) membership vectors if necessary
         parts = {sorted_tuple(part.membership) for part in parts}
     else:
@@ -566,8 +566,6 @@ def prune_to_multilayer_stable_partitions(G_intralayer, G_interlayer, layer_vec,
     :return: list of community membership tuples
     :rtype: list[tuple[int]]
     """
-    check_multilayer_louvain_capabilities()
-
     if single_threaded:
         raise NotImplementedError("Single-threaded multilayer CHAMP was never implemented. This would be fairly easy"
                                   "to add, so please raise an issue if this feature is desired.")
@@ -584,7 +582,7 @@ def prune_to_multilayer_stable_partitions(G_intralayer, G_interlayer, layer_vec,
         warnings.warn("The pruning pipeline does not fully handle weighted graphs and will proceed as though the input "
                       "graph is unweighted.")
 
-    if isinstance(parts, louvain.RBConfigurationVertexPartitionWeightedLayers):
+    if isinstance(parts, leidenalg.RBConfigurationVertexPartition):
         # convert to (canonically represented) membership vectors if necessary
         parts = {sorted_tuple(part.membership) for part in parts}
     else:

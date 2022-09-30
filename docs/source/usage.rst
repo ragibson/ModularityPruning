@@ -22,24 +22,24 @@ These functions provide access to the `CHAMP <https://doi.org/10.3390/a10030093>
 .. currentmodule:: modularitypruning.champ_utilities
 .. autofunction:: CHAMP_2D
 
-modularitypruning.louvain_utilities
+modularitypruning.leiden_utilities
 -----------------------------------
 
-These functions provide access to the `Louvain <https://doi.org/10.1088%2F1742-5468%2F2008%2F10%2FP10008>`_ modularity
-maximization algorithm and some related utilities. The implementation here is provided by `louvain-igraph
-<https://github.com/vtraag/louvain-igraph>`_.
+These functions provide access to the `Leiden <https://doi.org/10.1038/s41598-019-41695-z>`_ modularity
+maximization algorithm and some related utilities. The implementation here is provided by `leidenalg
+<https://github.com/vtraag/leidenalg>`_.
 
-.. currentmodule:: modularitypruning.louvain_utilities
+.. currentmodule:: modularitypruning.leiden_utilities
 .. autofunction:: sorted_tuple
-.. autofunction:: singlelayer_louvain
-.. autofunction:: repeated_parallel_louvain_from_gammas
+.. autofunction:: singlelayer_leiden
+.. autofunction:: repeated_parallel_leiden_from_gammas
 
 modularitypruning.parameter_estimation
 --------------------------------------
 
 These functions provide the ability to iteratively estimate "correct" values for the resolution parameter in modularity
 as discussed by `Newman <https://doi.org/10.1103/PhysRevE.94.052315>`_ and `Pamfil et al.
-<https://doi.org/10.1137/18M1231304>`_ Here, we maximize modularity via the Louvain algorithm.
+<https://doi.org/10.1137/18M1231304>`_ Here, we maximize modularity via the Leiden algorithm.
 
 .. currentmodule:: modularitypruning.parameter_estimation
 .. autofunction:: iterative_monolayer_resolution_parameter_estimation

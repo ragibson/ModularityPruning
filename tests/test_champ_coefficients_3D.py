@@ -1,7 +1,6 @@
 from .shared_testing_functions import generate_connected_multilayer_ER, generate_random_partitions
 from modularitypruning.champ_utilities import partition_coefficients_3D
-from modularitypruning.louvain_utilities import multilayer_louvain_part_with_membership, \
-    check_multilayer_louvain_capabilities, louvain_part_with_membership
+from modularitypruning.leiden_utilities import multilayer_leiden_part_with_membership, leiden_part_with_membership
 from random import seed
 import unittest
 
@@ -9,35 +8,31 @@ import unittest
 class TestCHAMPCoefficients3D(unittest.TestCase):
     def assert_partition_coefficient_correctness(self, G_intralayer, G_interlayer, layer_membership,
                                                  partitions, coefficients):
-        if not check_multilayer_louvain_capabilities(fatal=False):
-            # just return since this version of louvain is unable to perform multilayer parameter estimation anyway
-            return
-
         A_hats, P_hats, C_hats = coefficients
 
         for membership, A_hat, P_hat, C_hat in zip(partitions, A_hats, P_hats, C_hats):
-            intralayer_part, interlayer_part = multilayer_louvain_part_with_membership(G_intralayer, G_interlayer,
+            intralayer_parts, interlayer_part = multilayer_leiden_part_with_membership(G_intralayer, G_interlayer,
                                                                                        layer_membership,
                                                                                        community_membership=membership)
 
             # Q_intralayer(gamma=0) = sum_{ij} A_{ij} delta(c_i, c_j) = A_hat
-            louvain_A_hat = intralayer_part.quality(resolution_parameter=0)
+            leiden_A_hat = sum(p.quality(resolution_parameter=0) for p in intralayer_parts)
 
             # Q_intralayer(gamma=0) - Q_intralayer(gamma=1)
             #   = sum_{ij} (A_{ij} - gamma*P_{ij} - A_{ij}) delta(c_i, c_j)
             #   = sum_{ij} P_{ij} delta(c_i, c_j)
             #   = P_hat
-            louvain_P_hat = louvain_A_hat - intralayer_part.quality(resolution_parameter=1)
+            leiden_P_hat = leiden_A_hat - sum(p.quality(resolution_parameter=1) for p in intralayer_parts)
 
             # Q_interlayer(omega=0)
             #   = sum_{ij} (C_{ij} - omega*P{ij}) delta(c_i, c_j)
             #   = sum_{ij} C_{ij} delta(c_i, c_j)
             #   = C_hat
-            louvain_C_hat = interlayer_part.quality(resolution_parameter=0)
+            leiden_C_hat = interlayer_part.quality(resolution_parameter=0)
 
-            self.assertAlmostEqual(A_hat, louvain_A_hat, places=10)
-            self.assertAlmostEqual(P_hat, louvain_P_hat, places=10)
-            self.assertAlmostEqual(C_hat, louvain_C_hat, places=10)
+            self.assertAlmostEqual(A_hat, leiden_A_hat, places=10)
+            self.assertAlmostEqual(P_hat, leiden_P_hat, places=10)
+            self.assertAlmostEqual(C_hat, leiden_C_hat, places=10)
 
             # Also test against an alternate, per-layer calculation of P_hat
             alternate_P_hat = 0
@@ -46,7 +41,7 @@ class TestCHAMPCoefficients3D(unittest.TestCase):
                 layer_subgraph = G_intralayer.subgraph(this_layer_indices)
                 layer_community_membership = [community for i, community in enumerate(membership)
                                               if layer_membership[i] == layer]
-                layer_part = louvain_part_with_membership(layer_subgraph, layer_community_membership)
+                layer_part = leiden_part_with_membership(layer_subgraph, layer_community_membership)
                 alternate_P_hat += (layer_part.quality(resolution_parameter=0.0) -
                                     layer_part.quality(resolution_parameter=1.0))
             self.assertAlmostEqual(alternate_P_hat, P_hat, places=10)
@@ -105,10 +100,6 @@ class TestCHAMPCoefficients3D(unittest.TestCase):
 
     def test_partition_coefficient_correctness_interleaved_directedness(self):
         """Test partition coefficient correctness when directedness of interlayer and intralayer edges do not match."""
-        if not check_multilayer_louvain_capabilities(fatal=False):
-            # just return since this version of louvain is unable to perform multilayer parameter estimation anyway
-            return
-
         # Intralayer directed edges, but interlayer undirected ones
         G_intralayer, G_interlayer, layer_membership = generate_connected_multilayer_ER(num_nodes_per_layer=100, m=5000,
                                                                                         num_layers=10, directed=False)

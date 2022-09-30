@@ -1,12 +1,12 @@
-from .louvain_utilities import singlelayer_louvain, multilayer_louvain
-from .parameter_estimation_utilities import louvain_part_with_membership, estimate_singlelayer_SBM_parameters, \
+from .leiden_utilities import singlelayer_leiden, multilayer_leiden
+from .parameter_estimation_utilities import leiden_part_with_membership, estimate_singlelayer_SBM_parameters, \
     gamma_estimate_from_parameters, omega_function_from_model, estimate_multilayer_SBM_parameters
 from .partition_utilities import in_degrees
-import louvain
+import leidenalg
 
 
 def iterative_monolayer_resolution_parameter_estimation(G, gamma=1.0, tol=1e-2, max_iter=25, verbose=False,
-                                                        method="louvain"):
+                                                        method="leiden"):
     """Monolayer variant of ALG. 1 from "Relating modularity maximization and stochastic block models in multilayer
     networks." This is intended to determine an "optimal" value for gamma by repeatedly maximizing modularity and
     estimating new values for the resolution parameter.
@@ -28,20 +28,20 @@ def iterative_monolayer_resolution_parameter_estimation(G, gamma=1.0, tol=1e-2, 
     :return:
         - gamma to which the iteration converged
         - the resulting partition
-    :rtype: tuple[float, louvain.RBConfigurationVertexPartition]
+    :rtype: tuple[float, leidenalg.RBConfigurationVertexPartition]
     """
 
     if 'weight' not in G.es:
         G.es['weight'] = [1.0] * G.ecount()
     m = sum(G.es['weight'])
 
-    if method == "louvain":
+    if method == "louvain" or method == "leiden":
         def maximize_modularity(resolution_param):
-            return singlelayer_louvain(G, resolution_param, return_partition=True)
+            return singlelayer_leiden(G, resolution_param, return_partition=True)
     elif method == "2-spinglass":
         def maximize_modularity(resolution_param):
             membership = G.community_spinglass(spins=2, gamma=resolution_param).membership
-            return louvain_part_with_membership(G, membership)
+            return leiden_part_with_membership(G, membership)
     else:
         raise ValueError(f"Community detection method {method} not supported")
 
@@ -162,6 +162,7 @@ def iterative_multilayer_resolution_parameter_estimation(G_intralayer, G_interla
     :rtype: tuple[float, float, tuple[int]]
     """
 
+    global parts
     if 'weight' not in G_intralayer.es:
         G_intralayer.es['weight'] = [1.0] * G_intralayer.ecount()
 
@@ -169,7 +170,7 @@ def iterative_multilayer_resolution_parameter_estimation(G_intralayer, G_interla
         G_interlayer.es['weight'] = [1.0] * G_interlayer.ecount()
 
     T = max(layer_vec) + 1  # layer count
-    optimiser = louvain.Optimiser()
+    optimiser = leidenalg.Optimiser()
 
     # compute total edge weights per layer
     m_t = [0] * T
@@ -187,8 +188,8 @@ def iterative_multilayer_resolution_parameter_estimation(G_intralayer, G_interla
     update_gamma = gamma_estimate_from_parameters
 
     def maximize_modularity(intralayer_resolution, interlayer_resolution):
-        return multilayer_louvain(G_intralayer, G_interlayer, layer_vec, intralayer_resolution, interlayer_resolution,
-                                  optimiser=optimiser, return_partition=True)
+        return multilayer_leiden(G_intralayer, G_interlayer, layer_vec, intralayer_resolution, interlayer_resolution,
+                                 optimiser=optimiser, return_partition=True)
 
     def estimate_SBM_parameters(partition):
         return estimate_multilayer_SBM_parameters(G_intralayer, G_interlayer, layer_vec, partition, model,
@@ -196,8 +197,8 @@ def iterative_multilayer_resolution_parameter_estimation(G_intralayer, G_interla
 
     part, K, last_gamma, last_omega = (None,) * 4
     for iteration in range(max_iter):
-        part = maximize_modularity(gamma, omega)
-        theta_in, theta_out, p, K = estimate_SBM_parameters(part)
+        parts = maximize_modularity(gamma, omega)
+        theta_in, theta_out, p, K = estimate_SBM_parameters(parts[0])
 
         if not 0.0 <= p <= 1.0:
             raise ValueError(f"gamma={gamma:.3f}, omega={omega:.3f} resulted in impossible estimate p={p:.3f}")
@@ -211,7 +212,8 @@ def iterative_multilayer_resolution_parameter_estimation(G_intralayer, G_interla
         omega = update_omega(theta_in, theta_out, p, K)
 
         if verbose:
-            print(f"Iter {iteration:>2}: {K} communities with Q={part.q:.3f}, gamma={last_gamma:.3f}->{gamma:.3f}, "
+            part_Q = sum(p.q for p in parts)
+            print(f"Iter {iteration:>2}: {K} communities with Q={part_Q:.3f}, gamma={last_gamma:.3f}->{gamma:.3f}, "
                   f"omega={last_omega:.3f}->{omega:.3f}, and p={p:.3f}")
 
         if abs(gamma - last_gamma) < gamma_tol and abs(omega - last_omega) < omega_tol:
@@ -223,6 +225,7 @@ def iterative_multilayer_resolution_parameter_estimation(G_intralayer, G_interla
                   f"was not within tolerance ({gamma_tol}, {omega_tol})")
 
     if verbose:
-        print(f"Returned {K} communities with Q={part.q:.3f}, gamma={gamma:.3f}, and omega={omega:.3f}")
+        part_Q = sum(p.q for p in parts)
+        print(f"Returned {K} communities with Q={part_Q:.3f}, gamma={gamma:.3f}, and omega={omega:.3f}")
 
-    return gamma, omega, part
+    return gamma, omega, parts

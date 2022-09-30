@@ -3,8 +3,7 @@ from .shared_testing_functions import assert_almost_equal_or_both_none_or_nan, g
 import igraph as ig
 from math import log
 from numpy import mean
-from modularitypruning.louvain_utilities import repeated_louvain_from_gammas_omegas, \
-    check_multilayer_louvain_capabilities
+from modularitypruning.leiden_utilities import repeated_leiden_from_gammas_omegas
 from modularitypruning.parameter_estimation import iterative_multilayer_resolution_parameter_estimation
 from modularitypruning.parameter_estimation_utilities import gamma_omega_estimate
 from modularitypruning.partition_utilities import num_communities, all_degrees
@@ -27,10 +26,6 @@ class TestTemporalAndMultilevelParameterEstimation(unittest.TestCase):
 
     def assert_temporal_SBM_correct_convergence(self, first_layer_membership, copying_probability=0.75, num_layers=25,
                                                 p_in=0.25, p_out=0.05):
-        if not check_multilayer_louvain_capabilities(fatal=False):
-            # just return since this version of louvain is unable to perform multilayer parameter estimation anyway
-            return
-
         K = num_communities(first_layer_membership)
         G_intralayer, G_interlayer, layer_membership = self.generate_temporal_SBM(copying_probability, p_in, p_out,
                                                                                   first_layer_membership,
@@ -80,7 +75,7 @@ class TestTemporalAndMultilevelParameterEstimation(unittest.TestCase):
 
     def test_temporal_SBM_correct_convergence_varying_num_communities(self):
         for K in [2, 3, 4, 5]:
-            membership = generate_random_partition(num_nodes=250, K=K)
+            membership = generate_random_partition(num_nodes=500, K=K)
             self.assert_temporal_SBM_correct_convergence(first_layer_membership=membership)
 
     def test_temporal_SBM_correct_convergence_varying_num_layers(self):
@@ -88,20 +83,16 @@ class TestTemporalAndMultilevelParameterEstimation(unittest.TestCase):
             membership = generate_random_partition(num_nodes=100, K=2)
             self.assert_temporal_SBM_correct_convergence(first_layer_membership=membership, num_layers=num_layers)
 
-    def test_directed_consistency_temporal_SBM_louvain(self):
+    def test_directed_consistency_temporal_SBM_leiden(self):
         """Test parameter estimate consistency on a temporal SBM when the intralayer edges are directed."""
-        if not check_multilayer_louvain_capabilities(fatal=False):
-            # just return since this version of louvain is unable to perform multilayer parameter estimation anyway
-            return
-
         membership = [0] * 25 + [1] * 25 + [2] * 25
         G_intralayer, G_interlayer, layer_membership = self.generate_temporal_SBM(copying_probability=0.9,
                                                                                   p_in=0.25, p_out=0.05,
                                                                                   first_layer_membership=membership,
                                                                                   num_layers=25)
 
-        partitions = repeated_louvain_from_gammas_omegas(G_intralayer, G_interlayer, layer_membership,
-                                                         gammas=[0.5, 1.0, 1.5], omegas=[0.5, 1.0, 1.5])
+        partitions = repeated_leiden_from_gammas_omegas(G_intralayer, G_interlayer, layer_membership,
+                                                        gammas=[0.5, 1.0, 1.5], omegas=[0.5, 1.0, 1.5])
 
         for partition in partitions:
             # here, undirected/directed refers to the intralayer edges only

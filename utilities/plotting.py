@@ -87,7 +87,7 @@ def plot_2d_domains(domains, xlim, ylim, flip_axes=False, use_current_axes=False
     for polyverts, membership in domains:
         if flip_axes:
             polyverts = [(x[1], x[0]) for x in polyverts]
-        polygon = Polygon(polyverts, True)
+        polygon = Polygon(polyverts, closed=True)
         patches.append(polygon)
 
     cnorm = matplotlib.colors.Normalize(vmin=0, vmax=len(domains))
@@ -114,7 +114,7 @@ def plot_2d_domains(domains, xlim, ylim, flip_axes=False, use_current_axes=False
             for v in this_polyverts:
                 neighboring_domains.update(vertex_to_neighbor_domain_indices[tuple(v)])
             neighbor_colors = {colors[i] for i in neighboring_domains}
-            colors[i] = sample(available_colors.difference(neighbor_colors), 1)[0]
+            colors[i] = sample(sorted(available_colors.difference(neighbor_colors)), 1)[0]
 
     p = PatchCollection(patches, facecolors=colors, alpha=1.0, edgecolors='black', linewidths=1.5)
     ax.add_collection(p)
@@ -141,7 +141,7 @@ def plot_2d_domains_with_estimates(domains_with_estimates, xlim, ylim, plot_esti
         if flip_axes:
             polyverts = [(x[1], x[0]) for x in polyverts]
 
-        polygon = Polygon(polyverts, True)
+        polygon = Polygon(polyverts, closed=True)
         patches.append(polygon)
 
         centroid_x = np.mean([x[0] for x in polyverts])
@@ -186,7 +186,7 @@ def plot_2d_domains_with_num_communities(domains_with_estimates, xlim, ylim, fli
             polyverts = [(x[1], x[0]) for x in polyverts]
 
         if any(xlim[0] <= x[0] <= xlim[1] and ylim[0] <= x[1] <= ylim[1] for x in polyverts):
-            polygon = Polygon(polyverts, True)
+            polygon = Polygon(polyverts, closed=True)
             patches.append(polygon)
             Ks.append(num_communities(membership))
 
@@ -223,7 +223,7 @@ def plot_2d_domains_with_ami(domains_with_estimates, ground_truth, xlim, ylim, f
             polyverts = [(x[1], x[0]) for x in polyverts]
 
         if any(xlim[0] <= x[0] <= xlim[1] and ylim[0] <= x[1] <= ylim[1] for x in polyverts):
-            polygon = Polygon(polyverts, True)
+            polygon = Polygon(polyverts, closed=True)
             patches.append(polygon)
             amis.append(ami(membership, ground_truth))
 
