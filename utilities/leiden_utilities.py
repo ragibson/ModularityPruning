@@ -1,11 +1,12 @@
 from .progress import Progress
 import functools
+import igraph as ig
 import leidenalg
-import louvain  # TODO: continue removing louvain usages
 from math import ceil
 from multiprocessing import Pool, cpu_count
 import numpy as np
 import psutil
+import warnings
 
 LOW_MEMORY_THRESHOLD = 1e9  # 1 GB
 
@@ -49,70 +50,6 @@ def singlelayer_leiden(G, gamma, return_partition=False):
         return tuple(partition.membership)
 
 
-def check_multilayer_louvain_capabilities(fatal=True):
-    """Check if we are using the version of louvain with fast multilayer optimization.
-
-    :param fatal: if True, raise an error when we are not using the desired louvain version
-    """
-    # TODO: this method is truly still using louvain
-    try:
-        louvain.RBConfigurationVertexPartitionWeightedLayers
-    except AttributeError as e:
-        if not fatal:
-            return False
-
-        raise AttributeError("Your installation of louvain does not support fast multilayer optimization. See "
-                             "https://github.com/wweir827/louvain-igraph and "
-                             "https://github.com/vtraag/louvain-igraph/pull/34") from e
-
-    return True
-
-
-def multilayer_louvain(G_intralayer, G_interlayer, layer_vec, gamma, omega, optimiser=None, return_partition=False):
-    r"""Run the Louvain modularity maximization algorithm at a single (:math:`\gamma, \omega`) value.
-
-    :param G_intralayer: intralayer graph of interest
-    :type G_intralayer: igraph.Graph
-    :param G_interlayer: interlayer graph of interest
-    :type G_interlayer: igraph.Graph
-    :param layer_vec: list of each vertex's layer membership
-    :type layer_vec: list[int]
-    :param gamma: gamma (intralayer resolution parameter) to run Louvain at
-    :type gamma: float
-    :param omega: omega (interlayer resolution parameter) to run Louvain at
-    :type omega: float
-    :param optimiser: if not None, use passed-in (potentially custom) louvain optimiser
-    :type optimiser: louvain.Optimiser
-    :param return_partition: if True, return a louvain partition. Otherwise, return a community membership tuple
-    :type return_partition: bool
-    :return: partition from louvain
-    :rtype: tuple[int] or louvain.RBConfigurationVertexPartitionWeightedLayers
-    """
-    # TODO: this method is truly still using louvain
-    # RBConfigurationVertexPartitionWeightedLayers implements a multilayer version of "standard" modularity (i.e.
-    # the Reichardt and Bornholdt's Potts model with configuration null model).
-    check_multilayer_louvain_capabilities()
-
-    if 'weight' not in G_intralayer.es:
-        G_intralayer.es['weight'] = [1.0] * G_intralayer.ecount()
-
-    if 'weight' not in G_interlayer.es:
-        G_interlayer.es['weight'] = [1.0] * G_interlayer.ecount()
-
-    if optimiser is None:
-        optimiser = louvain.Optimiser()
-
-    intralayer_part = louvain.RBConfigurationVertexPartitionWeightedLayers(G_intralayer, layer_vec=layer_vec,
-                                                                           weights='weight', resolution_parameter=gamma)
-    interlayer_part = louvain.CPMVertexPartition(G_interlayer, resolution_parameter=0.0, weights='weight')
-    optimiser.optimise_partition_multiplex([intralayer_part, interlayer_part], layer_weights=[1, omega])
-
-    if return_partition:
-        return intralayer_part
-    else:
-        return tuple(intralayer_part.membership)
-
-
 def leiden_part(G):
     return leidenalg.RBConfigurationVertexPartition(G)
 
@@ -125,28 +62,103 @@ def leiden_part_with_membership(G, membership):
     return part
 
 
-def multilayer_louvain_part(G_intralayer, G_interlayer, layer_membership):
-    # TODO: this method is truly still using louvain
+def split_intralayer_leiden_graph(G_intralayer, layer_membership):
+    """
+    Split intralayer network into a separate network for each layer.
+
+    This is needed since leidenalg lacks support for faster multilayer optimization.
+
+    WARNING: Optimization can be EXTREMELY slow! Leidenalg does not properly implement multilayer optimization.
+
+    :param G_intralayer: intralayer graph of interest
+    :type G_intralayer: igraph.Graph
+    :param layer_vec: list of each vertex's layer membership
+    :type layer_vec: list[int]
+    :return: list of intralayer networks
+    :rtype: list[igraph.Graph]
+    """
+    warnings.warn("You are using Leiden multilayer modularity optimization, "
+                  "which is inefficiently implemented by leidenalg. THIS CAN BE EXTREMELY SLOW!")
+    T = max(layer_membership) + 1
+
+    G_split_layers_list = []
+    for layer_idx in range(T):
+        # naively split edges since leidenalg will be so slow anyway
+        G_layer = ig.Graph(n=G_intralayer.vcount(), edges=[(e.source, e.target) for e in G_intralayer.es
+                                                           if layer_membership[e.source] == layer_idx],
+                           directed=G_intralayer.is_directed())
+        G_layer.es['weight'] = [e['weight'] for e in G_intralayer.es if layer_membership[e.source] == layer_idx]
+        G_split_layers_list.append(G_layer)
+    return G_split_layers_list
+
+
+def multilayer_leiden(G_intralayer, G_interlayer, layer_vec, gamma, omega, optimiser=None, return_partition=False):
+    r"""Run the Leiden modularity maximization algorithm at a single (:math:`\gamma, \omega`) value.
+
+    WARNING: Optimization can be EXTREMELY slow! Leidenalg does not properly implement multilayer optimization.
+
+    :param G_intralayer: intralayer graph of interest
+    :type G_intralayer: igraph.Graph
+    :param G_interlayer: interlayer graph of interest
+    :type G_interlayer: igraph.Graph
+    :param layer_vec: list of each vertex's layer membership
+    :type layer_vec: list[int]
+    :param gamma: gamma (intralayer resolution parameter) to run Leiden at
+    :type gamma: float
+    :param omega: omega (interlayer resolution parameter) to run Leiden at
+    :type omega: float
+    :param optimiser: if not None, use passed-in (potentially custom) leidenalg optimiser
+    :type optimiser: leidenalg.Optimiser
+    :param return_partition: if True, return a leidenalg partition. Otherwise, return a community membership tuple
+    :type return_partition: bool
+    :return: partition from leidenalg
+    :rtype: tuple[int] or leidenalg.RBConfigurationVertexPartitionWeightedLayers
+    """
     if 'weight' not in G_intralayer.es:
         G_intralayer.es['weight'] = [1.0] * G_intralayer.ecount()
 
     if 'weight' not in G_interlayer.es:
         G_interlayer.es['weight'] = [1.0] * G_interlayer.ecount()
 
-    intralayer_part = louvain.RBConfigurationVertexPartitionWeightedLayers(G_intralayer, layer_vec=layer_membership,
-                                                                           weights='weight')
-    interlayer_part = louvain.CPMVertexPartition(G_interlayer, resolution_parameter=0.0, weights='weight')
-    return intralayer_part, interlayer_part
+    G_split_layers = split_intralayer_leiden_graph(G_intralayer, layer_vec)
+
+    if optimiser is None:
+        optimiser = leidenalg.Optimiser()
+
+    intralayer_parts = [leidenalg.RBConfigurationVertexPartition(G_layer, weights='weight', resolution_parameter=gamma)
+                        for G_layer in G_split_layers]
+    interlayer_part = leidenalg.CPMVertexPartition(G_interlayer, resolution_parameter=0.0, weights='weight')
+    optimiser.optimise_partition_multiplex(intralayer_parts + [interlayer_part],
+                                           layer_weights=[1] * len(intralayer_parts) + [omega])
+
+    if return_partition:
+        return intralayer_parts
+    else:
+        return tuple(intralayer_parts[0].membership)
 
 
-def multilayer_louvain_part_with_membership(G_intralayer, G_interlayer, layer_membership, community_membership):
-    # TODO: this method is truly still using louvain
+def multilayer_leiden_part(G_intralayer, G_interlayer, layer_membership):
+    if 'weight' not in G_intralayer.es:
+        G_intralayer.es['weight'] = [1.0] * G_intralayer.ecount()
+
+    if 'weight' not in G_interlayer.es:
+        G_interlayer.es['weight'] = [1.0] * G_interlayer.ecount()
+
+    G_split_layers = split_intralayer_leiden_graph(G_intralayer, layer_membership)
+    intralayer_parts = [leidenalg.RBConfigurationVertexPartition(G_layer, weights='weight')
+                        for G_layer in G_split_layers]
+    interlayer_part = leidenalg.CPMVertexPartition(G_interlayer, resolution_parameter=0.0, weights='weight')
+    return intralayer_parts, interlayer_part
+
+
+def multilayer_leiden_part_with_membership(G_intralayer, G_interlayer, layer_membership, community_membership):
     if isinstance(community_membership, np.ndarray):
         community_membership = community_membership.tolist()
-    intralayer_part, interlayer_part = multilayer_louvain_part(G_intralayer, G_interlayer, layer_membership)
-    intralayer_part.set_membership(community_membership)
+    intralayer_parts, interlayer_part = multilayer_leiden_part(G_intralayer, G_interlayer, layer_membership)
+    for intralayer_part in intralayer_parts:
+        intralayer_part.set_membership(community_membership)
     interlayer_part.set_membership(community_membership)
-    return intralayer_part, interlayer_part
+    return intralayer_parts, interlayer_part
 
 
 def repeated_leiden_from_gammas(G, gammas):
@@ -201,16 +213,15 @@ def repeated_parallel_leiden_from_gammas(G, gammas, show_progress=True, chunk_di
     return total
 
 
-def repeated_louvain_from_gammas_omegas(G_intralayer, G_interlayer, layer_vec, gammas, omegas):
-    # TODO: this method is truly still using louvain
-    return {sorted_tuple(multilayer_louvain(G_intralayer, G_interlayer, layer_vec, gamma, omega))
+def repeated_leiden_from_gammas_omegas(G_intralayer, G_interlayer, layer_vec, gammas, omegas):
+    return {sorted_tuple(multilayer_leiden(G_intralayer, G_interlayer, layer_vec, gamma, omega))
             for gamma in gammas for omega in omegas}
 
 
-def repeated_parallel_louvain_from_gammas_omegas(G_intralayer, G_interlayer, layer_vec, gammas, omegas,
-                                                 show_progress=True, chunk_dispatch=True):
+def repeated_parallel_leiden_from_gammas_omegas(G_intralayer, G_interlayer, layer_vec, gammas, omegas,
+                                                show_progress=True, chunk_dispatch=True):
     """
-    Runs louvain at each gamma and omega in ``gammas`` and ``omegas``, using all CPU cores available.
+    Runs leidenalg at each gamma and omega in ``gammas`` and ``omegas``, using all CPU cores available.
 
     :param G_intralayer: intralayer graph of interest
     :type G_intralayer: igraph.Graph
@@ -218,9 +229,9 @@ def repeated_parallel_louvain_from_gammas_omegas(G_intralayer, G_interlayer, lay
     :type G_interlayer: igraph.Graph
     :param layer_vec: list of each vertex's layer membership
     :type layer_vec: list[int]
-    :param gammas: list of gammas to run louvain at
+    :param gammas: list of gammas to run leidenalg at
     :type gammas: list[float]
-    :param omegas: list of omegas to run louvain at
+    :param omegas: list of omegas to run leidenalg at
     :type omegas: list[float]
     :param show_progress: if True, render a progress bar
     :type show_progress: bool
@@ -230,7 +241,6 @@ def repeated_parallel_louvain_from_gammas_omegas(G_intralayer, G_interlayer, lay
     :return: a set of all unique partitions encountered
     :rtype: set of tuple[int]
     """
-    # TODO: this method is truly still using louvain
     resolution_parameter_points = [(gamma, omega) for gamma in gammas for omega in omegas]
 
     pool = Pool(processes=cpu_count())
@@ -250,7 +260,7 @@ def repeated_parallel_louvain_from_gammas_omegas(G_intralayer, G_interlayer, lay
         progress = Progress(ceil(len(resolution_parameter_points) / chunk_size))
 
     for chunk in chunk_params:
-        for partition in pool.starmap(multilayer_louvain, chunk):
+        for partition in pool.starmap(multilayer_leiden, chunk):
             total.add(sorted_tuple(partition))
 
         if show_progress:

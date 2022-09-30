@@ -15,7 +15,7 @@ class TestMonolayerParameterEstimation(unittest.TestCase):
         """This mimics the synthetic test from Newman's paper on the equivalence.
 
         The setup here is the same as in FIG 1 of 'Equivalence between modularity optimization and maximum likelihood
-        methods for community detection', albeit using Louvain for modularity maximization."""
+        methods for community detection', albeit using Leiden for modularity maximization."""
 
         for q in range(3, 15):
             community_sizes = [250] * q  # q equally sized groups of 250 nodes

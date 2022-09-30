@@ -1,8 +1,7 @@
 from .shared_testing_functions import generate_connected_multilayer_ER, generate_random_values, \
     generate_random_partitions
 from modularitypruning.champ_utilities import CHAMP_3D
-from modularitypruning.leiden_utilities import multilayer_louvain_part_with_membership, \
-    check_multilayer_louvain_capabilities
+from modularitypruning.leiden_utilities import multilayer_leiden_part_with_membership
 from numpy import mean
 from random import seed
 import unittest
@@ -31,31 +30,29 @@ def point_is_inside_champ_domain(gamma, omega, domain_vertices):
 class TestCHAMP3D(unittest.TestCase):
     def assert_best_partitions_match_champ_set(self, G_intralayer, G_interlayer, layer_membership, partitions,
                                                champ_domains, gammas, omegas):
-        if not check_multilayer_louvain_capabilities(fatal=False):
-            # just return since this version of louvain is unable to perform multilayer parameter estimation anyway
-            return
-
-        membership_to_intralayer_louvain_partition = {}
-        membership_to_interlayer_louvain_partition = {}
+        membership_to_intralayer_leiden_partitions = {}
+        membership_to_interlayer_leiden_partition = {}
         for p in partitions:
-            intralayer_part, interlayer_part = multilayer_louvain_part_with_membership(G_intralayer, G_interlayer,
+            intralayer_parts, interlayer_part = multilayer_leiden_part_with_membership(G_intralayer, G_interlayer,
                                                                                        layer_membership, p)
-            membership_to_intralayer_louvain_partition[p] = intralayer_part
-            membership_to_interlayer_louvain_partition[p] = interlayer_part
+            membership_to_intralayer_leiden_partitions[p] = intralayer_parts
+            membership_to_interlayer_leiden_partition[p] = interlayer_part
 
         for gamma, omega in zip(gammas, omegas):
             best_partition_quality = max(
-                membership_to_intralayer_louvain_partition[p].quality(resolution_parameter=gamma) +
-                omega * membership_to_interlayer_louvain_partition[p].quality(resolution_parameter=0)
+                sum(p_intra.quality(resolution_parameter=gamma)
+                    for p_intra in membership_to_intralayer_leiden_partitions[p]) +
+                omega * membership_to_interlayer_leiden_partition[p].quality(resolution_parameter=0)
                 for p in partitions)
 
             for domain_vertices, membership in champ_domains:
                 if point_is_inside_champ_domain(gamma, omega, domain_vertices):
                     # check that the best partition quality matches that of the champ domains at this gamma
                     champ_quality = (
-                            membership_to_intralayer_louvain_partition[membership].quality(resolution_parameter=gamma)
+                            sum(p_intra.quality(resolution_parameter=gamma)
+                                for p_intra in membership_to_intralayer_leiden_partitions[membership])
                             + omega *
-                            membership_to_interlayer_louvain_partition[membership].quality(resolution_parameter=0)
+                            membership_to_interlayer_leiden_partition[membership].quality(resolution_parameter=0)
                     )
 
                     # note that this is float comparision to within ~10^{-10}
@@ -70,10 +67,6 @@ class TestCHAMP3D(unittest.TestCase):
     def assert_champ_correctness_unweighted_ER(self, num_nodes_per_layer=100, m=10000, num_layers=10, directed=False,
                                                num_partitions=10, num_sample_points=100, K_max=10,
                                                gamma_start=0.0, gamma_end=2.0, omega_start=0.0, omega_end=2.0):
-        if not check_multilayer_louvain_capabilities(fatal=False):
-            # just return since this version of louvain is unable to perform multilayer parameter estimation anyway
-            return
-
         G_intralayer, G_interlayer, layer_membership = generate_connected_multilayer_ER(
             num_nodes_per_layer=num_nodes_per_layer, m=m, num_layers=num_layers, directed=directed)
         partitions = generate_random_partitions(num_nodes=G_intralayer.vcount(), num_partitions=num_partitions,

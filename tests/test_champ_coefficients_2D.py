@@ -11,19 +11,19 @@ class TestCHAMPCoefficients2D(unittest.TestCase):
         A_hats, P_hats = coefficients
 
         for membership, A_hat, P_hat in zip(partitions, A_hats, P_hats):
-            louvain_part = leiden_part_with_membership(G, membership)
+            leiden_part = leiden_part_with_membership(G, membership)
 
             # Q(gamma=0) = sum_{ij} A_{ij} delta(c_i, c_j) = A_hat
-            louvain_A_hat = louvain_part.quality(resolution_parameter=0)
+            leiden_A_hat = leiden_part.quality(resolution_parameter=0)
 
             # Q(gamma=0) - Q(gamma=1)
             #   = sum_{ij} (A_{ij} - gamma*P_{ij} - A_{ij}) delta(c_i, c_j)
             #   = sum_{ij} P_{ij} delta(c_i, c_j)
             #   = P_hat
-            louvain_P_hat = louvain_A_hat - louvain_part.quality(resolution_parameter=1)
+            leiden_P_hat = leiden_A_hat - leiden_part.quality(resolution_parameter=1)
 
-            self.assertAlmostEqual(A_hat, louvain_A_hat, places=10)
-            self.assertAlmostEqual(P_hat, louvain_P_hat, places=10)
+            self.assertAlmostEqual(A_hat, leiden_A_hat, places=10)
+            self.assertAlmostEqual(P_hat, leiden_P_hat, places=10)
 
     def assert_partition_coefficient_correctness_unweighted_ER(self, n=100, m=500, directed=False,
                                                                num_partitions=10, K_max=5):
@@ -64,7 +64,7 @@ class TestCHAMPCoefficients2D(unittest.TestCase):
         for K_max in [2, 5, 10, 20]:
             self.assert_partition_coefficient_correctness_unweighted_ER(directed=True, num_partitions=100, K_max=K_max)
 
-    def test_partition_coefficient_correctness_igraph_famous_louvain(self):
+    def test_partition_coefficient_correctness_igraph_famous_leiden(self):
         """Test partition coefficient correctness on various famous graphs while obtaining partitions via Leiden.
 
         The correctness is checked for the original undirected and (symmetric) directed variants.

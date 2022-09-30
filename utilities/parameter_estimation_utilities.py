@@ -1,9 +1,8 @@
-from .leiden_utilities import leiden_part_with_membership, sorted_tuple, check_multilayer_louvain_capabilities
+from .leiden_utilities import leiden_part_with_membership, sorted_tuple
 from .champ_utilities import CHAMP_2D, CHAMP_3D
 from .partition_utilities import num_communities
 import igraph as ig
 import leidenalg
-import louvain  # TODO: continue removing louvain usages
 from math import log
 import numpy as np
 from scipy.optimize import fsolve
@@ -57,7 +56,7 @@ def estimate_multilayer_SBM_parameters(G_intralayer, G_interlayer, layer_vec, pa
     :param layer_vec: list of each vertex's layer membership
     :type layer_vec: list[int]
     :param partition: partition of interest
-    :type partition: louvain.RBConfigurationVertexPartitionWeightedLayers
+    :type partition: leidenalg.RBConfigurationVertexPartition
     :param model: network layer topology (temporal, multilevel, multiplex)
     :type model: str
     :param N: number of nodes per layer (automatically computed if None)
@@ -567,8 +566,6 @@ def prune_to_multilayer_stable_partitions(G_intralayer, G_interlayer, layer_vec,
     :return: list of community membership tuples
     :rtype: list[tuple[int]]
     """
-    check_multilayer_louvain_capabilities()
-
     if single_threaded:
         raise NotImplementedError("Single-threaded multilayer CHAMP was never implemented. This would be fairly easy"
                                   "to add, so please raise an issue if this feature is desired.")
@@ -585,7 +582,7 @@ def prune_to_multilayer_stable_partitions(G_intralayer, G_interlayer, layer_vec,
         warnings.warn("The pruning pipeline does not fully handle weighted graphs and will proceed as though the input "
                       "graph is unweighted.")
 
-    if isinstance(parts, louvain.RBConfigurationVertexPartitionWeightedLayers):
+    if isinstance(parts, leidenalg.RBConfigurationVertexPartition):
         # convert to (canonically represented) membership vectors if necessary
         parts = {sorted_tuple(part.membership) for part in parts}
     else:
