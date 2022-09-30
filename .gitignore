@@ -12,6 +12,7 @@ datasets
 *.zip
 *.mat
 *.dat
+*.htm
 
 # Generated figures
 *.png
