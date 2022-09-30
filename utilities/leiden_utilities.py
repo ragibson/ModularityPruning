@@ -77,8 +77,8 @@ def split_intralayer_leiden_graph(G_intralayer, layer_membership):
     :return: list of intralayer networks
     :rtype: list[igraph.Graph]
     """
-    warnings.warn("You are using Leiden multilayer modularity optimization, "
-                  "which is inefficiently implemented by leidenalg. THIS CAN BE EXTREMELY SLOW!")
+    warnings.warn("You are using Leiden multilayer modularity optimization. THIS CAN BE EXTREMELY SLOW! "
+                  "leidenalg's implementation is inefficient, especially when there are many layers.")
     T = max(layer_membership) + 1
 
     G_split_layers_list = []

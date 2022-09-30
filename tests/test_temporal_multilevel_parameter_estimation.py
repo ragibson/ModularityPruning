@@ -60,7 +60,7 @@ class TestTemporalAndMultilevelParameterEstimation(unittest.TestCase):
 
     def test_temporal_SBM_correct_convergence_varying_copying_probabilty(self):
         for eta in [0.25, 0.5, 0.75, 0.9]:
-            membership = generate_random_partition(num_nodes=100, K=2)
+            membership = generate_random_partition(num_nodes=250, K=2)
             self.assert_temporal_SBM_correct_convergence(copying_probability=eta, first_layer_membership=membership)
 
     def test_temporal_SBM_correct_convergence_varying_p_in(self):

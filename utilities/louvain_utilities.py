@@ -1,7 +1,10 @@
 """
 This is a deprecated version of leiden_utilities. Usage will be shimmed to use Leiden instead of Louvain when possible.
 
-The primary exceptions are the multilayer functions since leidenalg does not properly implement multilayer optimization.
+Prior to version v1.3.0, we used the Louvain algorithm for modularity maximization instead of Leiden. The deprecated
+module ``modularitypruning.louvain_utilities`` now shims single-layer functions to their corresponding Leiden versions
+in ``modularitypruning.leiden_utilities`` (though it still contains the legacy multi-layer functions since they can be
+faster in general -- leidenalg does not efficiently implement multilayer optimization).
 """
 from . import leiden_utilities
 from .leiden_utilities import sorted_tuple, LOW_MEMORY_THRESHOLD
