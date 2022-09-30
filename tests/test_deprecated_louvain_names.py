@@ -5,7 +5,7 @@ import unittest
 class TestDeprecatedLouvainNames(unittest.TestCase):
     def test_deprecated_louvain_module(self):
         with pytest.warns(DeprecationWarning):
-            from modularitypruning import louvain_utilities
+            from modularitypruning import louvain_utilities  # noqa
 
     def test_shimmed_louvain_functions_in_old_module(self):
         # these only include the single-layer functions

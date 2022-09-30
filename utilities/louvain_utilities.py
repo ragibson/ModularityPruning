@@ -3,20 +3,23 @@ This is a deprecated version of leiden_utilities. Usage will be shimmed to use L
 
 The primary exceptions are the multilayer functions since leidenalg does not properly implement multilayer optimization.
 """
-import warnings
-
-warnings.simplefilter('always', DeprecationWarning)
-warnings.warn("modularitypruning.louvain_utilities has been replaced. "
-              "Please use leiden_utilities in the future when possible.", DeprecationWarning)
-
-# TODO: ensure remaining references to Louvain (especially in docstrings, documentation, etc.) are removed
-from .leiden_utilities import *
 from . import leiden_utilities
+from .leiden_utilities import sorted_tuple, LOW_MEMORY_THRESHOLD
+from .progress import Progress
+from math import ceil
+from multiprocessing import Pool, cpu_count
+import numpy as np
+import psutil
+import warnings
 
 try:
     import louvain  # import louvain if possible
 except ModuleNotFoundError:
     pass
+
+warnings.simplefilter('always', DeprecationWarning)
+warnings.warn("modularitypruning.louvain_utilities has been replaced. "
+              "Please use leiden_utilities in the future when possible.", DeprecationWarning)
 
 
 def __getattr__(name):
