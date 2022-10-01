@@ -79,15 +79,28 @@ def split_intralayer_leiden_graph(G_intralayer, layer_membership):
     """
     warnings.warn("You are using Leiden multilayer modularity optimization. THIS CAN BE EXTREMELY SLOW! "
                   "leidenalg's implementation is inefficient, especially when there are many layers.")
+
+    # internally use hashable objects for memoization
+    return _split_leiden_graph_layers_cached(n=G_intralayer.vcount(), G_es=tuple(G_intralayer.es),
+                                             is_directed=G_intralayer.is_directed(),
+                                             layer_membership=tuple(layer_membership))
+
+
+@functools.lru_cache(maxsize=1)
+def _split_leiden_graph_layers_cached(n, G_es, is_directed, layer_membership):
     T = max(layer_membership) + 1
+
+    edges_by_layer = [[] for _ in range(T)]
+    weights_by_layer = [[] for _ in range(T)]
+    for e in G_es:
+        e_layer = layer_membership[e.source]
+        edges_by_layer[e_layer].append((e.source, e.target))
+        weights_by_layer[e_layer].append(e['weight'])
 
     G_split_layers_list = []
     for layer_idx in range(T):
-        # naively split edges since leidenalg will be so slow anyway
-        G_layer = ig.Graph(n=G_intralayer.vcount(), edges=[(e.source, e.target) for e in G_intralayer.es
-                                                           if layer_membership[e.source] == layer_idx],
-                           directed=G_intralayer.is_directed())
-        G_layer.es['weight'] = [e['weight'] for e in G_intralayer.es if layer_membership[e.source] == layer_idx]
+        G_layer = ig.Graph(n=n, edges=edges_by_layer[layer_idx], directed=is_directed)
+        G_layer.es['weight'] = weights_by_layer[layer_idx]
         G_split_layers_list.append(G_layer)
     return G_split_layers_list
 
