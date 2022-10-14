@@ -16,6 +16,7 @@ datasets
 
 # Generated figures
 *.png
+!docs/example_figures/*.png
 *.pdf
 
 # Byte-compiled / optimized / DLL files

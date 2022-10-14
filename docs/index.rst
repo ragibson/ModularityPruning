@@ -6,6 +6,8 @@
 Welcome to ModularityPruning's documentation!
 =============================================
 
+.. image:: example_figures/article_figure_method_visual.png
+
 ModularityPruning is a pruning tool to identify small subsets of network partitions that are significant from the
 perspective of stochastic block model inference.
 
