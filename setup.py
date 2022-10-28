@@ -9,7 +9,7 @@ with open(os.path.join(here, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name='modularitypruning',
-    version='1.3.1',
+    version='1.3.2',
     package_dir={'modularitypruning': 'utilities'},
     packages=['modularitypruning'],
     url='https://github.com/ragibson/ModularityPruning',
@@ -27,6 +27,7 @@ setup(
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
         'Programming Language :: Python :: 3 :: Only',
         'License :: OSI Approved :: MIT License'
     ],
