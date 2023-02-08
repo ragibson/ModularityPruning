@@ -56,6 +56,6 @@ which is the stable 4-community split of the Karate Club network.
 
 ## More Information
 
-The [TODO items](TODO.md) and
-[figure generation runtimes](figure_generation_runtimes.md) READMEs may also be
-of interest.
+The [issues (which contains some potential future work)](https://github.com/ragibson/ModularityPruning/issues)
+and [figure generation runtimes README](figure_generation_runtimes.md) may also
+be of interest.
