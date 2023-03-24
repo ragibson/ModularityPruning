@@ -14,6 +14,11 @@ perspective of stochastic block model inference.
 This method works for single-layer and multi-layer networks, as well as for restricting focus to a fixed number of
 communities when desired.
 
+Additional information can be found in the journal article at https://doi.org/10.1038/s41598-022-20142-6 or the
+article's significantly more detailed `Supplementary Information`_.
+
+.. _Supplementary Information: https://static-content.springer.com/esm/art%3A10.1038%2Fs41598-022-20142-6/MediaObjects/41598_2022_20142_MOESM1_ESM.pdf
+
 Prior to version v1.3.0, we used the Louvain algorithm for modularity maximization instead of Leiden. The deprecated
 module ``modularitypruning.louvain_utilities`` now shims single-layer functions to their corresponding Leiden versions
 in ``modularitypruning.leiden_utilities`` (though it still contains the legacy multi-layer functions since they can be
