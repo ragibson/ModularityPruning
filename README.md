@@ -11,6 +11,11 @@ See the [documentation](https://modularitypruning.readthedocs.io/en/latest/)
 or the journal article at https://doi.org/10.1038/s41598-022-20142-6 for more
 information.
 
+Significantly more details can be found in the article's
+[Supplementary Information](
+https://static-content.springer.com/esm/art%3A10.1038%2Fs41598-022-20142-6/MediaObjects/41598_2022_20142_MOESM1_ESM.pdf
+).
+
 ## Installation
 This project is on [PyPI](https://pypi.org/project/modularitypruning/) and can
 be installed with
