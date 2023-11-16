@@ -10,7 +10,7 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-from importlib.metadata import version
+import importlib.metadata
 import os
 import sys
 
@@ -27,7 +27,7 @@ copyright = '2020, Ryan Gibson'
 author = 'Ryan Gibson'
 
 # The full version, including alpha/beta/rc tags
-release = version('modularitypruning')
+release = importlib.metadata.version('modularitypruning')
 
 # -- General configuration ---------------------------------------------------
 
