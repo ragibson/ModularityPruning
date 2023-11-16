@@ -18,7 +18,7 @@ def plot_estimates(gamma_estimates):
     """Plot partition dominance ranges with gamma estimates.
 
     :param gamma_estimates: gamma estimates as returned from
-        :meth:`~modularitypruning.plotting.ranges_to_gamma_estimates`
+        :meth:`~modularitypruning.parameter_estimation_utilities.ranges_to_gamma_estimates`
     """
 
     ax = plt.gca()
