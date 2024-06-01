@@ -548,10 +548,11 @@ def prune_to_multilayer_stable_partitions(G_intralayer, G_interlayer, layer_vec,
 
     See https://doi.org/10.1038/s41598-022-20142-6 for more details.
 
-    NOTE: This method truncates omega estimates to ``omega_end - 1e-3`` in order to properly identify stable partitions
-    with infinite interlayer coupling estimates (e.g. when all membership labels persist across layers). If
-    ``omega_end`` is set too low, such partitions may be incorrectly identified as stable. As such, you should be
-    somewhat wary of the returned partitions with zero community structure differences across layers.
+    NOTE: This method will truncate omega estimates to ``omega_end - 1e-3`` (and raise a warning) if needed to properly
+    identify stable partitions with very large or infinite interlayer coupling estimates (e.g., when all membership
+    labels persist across layers). If ``omega_end`` is set too low, these partitions may be incorrectly identified as
+    stable. Conversely, some partitions with large omega estimates might be misclassified as not stable. Therefore, be
+    cautious of returned partitions with little or no community structure differences across layers.
 
     :param G_intralayer: intralayer graph of interest
     :type G_intralayer: igraph.Graph
@@ -610,6 +611,11 @@ def prune_to_multilayer_stable_partitions(G_intralayer, G_interlayer, layer_vec,
     domains = CHAMP_3D(G_intralayer, G_interlayer, layer_vec, parts, gamma_start, gamma_end,
                        omega_start, omega_end)
     domains_with_estimates = domains_to_gamma_omega_estimates(G_intralayer, G_interlayer, layer_vec, domains, model)
+
+    if any(o_est >= omega_end for _, _, g_est, o_est in domains_with_estimates if g_est is not None):
+        warnings.warn(f"We are truncating some omega estimates to your choice of omega_end={omega_end}. You should "
+                      f"check that this accurately captures the high-omega behavior of the partition domains. "
+                      f"Be cautious of partitions with little or no community structure differences across layers!")
 
     # Truncate infinite omega solutions to our maximum omega
     domains_with_estimates = [(polyverts, membership, g_est, min(o_est, omega_end - 1e-3))
