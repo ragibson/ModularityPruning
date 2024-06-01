@@ -534,6 +534,18 @@ def prune_to_multilayer_stable_partitions(G_intralayer, G_interlayer, layer_vec,
     parameter estimates are within the provided ``gamma_start``, ``gamma_end``, ``omega_start``, and ``omega_end``
     bounds.
 
+    There are three network layer topology models available, all from Pamfil et al.
+
+    * **"temporal"**: Interlayer edges always connect copies of a node from one layer to the next, often representing
+      interactions that change over time.
+    * **"multilevel"**: Interlayer edges connect a hierarchy of monolayer networks from one layer to the next. This is
+      more general than temporal networks, as nodes can connect arbitrarily to nodes in the next layer. These often
+      represent inclusion relationships, such as cities to counties, counties to states, and states to countries.
+    * **"multiplex"**: Each layer represents a type of interaction, making the entire multilayer network akin to an
+      edge-colored multigraph (each type of edge has its own layer). This model is unique in that there is no natural
+      ordering of layers, and the resulting theory requires some analytical simplifications, making the resulting
+      parameter estimation the least robust of the three models.
+
     See https://doi.org/10.1038/s41598-022-20142-6 for more details.
 
     NOTE: This method truncates omega estimates to ``omega_end - 1e-3`` in order to properly identify stable partitions
