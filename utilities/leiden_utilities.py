@@ -6,7 +6,6 @@ from math import ceil
 from multiprocessing import Pool, cpu_count
 import numpy as np
 import psutil
-import warnings
 
 LOW_MEMORY_THRESHOLD = 1e9  # 1 GB
 
@@ -68,8 +67,6 @@ def split_intralayer_leiden_graph(G_intralayer, layer_membership):
 
     This is needed since leidenalg lacks support for faster multilayer optimization.
 
-    WARNING: Optimization can be EXTREMELY slow! Leidenalg does not properly implement multilayer optimization.
-
     :param G_intralayer: intralayer graph of interest
     :type G_intralayer: igraph.Graph
     :param layer_vec: list of each vertex's layer membership
@@ -77,9 +74,6 @@ def split_intralayer_leiden_graph(G_intralayer, layer_membership):
     :return: list of intralayer networks
     :rtype: list[igraph.Graph]
     """
-    warnings.warn("You are using Leiden multilayer modularity optimization. THIS CAN BE EXTREMELY SLOW! "
-                  "leidenalg's implementation is inefficient, especially when there are many layers.")
-
     # internally use hashable objects for memoization
     return _split_leiden_graph_layers_cached(n=G_intralayer.vcount(), G_es=tuple(G_intralayer.es),
                                              is_directed=G_intralayer.is_directed(),
@@ -108,7 +102,8 @@ def _split_leiden_graph_layers_cached(n, G_es, is_directed, layer_membership):
 def multilayer_leiden(G_intralayer, G_interlayer, layer_vec, gamma, omega, optimiser=None, return_partition=False):
     r"""Run the Leiden modularity maximization algorithm at a single (:math:`\gamma, \omega`) value.
 
-    WARNING: Optimization can be EXTREMELY slow! Leidenalg does not properly implement multilayer optimization.
+    WARNING: Optimization can be EXTREMELY slow for large numbers of layers! Leidenalg does not properly implement
+    multilayer optimization.
 
     :param G_intralayer: intralayer graph of interest
     :type G_intralayer: igraph.Graph
@@ -235,6 +230,9 @@ def repeated_parallel_leiden_from_gammas_omegas(G_intralayer, G_interlayer, laye
                                                 show_progress=True, chunk_dispatch=True):
     """
     Runs leidenalg at each gamma and omega in ``gammas`` and ``omegas``, using all CPU cores available.
+
+    WARNING: Optimization can be EXTREMELY slow for large numbers of layers! Leidenalg does not properly implement
+    multilayer optimization.
 
     :param G_intralayer: intralayer graph of interest
     :type G_intralayer: igraph.Graph
