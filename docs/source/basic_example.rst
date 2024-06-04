@@ -9,14 +9,14 @@ See :doc:`usage` for complete documentation on this function, but a simple examp
 
    import igraph as ig
    from modularitypruning import prune_to_stable_partitions
-   from modularitypruning.leiden_utilities import repeated_leiden_from_gammas
+   from modularitypruning.leiden_utilities import repeated_parallel_leiden_from_gammas
    import numpy as np
 
    # get Karate Club graph in igraph
    G = ig.Graph.Famous("Zachary")
 
    # run leiden 1000 times on this graph from gamma=0 to gamma=2
-   partitions = repeated_leiden_from_gammas(G, np.linspace(0, 2, 1000))
+   partitions = repeated_parallel_leiden_from_gammas(G, np.linspace(0, 2, 1000))
 
    # prune to the stable partitions from gamma=0 to gamma=2
    stable_partitions = prune_to_stable_partitions(G, partitions, 0, 2)

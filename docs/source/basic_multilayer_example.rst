@@ -51,7 +51,7 @@ resulting partitions down to a small subset of stable partitions.
 .. code-block:: python
 
   from modularitypruning import prune_to_multilayer_stable_partitions
-  from modularitypruning.leiden_utilities import repeated_leiden_from_gammas_omegas
+  from modularitypruning.leiden_utilities import repeated_parallel_leiden_from_gammas_omegas
   import numpy as np
 
   # run leidenalg on a uniform 32x32 grid (1024 samples) of gamma and omega in [0, 2]
@@ -60,9 +60,9 @@ resulting partitions down to a small subset of stable partitions.
   leiden_gammas = np.linspace(*gamma_range, 32)
   leiden_omegas = np.linspace(*omega_range, 32)
 
-  parts = repeated_leiden_from_gammas_omegas(G_intralayer, G_interlayer, layer_vec,
-                                             gammas=leiden_gammas,
-                                             omegas=leiden_omegas)
+  parts = repeated_parallel_leiden_from_gammas_omegas(G_intralayer, G_interlayer, layer_vec,
+                                                      gammas=leiden_gammas,
+                                                      omegas=leiden_omegas)
 
   # prune to the stable partitions from (gamma=0, omega=0) to (gamma=2, omega=2)
   stable_parts = prune_to_multilayer_stable_partitions(G_intralayer, G_interlayer, layer_vec,
