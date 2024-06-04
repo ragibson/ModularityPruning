@@ -1,9 +1,9 @@
-from .progress import Progress
 import functools
 import igraph as ig
 import leidenalg
 from math import ceil
 from multiprocessing import Pool, cpu_count
+from tqdm import tqdm
 import numpy as np
 import psutil
 
@@ -47,6 +47,11 @@ def singlelayer_leiden(G, gamma, return_partition=False):
         return partition
     else:
         return tuple(partition.membership)
+
+
+def _wrapped_singlelayer_leiden(args):
+    """Wrapped singlelayer_leiden() for use in multiprocessing.Pool.imap_unordered."""
+    return singlelayer_leiden(*args)
 
 
 def leiden_part(G):
@@ -145,6 +150,11 @@ def multilayer_leiden(G_intralayer, G_interlayer, layer_vec, gamma, omega, optim
         return tuple(intralayer_parts[0].membership)
 
 
+def _wrapped_multilayer_leiden(args):
+    """Wrapped multilayer_leiden() for use in multiprocessing.Pool.imap_unordered."""
+    return multilayer_leiden(*args)
+
+
 def multilayer_leiden_part(G_intralayer, G_interlayer, layer_membership):
     if 'weight' not in G_intralayer.es:
         G_intralayer.es['weight'] = [1.0] * G_intralayer.ecount()
@@ -173,51 +183,29 @@ def repeated_leiden_from_gammas(G, gammas):
     return {sorted_tuple(singlelayer_leiden(G, gamma)) for gamma in gammas}
 
 
-def repeated_parallel_leiden_from_gammas(G, gammas, show_progress=True, chunk_dispatch=True):
+def repeated_parallel_leiden_from_gammas(G, gammas, show_progress=True):
     r"""Runs the Leiden modularity maximization algorithm at each provided :math:`\gamma` value, using all CPU cores.
 
     :param G: graph of interest
     :type G: igraph.Graph
     :param gammas: list of gammas (resolution parameters) to run Leiden at
     :type gammas: list[float]
-    :param show_progress: if True, render a progress bar. This will only work if ``chunk_dispatch`` is also True
+    :param show_progress: if True, render a progress bar
     :type show_progress: bool
-    :param chunk_dispatch: if True, dispatch parallel work in chunks. Setting this to False may increase performance,
-                           but can lead to out-of-memory issues
-    :type chunk_dispatch: bool
     :return: a set of all unique partitions returned by the Leiden algorithm
     :rtype: set of tuple[int]
     """
-
-    pool = Pool(processes=cpu_count())
     total = set()
+    pool_chunk_size = max(1, len(gammas) // (cpu_count() * 100))
+    with Pool(processes=cpu_count()) as pool:
+        pool_iterator = pool.imap_unordered(_wrapped_singlelayer_leiden, [(G, g) for g in gammas],
+                                            chunksize=pool_chunk_size)
+        if show_progress:
+            pool_iterator = tqdm(pool_iterator, total=len(gammas))
 
-    chunk_size = len(gammas) // 99
-    if chunk_size > 0 and chunk_dispatch:
-        chunk_params = ([(G, g) for g in gammas[i:i + chunk_size]] for i in range(0, len(gammas), chunk_size))
-    else:
-        chunk_params = [[(G, g) for g in gammas]]
-        chunk_size = len(gammas)
-
-    if show_progress:
-        progress = Progress(ceil(len(gammas) / chunk_size))
-
-    for chunk in chunk_params:
-        for partition in pool.starmap(singlelayer_leiden, chunk):
+        for partition in pool_iterator:
             total.add(sorted_tuple(partition))
 
-        if show_progress:
-            progress.increment()
-
-        if psutil.virtual_memory().available < LOW_MEMORY_THRESHOLD:
-            # Reinitialize pool to get around an apparent memory leak in multiprocessing
-            pool.close()
-            pool = Pool(processes=cpu_count())
-
-    if show_progress:
-        progress.done()
-
-    pool.close()
     return total
 
 
@@ -227,7 +215,7 @@ def repeated_leiden_from_gammas_omegas(G_intralayer, G_interlayer, layer_vec, ga
 
 
 def repeated_parallel_leiden_from_gammas_omegas(G_intralayer, G_interlayer, layer_vec, gammas, omegas,
-                                                show_progress=True, chunk_dispatch=True):
+                                                show_progress=True):
     """
     Runs leidenalg at each gamma and omega in ``gammas`` and ``omegas``, using all CPU cores available.
 
@@ -246,44 +234,23 @@ def repeated_parallel_leiden_from_gammas_omegas(G_intralayer, G_interlayer, laye
     :type omegas: list[float]
     :param show_progress: if True, render a progress bar
     :type show_progress: bool
-    :param chunk_dispatch: if True, dispatch parallel work in chunks. Setting this to False may increase performance,
-                           but can lead to out-of-memory issues
-    :type chunk_dispatch: bool
     :return: a set of all unique partitions encountered
     :rtype: set of tuple[int]
     """
     resolution_parameter_points = [(gamma, omega) for gamma in gammas for omega in omegas]
 
-    pool = Pool(processes=cpu_count())
     total = set()
+    pool_chunk_size = max(1, len(resolution_parameter_points) // (cpu_count() * 100))
+    with Pool(processes=cpu_count()) as pool:
+        pool_iterator = pool.imap_unordered(
+            _wrapped_multilayer_leiden,
+            [(G_intralayer, G_interlayer, layer_vec, gamma, omega) for gamma, omega in resolution_parameter_points],
+            chunksize=pool_chunk_size
+        )
+        if show_progress:
+            pool_iterator = tqdm(pool_iterator, total=len(resolution_parameter_points))
 
-    chunk_size = len(resolution_parameter_points) // 99
-    if chunk_size > 0 and chunk_dispatch:
-        chunk_params = ([(G_intralayer, G_interlayer, layer_vec, gamma, omega)
-                         for gamma, omega in resolution_parameter_points[i:i + chunk_size]]
-                        for i in range(0, len(resolution_parameter_points), chunk_size))
-    else:
-        chunk_params = [[(G_intralayer, G_interlayer, layer_vec, gamma, omega)
-                         for gamma, omega in resolution_parameter_points]]
-        chunk_size = len(gammas)
-
-    if show_progress:
-        progress = Progress(ceil(len(resolution_parameter_points) / chunk_size))
-
-    for chunk in chunk_params:
-        for partition in pool.starmap(multilayer_leiden, chunk):
+        for partition in pool_iterator:
             total.add(sorted_tuple(partition))
 
-        if show_progress:
-            progress.increment()
-
-        if psutil.virtual_memory().available < LOW_MEMORY_THRESHOLD:
-            # Reinitialize pool to get around an apparent memory leak in multiprocessing
-            pool.close()
-            pool = Pool(processes=cpu_count())
-
-    if show_progress:
-        progress.done()
-
-    pool.close()
     return total
