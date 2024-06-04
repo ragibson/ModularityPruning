@@ -69,7 +69,7 @@ def plot_estimates(gamma_estimates):
                 #           length_includes_head=True, alpha=0.5, zorder=2, **{"overhang": 0.5})
 
 
-def plot_2d_domains(domains, xlim, ylim, flip_axes=False, use_current_axes=False):
+def plot_2d_domains(domains, xlim, ylim, flip_axes=True, use_current_axes=False):
     """Plot partition dominance ranges in the (gamma, omega) plane, using the domains from CHAMP_3D.
 
     Limits output to xlim and ylim dimensions. Note that the plotting here has x=gamma and y=omega.
@@ -91,7 +91,7 @@ def plot_2d_domains(domains, xlim, ylim, flip_axes=False, use_current_axes=False
         patches.append(polygon)
 
     cnorm = matplotlib.colors.Normalize(vmin=0, vmax=len(domains))
-    cmap = matplotlib.cm.get_cmap("Set1")
+    cmap = plt.get_cmap("Set1")
     available_colors = {cmap(cnorm(i)) for i in range(len(domains))}
 
     if len(available_colors) == len(domains):
@@ -207,7 +207,7 @@ def plot_2d_domains_with_num_communities(domains_with_estimates, xlim, ylim, fli
     plt.ylim(ylim)
 
 
-def plot_2d_domains_with_ami(domains_with_estimates, ground_truth, xlim, ylim, flip_axes=False):
+def plot_2d_domains_with_ami(domains_with_estimates, ground_truth, xlim, ylim, flip_axes=True):
     """Plot partition dominance ranges in the (gamma, omega) plane, using the domains from CHAMP_3D and coloring by the
     AMI between the partitions and ground truth.
 
