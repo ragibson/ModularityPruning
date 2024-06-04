@@ -34,5 +34,5 @@ setup(
     ],
     python_requires='>=3.8, <4',
     install_requires=['leidenalg', 'matplotlib', "numpy", 'psutil', 'igraph',
-                      "scikit-learn", "scipy>=1.7", 'seaborn']
+                      "scikit-learn", "scipy>=1.7", 'seaborn', 'tqdm']
 )
