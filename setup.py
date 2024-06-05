@@ -9,7 +9,7 @@ with open(os.path.join(here, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name='modularitypruning',
-    version='1.3.6',
+    version='1.4.0',
     package_dir={'modularitypruning': 'utilities'},
     packages=['modularitypruning'],
     url='https://github.com/ragibson/ModularityPruning',
