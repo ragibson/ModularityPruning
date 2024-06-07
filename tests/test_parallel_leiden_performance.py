@@ -38,8 +38,7 @@ def determine_target_parallelization_speedup(num_calculations=32):
     """
     global PERFORMANCE_TARGET_RELATIVE_TO_PERFECT_SCALING
 
-    sleep(5)  # sleep to increase stability of the CPU utilization check
-    cpu_utilization = psutil.cpu_percent()
+    cpu_utilization = psutil.cpu_percent(interval=5)
     if cpu_utilization > 20:
         PERFORMANCE_TARGET_RELATIVE_TO_PERFECT_SCALING = 0.5
         warnings.warn(f"System CPU utilization is non-negligible during parallel performance test! "
