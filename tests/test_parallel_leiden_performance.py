@@ -9,6 +9,7 @@ import functools
 import igraph as ig
 import numpy as np
 import psutil
+import pytest
 import unittest
 import warnings
 
@@ -59,6 +60,7 @@ def determine_target_parallelization_speedup(num_calculations=32):
     return num_pool_calculations / num_calculations * base_duration / pool_duration
 
 
+@pytest.mark.serial  # these tests have to run serially for the parallel performance comparisons to make sense
 class TestParallelLeidenPerformance(unittest.TestCase):
     @staticmethod
     def run_singlelayer_graph_parallelization(G, gammas):

@@ -31,7 +31,7 @@ jobs:
 
           pip install .
 
-          pip install cython flake8 pytest
+          pip install cython flake8 pytest pytest-xdist
       - name: Lint with flake8
         run: |
           source env/bin/activate
@@ -42,4 +42,4 @@ jobs:
       - name: Test with pytest
         run: |
           source env/bin/activate
-          pytest tests/
+          pytest -n auto -m "not serial" tests/ && pytest -m "serial" tests/
