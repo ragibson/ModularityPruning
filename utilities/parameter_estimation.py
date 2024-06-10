@@ -1,8 +1,9 @@
+import leidenalg
+
 from .leiden_utilities import singlelayer_leiden, multilayer_leiden
 from .parameter_estimation_utilities import leiden_part_with_membership, estimate_singlelayer_SBM_parameters, \
     gamma_estimate_from_parameters, omega_function_from_model, estimate_multilayer_SBM_parameters
 from .partition_utilities import in_degrees
-import leidenalg
 
 
 def iterative_monolayer_resolution_parameter_estimation(G, gamma=1.0, tol=1e-2, max_iter=25, verbose=False,

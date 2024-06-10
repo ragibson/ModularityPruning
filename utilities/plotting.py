@@ -1,12 +1,14 @@
-from .partition_utilities import num_communities, ami
 from collections import defaultdict
 from random import sample, shuffle
-import numpy as np
+
 import matplotlib
-from matplotlib.patches import Polygon
-from matplotlib.collections import PatchCollection
 import matplotlib.pyplot as plt
+import numpy as np
 import seaborn as sbn
+from matplotlib.collections import PatchCollection
+from matplotlib.patches import Polygon
+
+from .partition_utilities import num_communities, ami
 
 
 def plot_adjacency(adj):

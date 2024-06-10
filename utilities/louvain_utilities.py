@@ -6,14 +6,16 @@ module ``modularitypruning.louvain_utilities`` now shims single-layer functions 
 in ``modularitypruning.leiden_utilities`` (though it still contains the legacy multi-layer functions since they can be
 faster in general -- leidenalg does not efficiently implement multilayer optimization).
 """
+import warnings
+from math import ceil
+from multiprocessing import Pool, cpu_count
+
+import numpy as np
+import psutil
+
 from . import leiden_utilities
 from .leiden_utilities import sorted_tuple, LOW_MEMORY_THRESHOLD
 from .progress import Progress
-from math import ceil
-from multiprocessing import Pool, cpu_count
-import numpy as np
-import psutil
-import warnings
 
 try:
     import louvain  # import louvain if possible

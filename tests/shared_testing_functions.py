@@ -1,7 +1,8 @@
-import igraph as ig
 from math import isnan
-from modularitypruning.partition_utilities import num_communities
 from random import randint, random, uniform
+
+import igraph as ig
+from modularitypruning.partition_utilities import num_communities
 
 
 def generate_connected_ER(n, m, directed):

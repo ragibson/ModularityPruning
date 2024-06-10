@@ -1,14 +1,16 @@
-from .shared_testing_functions import assert_almost_equal_or_both_none_or_nan, generate_random_partition, \
-    generate_multilayer_intralayer_SBM
-import igraph as ig
+import unittest
 from math import log
-from numpy import mean
+from random import seed
+
+import igraph as ig
 from modularitypruning.leiden_utilities import repeated_leiden_from_gammas_omegas
 from modularitypruning.parameter_estimation import iterative_multilayer_resolution_parameter_estimation
 from modularitypruning.parameter_estimation_utilities import gamma_omega_estimate
 from modularitypruning.partition_utilities import num_communities, all_degrees
-from random import seed
-import unittest
+from numpy import mean
+
+from .shared_testing_functions import assert_almost_equal_or_both_none_or_nan, generate_random_partition, \
+    generate_multilayer_intralayer_SBM
 
 
 class TestMultiplexParameterEstimation(unittest.TestCase):

@@ -1,9 +1,11 @@
-from .shared_testing_functions import generate_connected_ER, generate_random_values, generate_random_partitions, \
-    generate_igraph_famous
+import unittest
+from random import seed
+
 from modularitypruning.champ_utilities import CHAMP_2D
 from modularitypruning.leiden_utilities import leiden_part_with_membership, repeated_leiden_from_gammas
-from random import seed
-import unittest
+
+from .shared_testing_functions import generate_connected_ER, generate_random_values, generate_random_partitions, \
+    generate_igraph_famous
 
 
 class TestCHAMP2D(unittest.TestCase):

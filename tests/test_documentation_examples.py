@@ -3,6 +3,12 @@ This set of tests checks that the examples from the documentation still work cor
 
 Sometimes this is simply checking that the code produces the intended output or runs without errors.
 """
+import unittest
+from random import seed, random
+
+import igraph as ig
+import matplotlib.pyplot as plt
+import numpy as np
 from modularitypruning import prune_to_stable_partitions, prune_to_multilayer_stable_partitions
 from modularitypruning.champ_utilities import CHAMP_2D, CHAMP_3D
 from modularitypruning.leiden_utilities import (repeated_parallel_leiden_from_gammas,
@@ -11,11 +17,6 @@ from modularitypruning.parameter_estimation_utilities import domains_to_gamma_om
 from modularitypruning.partition_utilities import num_communities
 from modularitypruning.plotting import (plot_2d_domains_with_estimates, plot_2d_domains, plot_2d_domains_with_ami,
                                         plot_2d_domains_with_num_communities, plot_estimates, plot_multiplex_community)
-from random import seed, random
-import igraph as ig
-import matplotlib.pyplot as plt
-import numpy as np
-import unittest
 
 
 class TestDocumentationExamples(unittest.TestCase):

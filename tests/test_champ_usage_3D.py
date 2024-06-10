@@ -1,10 +1,12 @@
-from .shared_testing_functions import generate_connected_multilayer_ER, generate_random_values, \
-    generate_random_partitions
+import unittest
+from random import seed
+
 from modularitypruning.champ_utilities import CHAMP_3D
 from modularitypruning.leiden_utilities import multilayer_leiden_part_with_membership
 from numpy import mean
-from random import seed
-import unittest
+
+from .shared_testing_functions import generate_connected_multilayer_ER, generate_random_values, \
+    generate_random_partitions
 
 
 def point_is_inside_champ_domain(gamma, omega, domain_vertices):

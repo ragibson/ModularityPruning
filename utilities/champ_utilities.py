@@ -1,14 +1,16 @@
-from .partition_utilities import all_degrees, in_degrees, out_degrees, membership_to_communities, \
-    membership_to_layered_communities
+import warnings
 from collections import defaultdict
-import numpy as np
-from numpy.random import choice
 from math import floor
 from multiprocessing import Pool, cpu_count
-from scipy.spatial import HalfspaceIntersection
+
+import numpy as np
+from numpy.random import choice
 from scipy.linalg import LinAlgWarning
 from scipy.optimize import linprog, OptimizeWarning
-import warnings
+from scipy.spatial import HalfspaceIntersection
+
+from .partition_utilities import all_degrees, in_degrees, out_degrees, membership_to_communities, \
+    membership_to_layered_communities
 
 
 def get_interior_point(halfspaces, initial_num_sampled=50, full_retry_limit=10):

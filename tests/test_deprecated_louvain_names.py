@@ -1,5 +1,6 @@
-import pytest
 import unittest
+
+import pytest
 
 
 class TestDeprecatedLouvainNames(unittest.TestCase):

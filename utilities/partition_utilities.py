@@ -1,4 +1,5 @@
 from collections import defaultdict
+
 from sklearn.metrics import adjusted_mutual_info_score, normalized_mutual_info_score
 
 

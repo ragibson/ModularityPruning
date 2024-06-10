@@ -1,8 +1,10 @@
-from .shared_testing_functions import generate_connected_multilayer_ER, generate_random_partitions
+import unittest
+from random import seed
+
 from modularitypruning.champ_utilities import partition_coefficients_3D
 from modularitypruning.leiden_utilities import multilayer_leiden_part_with_membership, leiden_part_with_membership
-from random import seed
-import unittest
+
+from .shared_testing_functions import generate_connected_multilayer_ER, generate_random_partitions
 
 
 class TestCHAMPCoefficients3D(unittest.TestCase):

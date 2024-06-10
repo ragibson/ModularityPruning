@@ -1,13 +1,15 @@
-from .shared_testing_functions import assert_almost_equal_or_both_none_or_nan, generate_igraph_famous, \
-    generate_random_partition
-import igraph as ig
+import unittest
 from math import log
-from numpy import mean
+from random import seed
+
+import igraph as ig
 from modularitypruning.parameter_estimation import iterative_monolayer_resolution_parameter_estimation
 from modularitypruning.parameter_estimation_utilities import gamma_estimate
 from modularitypruning.partition_utilities import all_degrees
-from random import seed
-import unittest
+from numpy import mean
+
+from .shared_testing_functions import assert_almost_equal_or_both_none_or_nan, generate_igraph_famous, \
+    generate_random_partition
 
 
 class TestMonolayerParameterEstimation(unittest.TestCase):

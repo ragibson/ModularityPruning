@@ -1,11 +1,10 @@
 import functools
+from multiprocessing import Pool, cpu_count
+
 import igraph as ig
 import leidenalg
-from math import ceil
-from multiprocessing import Pool, cpu_count
-from tqdm import tqdm
 import numpy as np
-import psutil
+from tqdm import tqdm
 
 LOW_MEMORY_THRESHOLD = 1e9  # 1 GB
 

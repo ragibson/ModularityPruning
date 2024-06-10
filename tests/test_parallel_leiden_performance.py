@@ -1,17 +1,19 @@
-from .shared_testing_functions import generate_connected_ER, generate_multilayer_intralayer_SBM
-from modularitypruning.leiden_utilities import (repeated_leiden_from_gammas, repeated_parallel_leiden_from_gammas,
-                                                repeated_leiden_from_gammas_omegas,
-                                                repeated_parallel_leiden_from_gammas_omegas)
+import functools
+import unittest
+import warnings
 from multiprocessing import Pool, cpu_count
 from random import seed
-from time import time, sleep
-import functools
+from time import time
+
 import igraph as ig
 import numpy as np
 import psutil
 import pytest
-import unittest
-import warnings
+from modularitypruning.leiden_utilities import (repeated_leiden_from_gammas, repeated_parallel_leiden_from_gammas,
+                                                repeated_leiden_from_gammas_omegas,
+                                                repeated_parallel_leiden_from_gammas_omegas)
+
+from .shared_testing_functions import generate_connected_ER, generate_multilayer_intralayer_SBM
 
 # this set of tests ensures that we achieve >= 75% parallel performance compared to perfect scaling of
 # single-threaded jobs to multiple cores (with no memory contention). This threshold will be decreased in

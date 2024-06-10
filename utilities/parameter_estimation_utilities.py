@@ -1,12 +1,14 @@
-from .leiden_utilities import leiden_part_with_membership, sorted_tuple
-from .champ_utilities import CHAMP_2D, CHAMP_3D
-from .partition_utilities import num_communities
+import warnings
+from math import log
+
 import igraph as ig
 import leidenalg
-from math import log
 import numpy as np
 from scipy.optimize import fsolve
-import warnings
+
+from .champ_utilities import CHAMP_2D, CHAMP_3D
+from .leiden_utilities import leiden_part_with_membership, sorted_tuple
+from .partition_utilities import num_communities
 
 
 def estimate_singlelayer_SBM_parameters(G, partition, m=None):
