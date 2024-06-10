@@ -17,6 +17,7 @@ https://static-content.springer.com/esm/art%3A10.1038%2Fs41598-022-20142-6/Media
 ).
 
 ## Installation
+
 This project is on [PyPI](https://pypi.org/project/modularitypruning/) and can
 be installed with
 
@@ -31,6 +32,7 @@ Alternatively, you can install it from this repository directly:
     python3 setup.py install
 
 <a name = "Basic Usage"></a>
+
 ## Basic Usage
 
 This package interfaces directly with python-igraph. A simple example of its
