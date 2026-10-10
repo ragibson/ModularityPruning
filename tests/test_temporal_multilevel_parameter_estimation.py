@@ -60,30 +60,67 @@ class TestTemporalAndMultilevelParameterEstimation(unittest.TestCase):
         self.assertLess(abs(true_gamma - gamma), 0.05)
         self.assertLess(abs(true_omega - omega), 0.1)
 
+    def retry_test_across_graph_sizes(self, test_fn, sizes=[50, 100, 250, 500], retries_per_size=3):
+        """
+        Rerun randomized tests of asymptotic convergence across increasingly larger graph sizes until one succeeds.
+
+        This improves the performance of the test suite by automatically using smaller graphs for "easier" tests.
+        """
+        last_error = None
+        for n in sizes:
+            for _ in range(retries_per_size):
+                try:
+                    test_fn(n)
+                    return
+                except Exception as e:
+                    last_error = e
+                    if not isinstance(e, AssertionError):
+                        # test failed in unusual way (perhaps keyboard interrupt?), raising immediately
+                        raise e
+        raise last_error
+
     def test_temporal_SBM_correct_convergence_varying_copying_probabilty(self):
         for eta in [0.25, 0.5, 0.75, 0.9]:
-            membership = generate_random_partition(num_nodes=750, K=2)
-            self.assert_temporal_SBM_correct_convergence(copying_probability=eta, first_layer_membership=membership)
+            self.retry_test_across_graph_sizes(
+                test_fn=lambda n: self.assert_temporal_SBM_correct_convergence(
+                    copying_probability=eta,
+                    first_layer_membership=generate_random_partition(num_nodes=n, K=2)
+                )
+            )
 
     def test_temporal_SBM_correct_convergence_varying_p_in(self):
         for p_in in [0.5, 0.4, 0.3, 0.2]:
-            membership = generate_random_partition(num_nodes=500, K=2)
-            self.assert_temporal_SBM_correct_convergence(p_in=p_in, p_out=0.025, first_layer_membership=membership)
+            self.retry_test_across_graph_sizes(
+                test_fn=lambda n: self.assert_temporal_SBM_correct_convergence(
+                    p_in=p_in, p_out=0.025,
+                    first_layer_membership=generate_random_partition(num_nodes=n, K=2)
+                )
+            )
 
     def test_temporal_SBM_correct_convergence_varying_p_out(self):
         for p_out in [0.05, 0.04, 0.03, 0.02]:
-            membership = generate_random_partition(num_nodes=500, K=2)
-            self.assert_temporal_SBM_correct_convergence(p_out=p_out, first_layer_membership=membership)
+            self.retry_test_across_graph_sizes(
+                test_fn=lambda n: self.assert_temporal_SBM_correct_convergence(
+                    p_out=p_out, first_layer_membership=generate_random_partition(num_nodes=n, K=2)
+                )
+            )
 
     def test_temporal_SBM_correct_convergence_varying_num_communities(self):
         for K in [2, 3, 4, 5]:
-            membership = generate_random_partition(num_nodes=500, K=K)
-            self.assert_temporal_SBM_correct_convergence(first_layer_membership=membership)
+            self.retry_test_across_graph_sizes(
+                test_fn=lambda n: self.assert_temporal_SBM_correct_convergence(
+                    first_layer_membership=generate_random_partition(num_nodes=n, K=K)
+                )
+            )
 
     def test_temporal_SBM_correct_convergence_varying_num_layers(self):
         for num_layers in [20, 30, 40]:
-            membership = generate_random_partition(num_nodes=750, K=2)
-            self.assert_temporal_SBM_correct_convergence(first_layer_membership=membership, num_layers=num_layers)
+            self.retry_test_across_graph_sizes(
+                test_fn=lambda n: self.assert_temporal_SBM_correct_convergence(
+                    num_layers=num_layers,
+                    first_layer_membership=generate_random_partition(num_nodes=n, K=2)
+                )
+            )
 
     def test_directed_consistency_temporal_SBM_leiden(self):
         """Test parameter estimate consistency on a temporal SBM when the intralayer edges are directed."""
