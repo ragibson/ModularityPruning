@@ -62,17 +62,17 @@ class TestTemporalAndMultilevelParameterEstimation(unittest.TestCase):
 
     def test_temporal_SBM_correct_convergence_varying_copying_probabilty(self):
         for eta in [0.25, 0.5, 0.75, 0.9]:
-            membership = generate_random_partition(num_nodes=200, K=2)
+            membership = generate_random_partition(num_nodes=750, K=2)
             self.assert_temporal_SBM_correct_convergence(copying_probability=eta, first_layer_membership=membership)
 
     def test_temporal_SBM_correct_convergence_varying_p_in(self):
         for p_in in [0.5, 0.4, 0.3, 0.2]:
-            membership = generate_random_partition(num_nodes=100, K=2)
+            membership = generate_random_partition(num_nodes=500, K=2)
             self.assert_temporal_SBM_correct_convergence(p_in=p_in, p_out=0.025, first_layer_membership=membership)
 
     def test_temporal_SBM_correct_convergence_varying_p_out(self):
         for p_out in [0.05, 0.04, 0.03, 0.02]:
-            membership = generate_random_partition(num_nodes=100, K=2)
+            membership = generate_random_partition(num_nodes=500, K=2)
             self.assert_temporal_SBM_correct_convergence(p_out=p_out, first_layer_membership=membership)
 
     def test_temporal_SBM_correct_convergence_varying_num_communities(self):
@@ -82,7 +82,7 @@ class TestTemporalAndMultilevelParameterEstimation(unittest.TestCase):
 
     def test_temporal_SBM_correct_convergence_varying_num_layers(self):
         for num_layers in [20, 30, 40]:
-            membership = generate_random_partition(num_nodes=100, K=2)
+            membership = generate_random_partition(num_nodes=750, K=2)
             self.assert_temporal_SBM_correct_convergence(first_layer_membership=membership, num_layers=num_layers)
 
     def test_directed_consistency_temporal_SBM_leiden(self):
