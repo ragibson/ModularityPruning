@@ -43,3 +43,6 @@ packages = ["modularitypruning"]
 
 [tool.setuptools.package-dir]
 modularitypruning = "utilities"
+
+[tool.autopep8]
+max_line_length = 120
