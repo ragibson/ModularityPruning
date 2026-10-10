@@ -21,11 +21,11 @@ class TestMonolayerParameterEstimation(unittest.TestCase):
 
         for q in range(3, 15):
             community_sizes = [250] * q  # q equally sized groups of 250 nodes
-            n = 250 * q
+            n = sum(community_sizes)
             p_in = 16 * n / (q * 250 * 249)  # ~16 in-edges per node
             p_out = 8 * n / (q * (q - 1) * 250 * 250)  # ~8 out-edges per node to each community
             pref_matrix = [[p_in if i == j else p_out for j in range(q)] for i in range(q)]
-            G = ig.Graph.SBM(n, pref_matrix, community_sizes)
+            G = ig.Graph.SBM(pref_matrix, community_sizes)
 
             # compute "ground truth" gamma estimate
             k = mean(all_degrees(G))
