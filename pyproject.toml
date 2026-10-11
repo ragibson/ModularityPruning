@@ -4,12 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "modularitypruning"
-version = "1.5.0"
-description = """Pruning tool to identify small subsets of network partitions that are significant from the perspective
-of stochastic block model inference."""
+version = "1.5.1"
+description = "Pruning tool to identify small subsets of network partitions that are significant from the perspective of stochastic block model inference."
 readme = "README.md"
 requires-python = ">=3.9"
-license = { text = "MIT" }
+license = "MIT"
 authors = [
     { name = "Ryan Gibson", email = "ryan.alex.gibson@gmail.com" }
 ]
@@ -25,8 +24,7 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
     "Programming Language :: Python :: 3.15",
-    "Programming Language :: Python :: 3 :: Only",
-    "License :: OSI Approved :: MIT License"
+    "Programming Language :: Python :: 3 :: Only"
 ]
 dependencies = [
     "leidenalg",
