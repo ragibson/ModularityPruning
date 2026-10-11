@@ -27,7 +27,7 @@ class TestTemporalAndMultilevelParameterEstimation(unittest.TestCase):
         return G_intralayer, G_interlayer, layer_membership
 
     def assert_temporal_SBM_correct_convergence(self, first_layer_membership, copying_probability=0.75, num_layers=25,
-                                                p_in=0.25, p_out=0.05):
+                                                p_in=0.25, p_out=0.05, tolerance=0.1):
         K = num_communities(first_layer_membership)
         G_intralayer, G_interlayer, layer_membership = self.generate_temporal_SBM(copying_probability, p_in, p_out,
                                                                                   first_layer_membership,
@@ -49,16 +49,16 @@ class TestTemporalAndMultilevelParameterEstimation(unittest.TestCase):
                                                                                model='temporal')
 
         # check we converged close to the ground truth "correct" values
-        self.assertLess(abs(true_gamma - gamma), 0.05)
-        self.assertLess(abs(true_omega - omega), 0.1)
+        self.assertLess(abs(true_gamma - gamma), tolerance)
+        self.assertLess(abs(true_omega - omega), tolerance)
 
         # check multilevel parameter estimation as well
         # we never use this model, but it is a slight generalization of the temporal one
         gamma, omega, _ = iterative_multilayer_resolution_parameter_estimation(G_intralayer, G_interlayer,
                                                                                layer_membership, gamma=1.0, omega=1.0,
                                                                                model='multilevel')
-        self.assertLess(abs(true_gamma - gamma), 0.05)
-        self.assertLess(abs(true_omega - omega), 0.1)
+        self.assertLess(abs(true_gamma - gamma), tolerance)
+        self.assertLess(abs(true_omega - omega), tolerance)
 
     def retry_test_across_graph_sizes(self, test_fn, sizes=[50, 100, 250, 500], retries_per_size=3):
         """
