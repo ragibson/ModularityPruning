@@ -14,6 +14,9 @@ perspective of stochastic block model inference.
 This method works for single-layer and multi-layer networks, as well as for restricting focus to a fixed number of
 communities when desired.
 
+This package also contains a faster and more robust implementation of the CHAMP (Convex Hull of Admissible Modularity
+Partitions) algorithm (see ``CHAMP_2D`` and ``CHAMP_3D``).
+
 Additional information can be found in the journal article at https://doi.org/10.1038/s41598-022-20142-6 or the
 article's significantly more detailed `Supplementary Information`_.
 

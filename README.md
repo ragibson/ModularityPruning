@@ -7,14 +7,16 @@ partitions that are significant from the perspective of stochastic block model
 inference. This method works for single-layer and multi-layer networks, as well
 as for restricting focus to a fixed number of communities when desired.
 
+This package also contains a faster and more robust implementation of the
+CHAMP (Convex Hull of Admissible Modularity Partitions) algorithm (see
+`CHAMP_2D` and `CHAMP_3D`).
+
 See the [documentation](https://modularitypruning.readthedocs.io/en/latest/)
 or the journal article at https://doi.org/10.1038/s41598-022-20142-6 for more
 information.
 
 Significantly more details can be found in the article's
-[Supplementary Information](
-https://static-content.springer.com/esm/art%3A10.1038%2Fs41598-022-20142-6/MediaObjects/41598_2022_20142_MOESM1_ESM.pdf
-).
+[Supplementary Information](https://static-content.springer.com/esm/art%3A10.1038%2Fs41598-022-20142-6/MediaObjects/41598_2022_20142_MOESM1_ESM.pdf).
 
 ## Installation
 
@@ -53,7 +55,7 @@ partitions = repeated_leiden_from_gammas(G, np.linspace(0, 2, 1000))
 # prune to the stable partitions from gamma=0 to gamma=2
 stable_partitions = prune_to_stable_partitions(G, partitions, 0, 2)
 print(stable_partitions)
-``` 
+```
 
 This prints
 
