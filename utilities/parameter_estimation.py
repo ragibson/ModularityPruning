@@ -1,3 +1,7 @@
+from typing import TYPE_CHECKING, Callable
+if TYPE_CHECKING:
+    import igraph
+    import numpy
 import leidenalg
 
 from .leiden_utilities import singlelayer_leiden, multilayer_leiden
@@ -6,8 +10,8 @@ from .parameter_estimation_utilities import leiden_part_with_membership, estimat
 from .partition_utilities import in_degrees
 
 
-def iterative_monolayer_resolution_parameter_estimation(G, gamma=1.0, tol=1e-2, max_iter=25, verbose=False,
-                                                        method="leiden"):
+def iterative_monolayer_resolution_parameter_estimation(G: "igraph.Graph", gamma: float=1.0, tol: float=1e-2, max_iter: int=25, verbose: bool=False,
+                                                        method: str="leiden") -> "tuple[numpy.float64, leidenalg.RBConfigurationVertexPartition]":
     """Monolayer variant of ALG. 1 from "Relating modularity maximization and stochastic block models in multilayer
     networks." This is intended to determine an "optimal" value for gamma by repeatedly maximizing modularity and
     estimating new values for the resolution parameter.
@@ -34,10 +38,10 @@ def iterative_monolayer_resolution_parameter_estimation(G, gamma=1.0, tol=1e-2, 
 
     if 'weight' not in G.es:
         G.es['weight'] = [1.0] * G.ecount()
-    m = sum(G.es['weight'])
+    m: float = sum(G.es['weight'])
 
     if method == "louvain" or method == "leiden":
-        def maximize_modularity(resolution_param):
+        def maximize_modularity(resolution_param: float) -> leidenalg.RBConfigurationVertexPartition:
             return singlelayer_leiden(G, resolution_param, return_partition=True)
     elif method == "2-spinglass":
         def maximize_modularity(resolution_param):
@@ -46,10 +50,10 @@ def iterative_monolayer_resolution_parameter_estimation(G, gamma=1.0, tol=1e-2, 
     else:
         raise ValueError(f"Community detection method {method} not supported")
 
-    def estimate_SBM_parameters(partition):
+    def estimate_SBM_parameters(partition: leidenalg.RBConfigurationVertexPartition) -> tuple[float, float]:
         return estimate_singlelayer_SBM_parameters(G, partition, m=m)
 
-    def update_gamma(omega_in, omega_out):
+    def update_gamma(omega_in: float, omega_out: float) -> "numpy.float64":
         return gamma_estimate_from_parameters(omega_in, omega_out)
 
     part, last_gamma = None, None
@@ -80,7 +84,7 @@ def iterative_monolayer_resolution_parameter_estimation(G, gamma=1.0, tol=1e-2, 
     return gamma, part
 
 
-def check_multilayer_graph_consistency(G_intralayer, G_interlayer, layer_vec, model, m_t, T, N=None, Nt=None):
+def check_multilayer_graph_consistency(G_intralayer: "igraph.Graph", G_interlayer: "igraph.Graph", layer_vec: list[int], model: str, m_t: list[float], T: int, N: int|None=None, Nt: list[int]|None=None) -> None:
     """
     Checks that the structures of the intralayer and interlayer graphs are consistent and match the given model.
 
@@ -94,7 +98,7 @@ def check_multilayer_graph_consistency(G_intralayer, G_interlayer, layer_vec, mo
     :param Nt: vector of nodes per layer
     """
 
-    rules = [T > 1,
+    rules: list[bool|str] = [T > 1,
              "Graph must have multiple layers",
              G_interlayer.is_directed(),
              "Interlayer graph should be directed",
@@ -127,9 +131,9 @@ def check_multilayer_graph_consistency(G_intralayer, G_interlayer, layer_vec, mo
         raise ValueError("Input graph is malformed\n" + "\n".join(m for c, m in zip(checks, messages) if not c))
 
 
-def iterative_multilayer_resolution_parameter_estimation(G_intralayer, G_interlayer, layer_vec, gamma=1.0, omega=1.0,
-                                                         gamma_tol=1e-2, omega_tol=5e-2, omega_max=1000, max_iter=25,
-                                                         model='temporal', verbose=False):
+def iterative_multilayer_resolution_parameter_estimation(G_intralayer: "igraph.Graph", G_interlayer: "igraph.Graph", layer_vec: list[int], gamma: float=1.0, omega: float=1.0,
+                                                         gamma_tol: float=1e-2, omega_tol: float=5e-2, omega_max: int=1000, max_iter: int=25,
+                                                         model: str='temporal', verbose: bool=False) -> "tuple[numpy.float64, float, list[leidenalg.RBConfigurationVertexPartition]]":
     """
     Multilayer variant of ALG. 1 from "Relating modularity maximization and stochastic block models in multilayer
     networks." The nested functions here are just used to match the pseudocode in the paper.
@@ -170,29 +174,29 @@ def iterative_multilayer_resolution_parameter_estimation(G_intralayer, G_interla
     if 'weight' not in G_interlayer.es:
         G_interlayer.es['weight'] = [1.0] * G_interlayer.ecount()
 
-    T = max(layer_vec) + 1  # layer count
-    optimiser = leidenalg.Optimiser()
+    T: int = max(layer_vec) + 1  # layer count
+    optimiser: leidenalg.Optimiser = leidenalg.Optimiser()
 
     # compute total edge weights per layer
-    m_t = [0] * T
+    m_t: list[float] = [0] * T
     for e in G_intralayer.es:
         m_t[layer_vec[e.source]] += e['weight']
 
     # compute total node counts per layer
-    N = G_intralayer.vcount() // T
-    Nt = [0] * T
+    N: int = G_intralayer.vcount() // T
+    Nt: list[int] = [0] * T
     for layer in layer_vec:
         Nt[layer] += 1
 
     check_multilayer_graph_consistency(G_intralayer, G_interlayer, layer_vec, model, m_t, T, N, Nt)
-    update_omega = omega_function_from_model(model, omega_max, T=T)
-    update_gamma = gamma_estimate_from_parameters
+    update_omega: Callable[[float, float|float|int, float, int], float|float|int] = omega_function_from_model(model, omega_max, T=T)
+    update_gamma: "Callable[[float, float], numpy.float64|None]" = gamma_estimate_from_parameters
 
-    def maximize_modularity(intralayer_resolution, interlayer_resolution):
+    def maximize_modularity(intralayer_resolution: float, interlayer_resolution: float) -> list[leidenalg.RBConfigurationVertexPartition]:
         return multilayer_leiden(G_intralayer, G_interlayer, layer_vec, intralayer_resolution, interlayer_resolution,
                                  optimiser=optimiser, return_partition=True)
 
-    def estimate_SBM_parameters(partition):
+    def estimate_SBM_parameters(partition: leidenalg.RBConfigurationVertexPartition) -> tuple[float, float, float, int]:
         return estimate_multilayer_SBM_parameters(G_intralayer, G_interlayer, layer_vec, partition, model,
                                                   N=N, T=T, Nt=Nt, m_t=m_t)
 

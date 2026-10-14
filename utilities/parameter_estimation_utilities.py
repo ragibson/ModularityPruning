@@ -1,3 +1,4 @@
+from typing import Any, Callable
 import warnings
 from math import log
 
@@ -11,7 +12,7 @@ from .leiden_utilities import leiden_part_with_membership, sorted_tuple
 from .partition_utilities import num_communities
 
 
-def estimate_singlelayer_SBM_parameters(G, partition, m=None):
+def estimate_singlelayer_SBM_parameters(G: ig.Graph, partition: leidenalg.RBConfigurationVertexPartition, m: float|None=None) -> tuple[float, float]:
     r"""Estimate singlelayer SBM parameters from a graph and a partition.
 
     See https://doi.org/10.1103/PhysRevE.94.052315 for more details.
@@ -30,25 +31,25 @@ def estimate_singlelayer_SBM_parameters(G, partition, m=None):
         m = sum(G.es['weight'])
 
     assert isinstance(partition, leidenalg.RBConfigurationVertexPartition)
-    community = partition.membership
+    community: list[int] = partition.membership
 
-    m_in = sum(e['weight'] * (community[e.source] == community[e.target]) for e in G.es)
-    kappa_r_list = [0] * len(partition)
+    m_in: float = sum(e['weight'] * (community[e.source] == community[e.target]) for e in G.es)
+    kappa_r_list: list[float] = [0] * len(partition)
     for e in G.es:
         kappa_r_list[community[e.source]] += e['weight']
         kappa_r_list[community[e.target]] += e['weight']
-    sum_kappa_sqr = sum(x ** 2 for x in kappa_r_list)
+    sum_kappa_sqr: float = sum(x ** 2 for x in kappa_r_list)
 
-    omega_in = (2 * m_in) / (sum_kappa_sqr / (2 * m))
+    omega_in: float = (2 * m_in) / (sum_kappa_sqr / (2 * m))
     # guard for div by zero with single community partition
-    omega_out = (2 * m - 2 * m_in) / (2 * m - sum_kappa_sqr / (2 * m)) if len(partition) > 1 else 0
+    omega_out: float = (2 * m - 2 * m_in) / (2 * m - sum_kappa_sqr / (2 * m)) if len(partition) > 1 else 0
 
     # return estimates for omega_in, omega_out
     return omega_in, omega_out
 
 
-def estimate_multilayer_SBM_parameters(G_intralayer, G_interlayer, layer_vec, partition, model, N=None, T=None,
-                                       Nt=None, m_t=None):
+def estimate_multilayer_SBM_parameters(G_intralayer: ig.Graph, G_interlayer: ig.Graph, layer_vec: list[int], partition: leidenalg.RBConfigurationVertexPartition, model: str, N: int|None=None, T: int|None=None,
+                                       Nt: list[int]|None=None, m_t: list[float]|None=None) -> tuple[float, float, float, int]:
     """Estimates multilayer SBM parameters from a graph and a partition
 
     :param G_intralayer: intralayer graph of interest
@@ -93,42 +94,42 @@ def estimate_multilayer_SBM_parameters(G_intralayer, G_interlayer, layer_vec, pa
         for layer in layer_vec:
             Nt[layer] += 1
 
-    K = len(partition)
+    K: int = len(partition)
 
-    community = partition.membership
-    m_t_in = [0] * T
+    community: list[int] = partition.membership
+    m_t_in: list[float] = [0] * T
     for e in G_intralayer.es:
         if community[e.source] == community[e.target] and layer_vec[e.source] == layer_vec[e.target]:
             m_t_in[layer_vec[e.source]] += e['weight']
 
-    kappa_t_r_list = [[0] * K for _ in range(T)]
+    kappa_t_r_list: list[list[float]|list[float|int]] = [[0] * K for _ in range(T)]
     for e in G_intralayer.es:
         layer = layer_vec[e.source]
         kappa_t_r_list[layer][community[e.source]] += e['weight']
         kappa_t_r_list[layer][community[e.target]] += e['weight']
-    sum_kappa_t_sqr = [sum(x ** 2 for x in kappa_t_r_list[t]) for t in range(T)]
+    sum_kappa_t_sqr: list[float] = [sum(x ** 2 for x in kappa_t_r_list[t]) for t in range(T)]
 
-    theta_in = sum(2 * m_t_in[t] for t in range(T)) / sum(sum_kappa_t_sqr[t] / (2 * m_t[t]) for t in range(T))
+    theta_in: float = sum(2 * m_t_in[t] for t in range(T)) / sum(sum_kappa_t_sqr[t] / (2 * m_t[t]) for t in range(T))
 
     # guard for div by zero with e.g. a single community partition
-    theta_out_numerator = sum(2 * m_t[t] - 2 * m_t_in[t] for t in range(T))
-    theta_out_denominator = sum(2 * m_t[t] - sum_kappa_t_sqr[t] / (2 * m_t[t]) for t in range(T))
+    theta_out_numerator: float = sum(2 * m_t[t] - 2 * m_t_in[t] for t in range(T))
+    theta_out_denominator: float = sum(2 * m_t[t] - sum_kappa_t_sqr[t] / (2 * m_t[t]) for t in range(T))
     if theta_out_denominator == 0:
-        theta_out = 0
+        theta_out: float = 0
     else:
         theta_out = theta_out_numerator / theta_out_denominator
 
-    calculate_persistence = persistence_function_from_model(model, G_interlayer, layer_vec=layer_vec, N=N, T=T, Nt=Nt)
-    pers = calculate_persistence(community)
+    calculate_persistence: Callable[[list[int]], float] = persistence_function_from_model(model, G_interlayer, layer_vec=layer_vec, N=N, T=T, Nt=Nt)
+    pers: float = calculate_persistence(community)
     if model == 'multiplex':
         # estimate p by solving polynomial root-finding problem with starting estimate p=0.5
-        def f(x):
-            coeff = 2 * (1 - 1 / K) / (T * (T - 1))
+        def f(x: np.ndarray[Any, np.dtype[np.float64]]) -> np.ndarray[Any, np.dtype[np.float64]]:
+            coeff: float = 2 * (1 - 1 / K) / (T * (T - 1))
             return coeff * sum((T - n) * x ** n for n in range(1, T)) + 1 / K - pers
 
         # guard for div by zero with single community partition
         # (in this case, all community assignments persist across layers)
-        p = fsolve(f, np.array([0.5]))[0] if pers < 1.0 and K > 1 else 1.0
+        p: float = fsolve(f, np.array([0.5]))[0] if pers < 1.0 and K > 1 else 1.0
         if p < 0:
             p = 0
     else:
@@ -139,7 +140,7 @@ def estimate_multilayer_SBM_parameters(G_intralayer, G_interlayer, layer_vec, pa
     return theta_in, theta_out, p, K
 
 
-def gamma_estimate(G, partition):
+def gamma_estimate(G: ig.Graph, partition: leidenalg.RBConfigurationVertexPartition|tuple[int, ...]) -> np.float64|None:
     """Compute the "correct" value of gamma where modularity maximization becomes equivalent to maximum likelihood
     methods on a degree-corrected, planted partition stochastic block model.
 
@@ -163,7 +164,7 @@ def gamma_estimate(G, partition):
     return gamma_estimate_from_parameters(omega_in, omega_out)
 
 
-def gamma_estimate_from_parameters(omega_in, omega_out):
+def gamma_estimate_from_parameters(omega_in: float, omega_out: float) -> np.float64|None:
     """
     Compute the "correct" value of gamma as in
     :meth:`~modularitypruning.parameter_estimation_utilities.gamma_estimate` from SBM parameters.
@@ -182,7 +183,7 @@ def gamma_estimate_from_parameters(omega_in, omega_out):
     return (omega_in - omega_out) / (np.log(omega_in) - np.log(omega_out))
 
 
-def multiplex_omega_estimate_from_parameters(theta_in, theta_out, p, K, T, omega_max=1000):
+def multiplex_omega_estimate_from_parameters(theta_in: float, theta_out: float, p: float, K: int, T: int, omega_max: int=1000) -> float:
     """Returns the omega estimate for a multiplex multilayer model
 
     :param theta_in: SBM parameter
@@ -213,7 +214,7 @@ def multiplex_omega_estimate_from_parameters(theta_in, theta_out, p, K, T, omega
     return log(1 + p * K / (1 - p)) / (T * (log(theta_in) - log(theta_out)))
 
 
-def temporal_multilevel_omega_estimate_from_parameters(theta_in, theta_out, p, K, omega_max=1000):
+def temporal_multilevel_omega_estimate_from_parameters[T1: (float, int)](theta_in: float, theta_out: T1, p: float, K: int, omega_max: int=1000) -> T1:
     """Returns the omega estimate for a temporal or multilevel multilayer model
 
     :param theta_in: SBM parameter
@@ -239,13 +240,13 @@ def temporal_multilevel_omega_estimate_from_parameters(theta_in, theta_out, p, K
     return log(1 + p * K / (1 - p)) / (2 * (log(theta_in) - log(theta_out))) if p < 1.0 else omega_max
 
 
-def ordinal_persistence(G_interlayer, community, N, T):
+def ordinal_persistence(G_interlayer: ig.Graph, community: list[int], N: int, T: int) -> float:
     # ordinal persistence (temporal model)
     return sum(community[e.source] == community[e.target] for e in G_interlayer.es) / (N * (T - 1))
 
 
-def multilevel_persistence(G_interlayer, community, layer_vec, Nt, T):
-    pers_per_layer = [0] * T
+def multilevel_persistence(G_interlayer: ig.Graph, community: list[int], layer_vec: list[int], Nt: list[int], T: int) -> float:
+    pers_per_layer: list[float] = [0] * T
     for e in G_interlayer.es:
         pers_per_layer[layer_vec[e.target]] += (community[e.source] == community[e.target])
 
@@ -253,12 +254,12 @@ def multilevel_persistence(G_interlayer, community, layer_vec, Nt, T):
     return sum(pers_per_layer) / (T - 1)
 
 
-def categorical_persistence(G_interlayer, community, N, T):
+def categorical_persistence(G_interlayer: ig.Graph, community: list[int], N: int, T: int) -> float:
     # categorical persistence (multiplex model)
     return sum(community[e.source] == community[e.target] for e in G_interlayer.es) / (N * T * (T - 1))
 
 
-def omega_function_from_model(model, omega_max, T):
+def omega_function_from_model[T1: (float, int)](model: str, omega_max: int, T: int) -> Callable[[float, T1, float, int], T1]:
     """Returns an appropriate function (depending on the model) for computing omega from multilayer SBM parameters
 
     Specifically, it will return versions of
@@ -274,10 +275,10 @@ def omega_function_from_model(model, omega_max, T):
     :rtype: function
     """
     if model == 'multiplex':
-        def update_omega(theta_in, theta_out, p, K):
+        def update_omega(theta_in: float, theta_out: float, p: float, K: int) -> float:
             return multiplex_omega_estimate_from_parameters(theta_in, theta_out, p, K, T, omega_max=omega_max)
     elif model == 'temporal' or model == 'multilevel':
-        def update_omega(theta_in, theta_out, p, K):
+        def update_omega[T2: (float, int)](theta_in: float, theta_out: T2, p: float, K: int) -> T2:
             return temporal_multilevel_omega_estimate_from_parameters(theta_in, theta_out, p, K, omega_max=omega_max)
     else:
         raise ValueError(f"Model {model} is not temporal, multilevel, or multiplex")
@@ -285,7 +286,7 @@ def omega_function_from_model(model, omega_max, T):
     return update_omega
 
 
-def persistence_function_from_model(model, G_interlayer, layer_vec=None, N=None, T=None, Nt=None):
+def persistence_function_from_model(model: str, G_interlayer: ig.Graph, layer_vec: list[int]|None=None, N: int|None=None, T: int|None=None, Nt: list[int]|None=None) -> Callable[[list[int]], float]:
     """
     Returns a function to calculate persistence according to a given multilayer model
 
@@ -303,19 +304,19 @@ def persistence_function_from_model(model, G_interlayer, layer_vec=None, N=None,
         if N is None or T is None:
             raise ValueError("Parameters N and T cannot be None for temporal persistence calculation")
 
-        def calculate_persistence(community):
+        def calculate_persistence(community: list[int]) -> float:
             return ordinal_persistence(G_interlayer, community, N, T)
     elif model == 'multilevel':
         if Nt is None or T is None or layer_vec is None:
             raise ValueError("Parameters layer_vec, Nt, T cannot be None for multilevel persistence calculation")
 
-        def calculate_persistence(community):
+        def calculate_persistence(community: list[int]) -> float:
             return multilevel_persistence(G_interlayer, community, layer_vec, Nt, T)
     elif model == 'multiplex':
         if N is None or T is None:
             raise ValueError("Parameters N and T cannot be None for multiplex persistence calculation")
 
-        def calculate_persistence(community):
+        def calculate_persistence(community: list[int]) -> float:
             return categorical_persistence(G_interlayer, community, N, T)
     else:
         raise ValueError(f"Model {model} is not temporal, multilevel, or multiplex")
@@ -323,8 +324,8 @@ def persistence_function_from_model(model, G_interlayer, layer_vec=None, N=None,
     return calculate_persistence
 
 
-def gamma_omega_estimate(G_intralayer, G_interlayer, layer_vec, membership, omega_max=1000, model='temporal',
-                         N=None, T=None, Nt=None, m_t=None):
+def gamma_omega_estimate(G_intralayer: ig.Graph, G_interlayer: ig.Graph, layer_vec: list[int], membership: tuple[int, ...], omega_max: int=1000, model: str='temporal',
+                         N: None=None, T: int|None=None, Nt: None=None, m_t: None=None) -> tuple[np.float64|None, float]:
     """Returns the (gamma, omega) estimate for a multilayer network and a partition
 
     :param G_intralayer: intralayer graph of interest
@@ -353,18 +354,18 @@ def gamma_omega_estimate(G_intralayer, G_interlayer, layer_vec, membership, omeg
     if T is None:
         T = max(layer_vec) + 1  # layer  count
 
-    partition = leiden_part_with_membership(G_intralayer, membership)
+    partition: leidenalg.RBConfigurationVertexPartition = leiden_part_with_membership(G_intralayer, membership)
     theta_in, theta_out, p, K = estimate_multilayer_SBM_parameters(G_intralayer, G_interlayer, layer_vec, partition,
                                                                    model, N=N, T=T, Nt=Nt, m_t=m_t)
-    update_omega = omega_function_from_model(model, omega_max, T=T)
-    update_gamma = gamma_estimate_from_parameters
+    update_omega: Callable[[float, float|float|int, float, int], float|float|int] = omega_function_from_model(model, omega_max, T=T)
+    update_gamma: Callable[[float, float], np.float64|None] = gamma_estimate_from_parameters
 
-    gamma = update_gamma(theta_in, theta_out)
-    omega = update_omega(theta_in, theta_out, p, K)
+    gamma: np.float64|None = update_gamma(theta_in, theta_out)
+    omega: float = update_omega(theta_in, theta_out, p, K)
     return gamma, omega
 
 
-def ranges_to_gamma_estimates(G, ranges):
+def ranges_to_gamma_estimates(G: ig.Graph, ranges: list[tuple[np.float64, np.float64, tuple[int, ...]]]) -> list[tuple[np.float64, np.float64, tuple[int, ...], None]|tuple[np.float64, np.float64, tuple[int, ...], np.float64]]:
     """
     Compute gamma estimates as in :meth:`~modularitypruning.parameter_estimation_utilities.gamma_estimate`, given
     domains of optimality from :meth:`~modularitypruning.champ_utilities.CHAMP_2D`.
@@ -382,7 +383,7 @@ def ranges_to_gamma_estimates(G, ranges):
             gamma_start, gamma_end, part in ranges]
 
 
-def gamma_estimates_to_stable_partitions(gamma_estimates):
+def gamma_estimates_to_stable_partitions(gamma_estimates: list[tuple[np.float64, np.float64, tuple[int, ...], None]|tuple[np.float64, np.float64, tuple[int, ...], np.float64]]) -> list[tuple[int, ...]]:
     """Computes the stable partitions (i.e. those whose gamma estimates are within their domains of optimality), given
     domains of optimality and gamma estimates from :meth:`ranges_to_gamma_estimates`.
 
@@ -399,7 +400,7 @@ def gamma_estimates_to_stable_partitions(gamma_estimates):
             if gamma_estimate is not None and gamma_start <= gamma_estimate <= gamma_end]
 
 
-def domains_to_gamma_omega_estimates(G_intralayer, G_interlayer, layer_vec, domains, model='temporal'):
+def domains_to_gamma_omega_estimates(G_intralayer: ig.Graph, G_interlayer: ig.Graph, layer_vec: list[int], domains: list[tuple[list[np.ndarray[Any, np.dtype[np.float64]]], tuple[int, ...]]], model: str='temporal') -> list[tuple[list[np.ndarray[Any, np.dtype[np.float64]]], tuple[int, ...], np.float64, float]]:
     """
     Compute (gamma, omega) estimates as in
     :meth:`~modularitypruning.parameter_estimation_utilities.gamma_omega_estimate`, given domains of optimality from
@@ -420,7 +421,7 @@ def domains_to_gamma_omega_estimates(G_intralayer, G_interlayer, layer_vec, doma
     :rtype: list of tuple[list[float], tuple[int], float, float]
     """
 
-    domains_with_estimates = []
+    domains_with_estimates: list[tuple[list[np.ndarray[Any, np.dtype[np.float64]]], tuple[int, ...], np.float64, float]] = []
     for polyverts, membership in domains:
         gamma_est, omega_est = gamma_omega_estimate(G_intralayer, G_interlayer, layer_vec, membership,
                                                     model=model)
@@ -428,7 +429,7 @@ def domains_to_gamma_omega_estimates(G_intralayer, G_interlayer, layer_vec, doma
     return domains_with_estimates
 
 
-def gamma_omega_estimates_to_stable_partitions(domains_with_estimates, return_membership_only=False):
+def gamma_omega_estimates_to_stable_partitions(domains_with_estimates: list[tuple[list[np.ndarray[Any, np.dtype[np.float64]]], tuple[int, ...], np.float64, float]], return_membership_only: bool=False) -> list[tuple[int, ...]]:
     """Computes the stable partitions (i.e. those whose resolution parameter estimates are within their domains of
     optimality), given domains of optimality and (gamma, omega) estimates from
     :meth:`domains_to_gamma_omega_estimates`.
@@ -442,27 +443,27 @@ def gamma_omega_estimates_to_stable_partitions(domains_with_estimates, return_me
     :rtype: list of tuple[int]
     """
 
-    def left_or_right(x1, y1, x2, y2, x, y):
+    def left_or_right(x1: np.float64, y1: np.float64, x2: np.float64, y2: np.float64, x: np.float64, y: float) -> np.bool:
         """Returns whether the point (x,y) is to the left or right of the line between (x1, y1) and (x2, y2)."""
         return (x - x1) * (y2 - y1) - (y - y1) * (x2 - x1) >= 0
 
-    stable_partitions = []
+    stable_partitions: list[tuple[int, ...]] = []
 
     for polyverts, membership, gamma_est, omega_est in domains_with_estimates:
         if gamma_est is None or omega_est is None:
             print(gamma_est, omega_est)
             continue
 
-        centroid_x = np.mean([x[0] for x in polyverts])
-        centroid_y = np.mean([x[1] for x in polyverts])
-        polygon_edges = []
+        centroid_x: np.float64 = np.mean([x[0] for x in polyverts])
+        centroid_y: np.float64 = np.mean([x[1] for x in polyverts])
+        polygon_edges: list[tuple[np.ndarray[Any, np.dtype[np.float64]], np.ndarray[Any, np.dtype[np.float64]]]] = []
         for i in range(len(polyverts)):
             p1, p2 = polyverts[i], polyverts[(i + 1) % len(polyverts)]
             if left_or_right(p1[0], p1[1], p2[0], p2[1], centroid_x, centroid_y):
                 p1, p2 = p2, p1
             polygon_edges.append((p1, p2))
 
-        left_or_rights = []
+        left_or_rights: list[np.bool] = []
         for p1, p2 in polygon_edges:
             left_or_rights.append(left_or_right(p1[0], p1[1], p2[0], p2[1], gamma_est, omega_est))
 
@@ -476,8 +477,8 @@ def gamma_omega_estimates_to_stable_partitions(domains_with_estimates, return_me
     return stable_partitions
 
 
-def prune_to_stable_partitions(G, parts, gamma_start, gamma_end, restrict_num_communities=None,
-                               single_threaded=False):
+def prune_to_stable_partitions(G: ig.Graph, parts: set[tuple[int, ...]], gamma_start: int, gamma_end: int, restrict_num_communities: None=None,
+                               single_threaded: bool=False) -> list[tuple[int, ...]]:
     """
     Runs our full pruning pipeline on a singlelayer network. Returns the pruned list of stable partitions whose
     parameter estimates are within the provided ``gamma_start`` and ``gamma_end`` bounds.
@@ -521,16 +522,16 @@ def prune_to_stable_partitions(G, parts, gamma_start, gamma_end, restrict_num_co
     if len(parts) == 0:
         return []
 
-    ranges = CHAMP_2D(G, parts, gamma_start, gamma_end, single_threaded=single_threaded)
-    gamma_estimates = ranges_to_gamma_estimates(G, ranges)
-    stable_parts = gamma_estimates_to_stable_partitions(gamma_estimates)
+    ranges: list[tuple[np.float64, np.float64, tuple[int, ...]]] = CHAMP_2D(G, parts, gamma_start, gamma_end, single_threaded=single_threaded)
+    gamma_estimates: list[tuple[np.float64, np.float64, tuple[int, ...], None]|tuple[np.float64, np.float64, tuple[int, ...], np.float64]] = ranges_to_gamma_estimates(G, ranges)
+    stable_parts: list[tuple[int, ...]] = gamma_estimates_to_stable_partitions(gamma_estimates)
 
     return stable_parts
 
 
-def prune_to_multilayer_stable_partitions(G_intralayer, G_interlayer, layer_vec, model,
-                                          parts, gamma_start, gamma_end, omega_start, omega_end,
-                                          restrict_num_communities=None, single_threaded=False):
+def prune_to_multilayer_stable_partitions(G_intralayer: ig.Graph, G_interlayer: ig.Graph, layer_vec: list[int], model: str,
+                                          parts: set[tuple[int, ...]], gamma_start: int, gamma_end: int, omega_start: int, omega_end: int,
+                                          restrict_num_communities: None=None, single_threaded: bool=False) -> list[tuple[int, ...]]:
     """
     Runs our full pruning pipeline on a multilayer network. Returns the pruned list of stable partitions whose
     parameter estimates are within the provided ``gamma_start``, ``gamma_end``, ``omega_start``, and ``omega_end``
@@ -586,7 +587,7 @@ def prune_to_multilayer_stable_partitions(G_intralayer, G_interlayer, layer_vec,
                                   "to add, so please raise an issue if this feature is desired.")
 
     # check graph is connected (cannot just check intra/interlayer graphs since they will both be disconnected)
-    G_combined = ig.Graph(edges=[(e.source, e.target) for e in G_intralayer.es] +
+    G_combined: ig.Graph = ig.Graph(edges=[(e.source, e.target) for e in G_intralayer.es] +
                                 [(e.source, e.target) for e in G_interlayer.es])
     if not G_combined.is_connected() or G_combined.vcount() != G_interlayer.vcount():
         warnings.warn("The pruning pipeline has not been thoroughly tested on disconnected graphs. If you run into "
@@ -610,9 +611,9 @@ def prune_to_multilayer_stable_partitions(G_intralayer, G_interlayer, layer_vec,
     if len(parts) == 0:
         return []
 
-    domains = CHAMP_3D(G_intralayer, G_interlayer, layer_vec, parts, gamma_start, gamma_end,
+    domains: list[tuple[list[np.ndarray[Any, np.dtype[np.float64]]], tuple[int, ...]]] = CHAMP_3D(G_intralayer, G_interlayer, layer_vec, parts, gamma_start, gamma_end,
                        omega_start, omega_end)
-    domains_with_estimates = domains_to_gamma_omega_estimates(G_intralayer, G_interlayer, layer_vec, domains, model)
+    domains_with_estimates: list[tuple[list[np.ndarray[Any, np.dtype[np.float64]]], tuple[int, ...], np.float64, float]] = domains_to_gamma_omega_estimates(G_intralayer, G_interlayer, layer_vec, domains, model)
 
     if any(o_est >= omega_end for _, _, g_est, o_est in domains_with_estimates if g_est is not None):
         warnings.warn(f"We are truncating some omega estimates to your choice of omega_end={omega_end}. You should "
@@ -624,6 +625,6 @@ def prune_to_multilayer_stable_partitions(G_intralayer, G_interlayer, layer_vec,
                               for polyverts, membership, g_est, o_est in domains_with_estimates
                               if g_est is not None]
 
-    stable_parts = gamma_omega_estimates_to_stable_partitions(domains_with_estimates, return_membership_only=True)
+    stable_parts: list[tuple[int, ...]] = gamma_omega_estimates_to_stable_partitions(domains_with_estimates, return_membership_only=True)
 
     return stable_parts

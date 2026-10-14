@@ -6,6 +6,10 @@ module ``modularitypruning.louvain_utilities`` now shims single-layer functions 
 in ``modularitypruning.leiden_utilities`` (though it still contains the legacy multi-layer functions since they can be
 faster in general -- leidenalg does not efficiently implement multilayer optimization).
 """
+from typing import TYPE_CHECKING, Callable
+if TYPE_CHECKING:
+    import igraph
+    import leidenalg
 import warnings
 from math import ceil
 from multiprocessing import Pool, cpu_count
@@ -27,9 +31,9 @@ warnings.warn("modularitypruning.louvain_utilities has been replaced. "
               "Please use leiden_utilities in the future when possible.", DeprecationWarning)
 
 
-def __getattr__(name):
+def __getattr__(name: str) -> "Callable[..., set[tuple[int, ...]]]|Callable[[igraph.Graph, list[float]], set[tuple[int, ...]]]|Callable[[igraph.Graph, list[int]|tuple[int, ...]], leidenalg.RBConfigurationVertexPartition]|Callable[[igraph.Graph], leidenalg.RBConfigurationVertexPartition]|None":
     if "louvain" in name:
-        leiden_name = name.replace("louvain", "leiden")
+        leiden_name: str = name.replace("louvain", "leiden")
         warnings.simplefilter('always', DeprecationWarning)
         warnings.warn(f"The Louvain functions have been deprecated. Replacing {repr(name)} with {repr(leiden_name)}.",
                       DeprecationWarning)
