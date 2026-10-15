@@ -674,10 +674,16 @@ def prune_to_multilayer_stable_partitions(
         warnings.warn("The pruning pipeline has not been thoroughly tested on disconnected graphs. If you run into "
                       "problems, consider using the largest connected component of your graph.")
 
-    if (G_intralayer.is_weighted() and any(x != 1.0 for x in G_intralayer.es['weight'])) or (
-            G_interlayer.is_weighted() and any(x != 1.0 for x in G_interlayer.es['weight'])):
-        warnings.warn("The pruning pipeline does not fully handle weighted graphs and will proceed as though the input "
-                      "graph is unweighted.")
+    for G in (G_intralayer, G_interlayer):
+        if G.is_weighted():
+            if any(w < 0 for w in G.es['weight']):
+                raise ValueError("Edge weights must be non-negative.")
+            if sum(G.es['weight']) <= 0:
+                raise ValueError("Total edge weight must be positive.")
+
+    if G_interlayer.is_weighted() and any(x != 1.0 for x in G_interlayer.es['weight']):
+        warnings.warn("Parameter estimation treats interlayer edges as unweighted and will proceed as though all "
+                      "interlayer weights are 1.0.")
 
     if isinstance(parts, leidenalg.RBConfigurationVertexPartition):
         # convert to (canonically represented) membership vectors if necessary
