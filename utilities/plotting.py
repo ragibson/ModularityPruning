@@ -4,7 +4,9 @@ if TYPE_CHECKING:
     import matplotlib.colorbar
     import matplotlib.colors
 from collections import defaultdict
+from collections.abc import Sequence
 from random import sample, shuffle
+from numpy.typing import ArrayLike
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -16,12 +18,15 @@ from matplotlib.patches import Polygon
 from .partition_utilities import num_communities, ami
 
 
-def plot_adjacency(adj):
+def plot_adjacency(adj: ArrayLike) -> None:
     plt.imshow(adj, cmap='Greys', interpolation='nearest')
     plt.title("Adjacency matrix")
 
 
-def plot_estimates(gamma_estimates: list[tuple[np.float64, np.float64, tuple[int, ...], None]|tuple[np.float64, np.float64, tuple[int, ...], np.float64]]) -> None:
+def plot_estimates(
+    gamma_estimates: list[tuple[np.float64, np.float64, tuple[int, ...], None]
+                          | tuple[np.float64, np.float64, tuple[int, ...], np.float64]]
+) -> None:
     """Plot partition dominance ranges with gamma estimates.
 
     :param gamma_estimates: gamma estimates as returned from
@@ -58,7 +63,8 @@ def plot_estimates(gamma_estimates: list[tuple[np.float64, np.float64, tuple[int
                             arrowprops=dict(alpha=0.5, facecolor="black", linewidth=1.5,
                                             arrowstyle="->, head_width=0.5, head_length=0.5"))
             else:
-                truncated_x, truncated_y = g_est, k_new
+                truncated_x: float = g_est
+                truncated_y: float = k_new
                 if g_est > x_high:
                     truncated_x = x_high
                 elif g_est < x_low:
@@ -76,7 +82,11 @@ def plot_estimates(gamma_estimates: list[tuple[np.float64, np.float64, tuple[int
                 #           length_includes_head=True, alpha=0.5, zorder=2, **{"overhang": 0.5})
 
 
-def plot_2d_domains(domains: list[tuple[list[np.ndarray[Any, np.dtype[np.float64]]], tuple[int, ...]]], xlim: tuple[int, int], ylim: tuple[float, float], flip_axes: bool=True, use_current_axes: bool=False) -> None:
+# TODO: remove Anys
+def plot_2d_domains(
+    domains: list[tuple[Sequence[np.ndarray[Any, np.dtype[np.float64]] | tuple[Any, Any]], tuple[int, ...]]],
+        xlim: tuple[int, int], ylim: tuple[float, float], flip_axes: bool = True, use_current_axes: bool = False
+) -> None:
     """Plot partition dominance ranges in the (gamma, omega) plane, using the domains from CHAMP_3D.
 
     Limits output to xlim and ylim dimensions. Note that the plotting here has x=gamma and y=omega.
@@ -98,16 +108,18 @@ def plot_2d_domains(domains: list[tuple[list[np.ndarray[Any, np.dtype[np.float64
         patches.append(polygon)
 
     cnorm: "matplotlib.colors.Normalize" = matplotlib.colors.Normalize(vmin=0, vmax=len(domains))
-    cmap: "matplotlib.colors.ListedColormap" = plt.get_cmap("Set1")
-    available_colors: set[tuple[np.float64, ...]] = {cmap(cnorm(i)) for i in range(len(domains))}
+    cmap: "matplotlib.colors.Colormap" = plt.get_cmap("Set1")
+    available_colors: set[tuple[float, ...]] = {cmap(cnorm(i)) for i in range(len(domains))}
 
+    colors: list[tuple[float, ...] | None]
     if len(available_colors) == len(domains):
-        colors: list[tuple[np.float64, ...]] = list(available_colors)
+        colors = list(available_colors)
         shuffle(colors)
     else:
         # ensure that no adjacent domains have the same color
         colors = [None] * len(domains)
-        domain_polygons: list[list[np.ndarray[Any, np.dtype[np.float64]]]] = [polyverts for polyverts, membership in domains]
+        domain_polygons: list[Sequence[np.ndarray[Any, np.dtype[np.float64]] | tuple[Any, Any]]] = (
+            [polyverts for polyverts, membership in domains])
 
         vertex_to_neighbor_domain_indices: defaultdict[tuple[np.float64, np.float64], set[int]] = defaultdict(set)
         for i, polyverts in enumerate(domain_polygons):
@@ -120,7 +132,7 @@ def plot_2d_domains(domains: list[tuple[list[np.ndarray[Any, np.dtype[np.float64
             neighboring_domains: set[int] = set()
             for v in this_polyverts:
                 neighboring_domains.update(vertex_to_neighbor_domain_indices[tuple(v)])
-            neighbor_colors: set[tuple[np.float64, ...]|None] = {colors[i] for i in neighboring_domains}
+            neighbor_colors: set[tuple[float, ...] | None] = {colors[i] for i in neighboring_domains}
             colors[i] = sample(sorted(available_colors.difference(neighbor_colors)), 1)[0]
 
     p: PatchCollection = PatchCollection(patches, facecolors=colors, alpha=1.0, edgecolors='black', linewidths=1.5)
@@ -129,7 +141,12 @@ def plot_2d_domains(domains: list[tuple[list[np.ndarray[Any, np.dtype[np.float64
     plt.ylim(ylim)
 
 
-def plot_2d_domains_with_estimates(domains_with_estimates: list[tuple[list[np.ndarray[Any, np.dtype[np.float64]]], tuple[int, ...], np.float64, float]], xlim: tuple[int, int], ylim: tuple[float, float], plot_estimate_points: bool=True, flip_axes: bool=True) -> None:
+def plot_2d_domains_with_estimates(
+    domains_with_estimates: list[tuple[Sequence[np.ndarray[Any, np.dtype[np.float64]] | tuple[Any, Any]],
+                                       tuple[int, ...], np.float64, float]],
+    xlim: tuple[int, int], ylim: tuple[float, float],
+        plot_estimate_points: bool = True, flip_axes: bool = True
+) -> None:
     """Plot partition dominance ranges in the (gamma, omega) plane, using the domains from CHAMP_3D with their gamma
     and omega estimates overlaid.
 
@@ -151,8 +168,8 @@ def plot_2d_domains_with_estimates(domains_with_estimates: list[tuple[list[np.nd
         polygon: Polygon = Polygon(polyverts, closed=True)
         patches.append(polygon)
 
-        centroid_x: np.float64 = np.mean([x[0] for x in polyverts])
-        centroid_y: np.float64 = np.mean([x[1] for x in polyverts])
+        centroid_x: float = np.mean([x[0] for x in polyverts])
+        centroid_y: float = np.mean([x[1] for x in polyverts])
 
         if gamma_est is not None and omega_est is not None:
             width: int = xlim[1] - xlim[0]
@@ -177,7 +194,12 @@ def plot_2d_domains_with_estimates(domains_with_estimates: list[tuple[list[np.nd
                     flip_axes=flip_axes, use_current_axes=True)
 
 
-def plot_2d_domains_with_num_communities(domains_with_estimates: list[tuple[list[np.ndarray[Any, np.dtype[np.float64]]], tuple[int, ...], np.float64, float]], xlim: tuple[int, int], ylim: tuple[float, float], flip_axes: bool=True, K_max: int|None=None, tick_step: int=2) -> None:
+def plot_2d_domains_with_num_communities(
+    domains_with_estimates: list[tuple[Sequence[np.ndarray[Any, np.dtype[np.float64]] | tuple[Any, Any]],
+                                       tuple[int, ...], np.float64, float]],
+    xlim: tuple[int, int], ylim: tuple[float, float],
+        flip_axes: bool = True, K_max: int | None = None, tick_step: int = 2
+) -> None:
     """Plot partition dominance ranges in the (gamma, omega) plane, using the domains from CHAMP_3D and coloring by the
     number of communities.
 
@@ -185,7 +207,7 @@ def plot_2d_domains_with_num_communities(domains_with_estimates: list[tuple[list
     assert flip_axes
     fig, ax = plt.subplots()
     patches: list[Polygon] = []
-    cm: "matplotlib.colors.ListedColormap" = matplotlib.cm.viridis
+    cm: "matplotlib.colors.Colormap" = matplotlib.cm.viridis
     Ks: list[int] = []
 
     for polyverts, membership, gamma_est, omega_est in domains_with_estimates:
@@ -214,7 +236,12 @@ def plot_2d_domains_with_num_communities(domains_with_estimates: list[tuple[list
     plt.ylim(ylim)
 
 
-def plot_2d_domains_with_ami(domains_with_estimates: list[tuple[list[np.ndarray[Any, np.dtype[np.float64]]], tuple[int, ...], np.float64, float]], ground_truth: list[int], xlim: tuple[int, int], ylim: tuple[float, float], flip_axes: bool=True) -> None:
+def plot_2d_domains_with_ami(
+    domains_with_estimates: list[tuple[Sequence[np.ndarray[Any, np.dtype[np.float64]] | tuple[Any, Any]],
+                                       tuple[int, ...], np.float64, float]],
+        ground_truth: list[int], xlim: tuple[int, int], ylim: tuple[float, float],
+        flip_axes: bool = True
+) -> None:
     """Plot partition dominance ranges in the (gamma, omega) plane, using the domains from CHAMP_3D and coloring by the
     AMI between the partitions and ground truth.
 
@@ -222,7 +249,7 @@ def plot_2d_domains_with_ami(domains_with_estimates: list[tuple[list[np.ndarray[
     assert flip_axes
     fig, ax = plt.subplots()
     patches: list[Polygon] = []
-    cm: "matplotlib.colors.LinearSegmentedColormap" = matplotlib.cm.copper
+    cm: "matplotlib.colors.Colormap" = matplotlib.cm.copper
     amis: list[float] = []
 
     for polyverts, membership, gamma_est, omega_est in domains_with_estimates:
@@ -245,7 +272,8 @@ def plot_2d_domains_with_ami(domains_with_estimates: list[tuple[list[np.ndarray[
     plt.ylim(ylim)
 
 
-def plot_multiplex_community(membership: np.ndarray[Any, np.dtype[np.int64]], layer_vec: np.ndarray[Any, np.dtype[np.int64]]) -> "matplotlib.axes.Axes":
+def plot_multiplex_community(membership: np.ndarray[Any, np.dtype[np.int64]],
+                             layer_vec: np.ndarray[Any, np.dtype[np.int64]]) -> "matplotlib.axes.Axes":
     """Plot a visualization of multiplex community membership
 
     :param membership: partition membership vector
