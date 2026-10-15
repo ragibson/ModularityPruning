@@ -29,6 +29,14 @@ def generate_connected_multilayer_ER(num_nodes_per_layer, m, num_layers, directe
             layer_membership)
 
 
+def generate_connected_weighted_multilayer_ER(num_nodes_per_layer, m, num_layers, directed, low=0.1, high=10.0):
+    G_intralayer, G_interlayer, layer_membership = generate_connected_multilayer_ER(
+        num_nodes_per_layer=num_nodes_per_layer, m=m, num_layers=num_layers, directed=directed)
+    G_intralayer.es['weight'] = [uniform(low, high) for _ in range(G_intralayer.ecount())]
+    G_interlayer.es['weight'] = [uniform(low, high) for _ in range(G_interlayer.ecount())]
+    return G_intralayer, G_interlayer, layer_membership
+
+
 def generate_random_values(num_values, start_value, end_value):
     return [uniform(start_value, end_value) for _ in range(num_values)]
 
