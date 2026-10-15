@@ -60,7 +60,7 @@ def singlelayer_leiden(
     :return: partition from leidenalg
     :rtype: tuple[int, ...] or leidenalg.RBConfigurationVertexPartition
     """
-    if 'weight' not in G.es:
+    if not G.is_weighted():
         G.es['weight'] = [1.0] * G.ecount()
 
     partition: LeidenPartition = leidenalg.find_partition(
@@ -79,6 +79,8 @@ def _wrapped_singlelayer_leiden(args: tuple[ig.Graph, float]) -> Membership:
 
 
 def leiden_part(G: ig.Graph) -> LeidenPartition:
+    if G.is_weighted():
+        return leidenalg.RBConfigurationVertexPartition(G, weights='weight')
     return leidenalg.RBConfigurationVertexPartition(G)
 
 
@@ -175,10 +177,10 @@ def multilayer_leiden(
     :return: partition from leidenalg
     :rtype: tuple[int, ...] or list[leidenalg.RBConfigurationVertexPartition]
     """
-    if 'weight' not in G_intralayer.es:
+    if not G_intralayer.is_weighted():
         G_intralayer.es['weight'] = [1.0] * G_intralayer.ecount()
 
-    if 'weight' not in G_interlayer.es:
+    if not G_interlayer.is_weighted():
         G_interlayer.es['weight'] = [1.0] * G_interlayer.ecount()
 
     G_split_layers: list[ig.Graph] = split_intralayer_leiden_graph(G_intralayer, layer_vec)
@@ -211,10 +213,10 @@ def _wrapped_multilayer_leiden(args: tuple[ig.Graph, ig.Graph, LayerVector, floa
 def multilayer_leiden_part(
     G_intralayer: ig.Graph, G_interlayer: ig.Graph, layer_membership: LayerVector
 ) -> MultilayerLeidenParts:
-    if 'weight' not in G_intralayer.es:
+    if not G_intralayer.is_weighted():
         G_intralayer.es['weight'] = [1.0] * G_intralayer.ecount()
 
-    if 'weight' not in G_interlayer.es:
+    if not G_interlayer.is_weighted():
         G_interlayer.es['weight'] = [1.0] * G_interlayer.ecount()
 
     G_split_layers: list[ig.Graph] = split_intralayer_leiden_graph(G_intralayer, layer_membership)

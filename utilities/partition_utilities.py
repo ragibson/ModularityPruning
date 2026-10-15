@@ -28,6 +28,18 @@ def out_degrees(G: "igraph.Graph") -> list[int]:
     return list(G.outdegree())
 
 
+def all_strengths(G: "igraph.Graph") -> list[float]:
+    return list(G.strength(weights='weight' if G.is_weighted() else None))
+
+
+def in_strengths(G: "igraph.Graph") -> list[float]:
+    return list(G.strength(mode='in', weights='weight' if G.is_weighted() else None))
+
+
+def out_strengths(G: "igraph.Graph") -> list[float]:
+    return list(G.strength(mode='out', weights='weight' if G.is_weighted() else None))
+
+
 def membership_to_communities(membership: IntSequence) -> dict[int, list[int]]:
     communities: defaultdict[int, list[int]] = defaultdict(list)
     for v, c in enumerate(membership):

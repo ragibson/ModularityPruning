@@ -39,7 +39,7 @@ def iterative_monolayer_resolution_parameter_estimation(
     :rtype: tuple[float, leidenalg.RBConfigurationVertexPartition]
     """
 
-    if 'weight' not in G.es:
+    if not G.is_weighted():
         G.es['weight'] = [1.0] * G.ecount()
     m: float = sum(G.es['weight'])
 
@@ -185,10 +185,10 @@ def iterative_multilayer_resolution_parameter_estimation(
     :rtype: tuple[float, float, list[leidenalg.RBConfigurationVertexPartition]]
     """
 
-    if 'weight' not in G_intralayer.es:
+    if not G_intralayer.is_weighted():
         G_intralayer.es['weight'] = [1.0] * G_intralayer.ecount()
 
-    if 'weight' not in G_interlayer.es:
+    if not G_interlayer.is_weighted():
         G_interlayer.es['weight'] = [1.0] * G_interlayer.ecount()
 
     T: int = max(layer_vec) + 1  # layer count

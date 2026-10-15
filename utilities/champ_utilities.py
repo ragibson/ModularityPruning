@@ -13,8 +13,8 @@ from scipy.linalg import LinAlgWarning
 from scipy.optimize import linprog, OptimizeWarning
 from scipy.spatial import HalfspaceIntersection
 
-from .partition_utilities import all_degrees, in_degrees, out_degrees, membership_to_communities, \
-    membership_to_layered_communities
+from .partition_utilities import all_degrees, in_degrees, out_degrees, all_strengths, in_strengths, \
+    out_strengths, membership_to_communities, membership_to_layered_communities
 from .types import (Domain, FloatArray, GammaRange, IntArray, LayerVector, Membership,
                     Partitions, PartitionCoefficients2D, PartitionCoefficients3D)
 
@@ -246,32 +246,33 @@ def CHAMP_3D(
 
 def partition_coefficients_2D_serial(G: "igraph.Graph", partitions: Partitions
                                      ) -> PartitionCoefficients2D:
-    """Computes A_hat and P_hat for partitions of :G:
+    """Computes A_hat and P_hat for partitions of :G:"""
 
-    TODO: support edge weights"""
-
-    all_edges = [(e.source, e.target) for e in G.es]
+    weights = G.es['weight'] if G.is_weighted() else [1.0] * G.ecount()
+    total_weight = float(sum(weights))
+    all_edges = [(e.source, e.target, w) for e, w in zip(G.es, weights)]
 
     # multiply by 2 only if undirected here
     if G.is_directed():
-        A_hats = np.array([sum([membership[u] == membership[v] for u, v in all_edges])
-                           for membership in partitions])
+        A_hats = np.array([sum(w for u, v, w in all_edges if membership[u] == membership[v])
+                           for membership in partitions], dtype=np.float64)
     else:
-        A_hats = np.array([2 * sum([membership[u] == membership[v] for u, v in all_edges])
-                           for membership in partitions])
+        A_hats = np.array([2 * sum(w for u, v, w in all_edges if membership[u] == membership[v])
+                           for membership in partitions], dtype=np.float64)
 
     if G.is_directed():
         # directed modularity of Leicht and Newman is actually
         #   (1/m) sum_{ij} [A_{ij} - k_i^{in} * k_j^{out} / m] delta(c_i, c_j)
-        in_degree = in_degrees(G)
-        out_degree = out_degrees(G)
-        P_hats = np.array([sum(sum(in_degree[v] for v in vs) * sum(out_degree[v] for v in vs)
+        in_strength = in_strengths(G)
+        out_strength = out_strengths(G)
+        P_hats = np.array([sum(sum(in_strength[v] for v in vs) * sum(out_strength[v] for v in vs)
                                for vs in membership_to_communities(membership).values())
-                           for membership in partitions]) / G.ecount()
+                           for membership in partitions]) / total_weight
     else:
-        twom = 2 * G.ecount()
-        degree = all_degrees(G)
-        P_hats = np.array([sum(sum(degree[v] for v in vs) ** 2 for vs in membership_to_communities(membership).values())
+        twom = 2 * total_weight
+        strength = all_strengths(G)
+        P_hats = np.array([sum(sum(strength[v] for v in vs) ** 2
+                               for vs in membership_to_communities(membership).values())
                            for membership in partitions]) / twom
 
     return A_hats, P_hats
@@ -306,7 +307,7 @@ def partition_coefficients_2D(
 
 
 def halfspaces_from_coefficients_2D(
-    A_hats: IntArray, P_hats: FloatArray
+    A_hats: FloatArray, P_hats: FloatArray
 ) -> FloatArray:
     """Converts partitions' coefficients to halfspace normal, offset
 
