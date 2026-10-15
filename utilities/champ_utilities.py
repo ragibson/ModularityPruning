@@ -1,11 +1,10 @@
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import igraph
     import multiprocessing.pool
     import scipy.optimize
 import warnings
 from collections import defaultdict
-from collections.abc import Sequence
 from math import floor
 from multiprocessing import Pool, cpu_count
 
@@ -17,14 +16,13 @@ from scipy.spatial import HalfspaceIntersection
 
 from .partition_utilities import all_degrees, in_degrees, out_degrees, membership_to_communities, \
     membership_to_layered_communities
-
-_FloatArray = np.ndarray[Any, np.dtype[np.float64]]
-_IntArray = np.ndarray[Any, np.dtype[np.int64]]
+from .types import (Domain, FloatArray, GammaRange, IntArray, LayerVector, Membership,
+                    Partitions, PartitionCoefficients2D, PartitionCoefficients3D)
 
 
 def get_interior_point(
-    halfspaces: _FloatArray, initial_num_sampled: int = 50, full_retry_limit: int = 10
-) -> _FloatArray:
+    halfspaces: FloatArray, initial_num_sampled: int = 50, full_retry_limit: int = 10
+) -> FloatArray:
     """
     Find interior point of halfspaces (needed to perform halfspace intersection)
 
@@ -57,18 +55,18 @@ def get_interior_point(
     while True:  # retry until success
         # randomly sample some of the halfspaces
         sample_len: int = min(initial_num_sampled, len(interior_hs))  # len(interior_hs)
-        sampled_hs: _FloatArray = np.vstack((
+        sampled_hs: FloatArray = np.vstack((
             interior_hs[choice(interior_hs.shape[0], sample_len, replace=False)], boundaries))
 
         # compute the Chebyshev center of the sampled halfspaces' intersection
-        norm_vector: _FloatArray = np.reshape(
+        norm_vector: FloatArray = np.reshape(
             np.linalg.norm(sampled_hs[:, :-1], axis=1), (sampled_hs.shape[0], 1))
-        c: np.ndarray[Any, np.dtype[np.float64]] = np.zeros((sampled_hs.shape[1],))
+        c: FloatArray = np.zeros((sampled_hs.shape[1],))
         c[-1] = -1
-        A: np.ndarray[Any, np.dtype[np.float64]] = np.hstack((sampled_hs[:, :-1], norm_vector))
-        b: np.ndarray[Any, np.dtype[np.float64]] = -sampled_hs[:, -1:]
+        A: FloatArray = np.hstack((sampled_hs[:, :-1], norm_vector))
+        b: FloatArray = -sampled_hs[:, -1:]
 
-        res: "scipy.optimize.OptimizeResult" = linprog(c, A_ub=A, b_ub=b, bounds=(-np.inf, np.inf), method='highs-ipm')
+        res = linprog(c, A_ub=A, b_ub=b, bounds=(-np.inf, np.inf), method='highs-ipm')
 
         # check solution if optimization succeeded, even with difficulties
         #     res.status codes
@@ -78,7 +76,10 @@ def get_interior_point(
         #     3 : Problem appears to be unbounded.
         #     4 : Numerical difficulties encountered.
         if res.success or res.status in {0, 1, 4}:
-            intpt: _FloatArray = res.x[:-1]  # res.x contains [interior_point, distance to enclosing polyhedron]
+            if res.x is None:
+                # satisfying mypy, this should never occur
+                raise ValueError(f"Scipy's linprog claimed success but returned no solution! {res}")
+            intpt: FloatArray = res.x[:-1]  # res.x contains [interior_point, distance to enclosing polyhedron]
 
             # ensure that the computed point is actually interior to all halfspaces
             if (np.dot(normals, intpt) + np.transpose(offsets) < 0).all():
@@ -99,10 +100,10 @@ def get_interior_point(
     return intpt
 
 
-def CHAMP_2D[T1: (float, int)](
-    G: "igraph.Graph", all_parts: Sequence[tuple[int, ...]] | set[tuple[int, ...]], gamma_0: T1, gamma_f: T1,
+def CHAMP_2D(
+    G: "igraph.Graph", all_parts: Partitions, gamma_0: float, gamma_f: float,
     single_threaded: bool = False
-) -> list[tuple[np.float64, np.float64, tuple[int, ...]]]:
+) -> list[GammaRange]:
     r"""Calculates the pruned set of partitions from CHAMP on ``gamma_0`` :math:`\leq \gamma \leq` ``gamma_f``.
 
     See https://doi.org/10.3390/a10030093 for more details.
@@ -131,33 +132,33 @@ def CHAMP_2D[T1: (float, int)](
     all_parts = list(all_parts)
     num_partitions: int = len(all_parts)
 
-    partition_coefficients: tuple[_IntArray, _FloatArray] = partition_coefficients_2D(
+    partition_coefficients: PartitionCoefficients2D = partition_coefficients_2D(
         G, all_parts, single_threaded=single_threaded)
     A_hats, P_hats = partition_coefficients
 
     # add on boundaries: bottom < Q < top, gamma_0 < gamma < gamma_f
     top: np.float64 = max(A_hats - P_hats * gamma_0)  # Could potentially be optimized
     bottom: np.float64 = min(A_hats - P_hats * gamma_f)  # Could potentially be optimized
-    halfspaces: _FloatArray = np.vstack((halfspaces_from_coefficients_2D(*partition_coefficients),
-                                         np.array([[0, 1, -top], [0, -1, bottom],
-                                                   [1, 0, -gamma_f], [-1, 0, gamma_0]])))
+    halfspaces: FloatArray = np.vstack((halfspaces_from_coefficients_2D(*partition_coefficients),
+                                        np.array([[0, 1, -top], [0, -1, bottom],
+                                                  [1, 0, -gamma_f], [-1, 0, gamma_0]])))
 
     # normalize halfspaces to try to improve ill-conditioned linear programs
     halfspaces = halfspaces / np.linalg.norm(halfspaces, axis=1, keepdims=True)
 
     # Could potentially scale axes so Chebyshev center is better for problem
-    interior_point: np.ndarray[Any, np.dtype[np.float64]] = get_interior_point(halfspaces)
+    interior_point: FloatArray = get_interior_point(halfspaces)
     hs: HalfspaceIntersection = HalfspaceIntersection(halfspaces, interior_point)
 
     # scipy does not support facets by halfspace directly, so we must compute them
-    facets_by_halfspace: defaultdict[int, list[np.ndarray[Any, np.dtype[np.float64]]]] = defaultdict(list)
+    facets_by_halfspace: defaultdict[int, list[FloatArray]] = defaultdict(list)
     for v, idx in zip(hs.intersections, hs.dual_facets):
         assert np.isfinite(v).all()
         for i in idx:
             if i < num_partitions:
                 facets_by_halfspace[i].append(v)
 
-    ranges: list[tuple[np.float64, np.float64, tuple[int, ...]]] = []
+    ranges: list[GammaRange] = []
     for i, intersections in facets_by_halfspace.items():
         x1, x2 = intersections[0][0], intersections[1][0]
         if x1 > x2:
@@ -167,10 +168,10 @@ def CHAMP_2D[T1: (float, int)](
     return sorted(ranges, key=lambda x: x[0])
 
 
-def CHAMP_3D[T1: (float, int), T2: (float, int)](
-    G_intralayer: "igraph.Graph", G_interlayer: "igraph.Graph", layer_vec: list[int],
-    all_parts: Sequence[tuple[int, ...]] | set[tuple[int, ...]], gamma_0: T1, gamma_f: T1, omega_0: T2, omega_f: T2
-) -> list[tuple[list[_FloatArray], tuple[int, ...]]]:
+def CHAMP_3D(
+    G_intralayer: "igraph.Graph", G_interlayer: "igraph.Graph", layer_vec: LayerVector,
+    all_parts: Partitions, gamma_0: float, gamma_f: float, omega_0: float, omega_f: float
+) -> list[Domain]:
     r"""Calculates the pruned set of partitions from CHAMP on ``gamma_0`` :math:`\leq \gamma \leq` ``gamma_f`` and
     ``omega_0`` :math:`\leq \omega \leq` ``omega_f``.
 
@@ -205,47 +206,47 @@ def CHAMP_3D[T1: (float, int), T2: (float, int)](
     all_parts = list(all_parts)
     num_partitions: int = len(all_parts)
 
-    partition_coefficients: tuple[_IntArray, _FloatArray, _IntArray] = partition_coefficients_3D(
+    partition_coefficients: PartitionCoefficients3D = partition_coefficients_3D(
         G_intralayer, G_interlayer, layer_vec, all_parts)
     A_hats, P_hats, C_hats = partition_coefficients
 
     # add on boundaries: bottom < Q < top, gamma_0 < gamma < gamma_f, omega_0 < omega < omega_f
     top: np.float64 = max(A_hats - P_hats * gamma_0 + C_hats * omega_f)  # Could potentially be optimized
     bottom: np.float64 = min(A_hats - P_hats * gamma_f + C_hats * omega_0)  # Could potentially be optimized
-    halfspaces: _FloatArray = np.vstack((halfspaces_from_coefficients_3D(*partition_coefficients),
-                                         (np.array([[0, 0, 1, -top], [0, 0, -1, bottom],
-                                                    [1, 0, 0, -gamma_f], [-1, 0, 0, gamma_0],
-                                                    [0, 1, 0, -omega_f], [0, -1, 0, omega_0]]))))
+    halfspaces: FloatArray = np.vstack((halfspaces_from_coefficients_3D(*partition_coefficients),
+                                        (np.array([[0, 0, 1, -top], [0, 0, -1, bottom],
+                                                   [1, 0, 0, -gamma_f], [-1, 0, 0, gamma_0],
+                                                   [0, 1, 0, -omega_f], [0, -1, 0, omega_0]]))))
 
     # normalize halfspaces to try to improve ill-conditioned linear programs
     halfspaces = halfspaces / np.linalg.norm(halfspaces, axis=1, keepdims=True)
 
     # Could potentially scale axes so Chebyshev center is better for problem
-    interior_point: np.ndarray[Any, np.dtype[np.float64]] = get_interior_point(halfspaces)
+    interior_point: FloatArray = get_interior_point(halfspaces)
     hs: HalfspaceIntersection = HalfspaceIntersection(halfspaces, interior_point)
 
     # scipy does not support facets by halfspace directly, so we must compute them
-    facets_by_halfspace: defaultdict[int, list[np.ndarray[Any, np.dtype[np.float64]]]] = defaultdict(list)
+    facets_by_halfspace: defaultdict[int, list[FloatArray]] = defaultdict(list)
     for v, idx in zip(hs.intersections, hs.dual_facets):
         assert np.isfinite(v).all()
         for i in idx:
             if i < num_partitions:
                 facets_by_halfspace[i].append(v)
 
-    domains: list[tuple[list[np.ndarray[Any, np.dtype[np.float64]]], tuple[int, ...]]] = []
+    domains: list[Domain] = []
     for i, intersections in facets_by_halfspace.items():
         # drop quality dimension / project into (gamma, omega) plane
         intersections = [x[:2] for x in intersections]
         # sort the domain's points counter-clockwise around the centroid
-        centroid: np.ndarray[Any, np.dtype[np.float64]] = np.mean(intersections, axis=0)
+        centroid: FloatArray = np.mean(intersections, axis=0)
         intersections.sort(key=lambda x: np.arctan2(x[0] - centroid[0], x[1] - centroid[1]))
         domains.append((intersections, all_parts[i]))
 
     return domains
 
 
-def partition_coefficients_2D_serial(G: "igraph.Graph", partitions: Sequence[tuple[int, ...]]
-                                     ) -> tuple[_IntArray, _FloatArray]:
+def partition_coefficients_2D_serial(G: "igraph.Graph", partitions: Partitions
+                                     ) -> PartitionCoefficients2D:
     """Computes A_hat and P_hat for partitions of :G:
 
     TODO: support edge weights"""
@@ -278,21 +279,21 @@ def partition_coefficients_2D_serial(G: "igraph.Graph", partitions: Sequence[tup
 
 
 def partition_coefficients_2D(
-    G: "igraph.Graph", partitions: Sequence[tuple[int, ...]], single_threaded: bool = False
-) -> tuple[_IntArray, _FloatArray]:
+    G: "igraph.Graph", partitions: Partitions, single_threaded: bool = False
+) -> PartitionCoefficients2D:
     """Computes partitions coefficients in parallel by calling partition_coefficients_2D_serial"""
     partitions = list(partitions)
 
     if single_threaded:
         A_hats, P_hats = partition_coefficients_2D_serial(G, partitions)
     else:
-        partition_chunks: list[list[tuple[int, ...]]] = [
+        partition_chunks: list[list[Membership]] = [
             partitions[floor(i * len(partitions) / cpu_count()):floor((i + 1) * len(partitions) / cpu_count())]
             for i in range(cpu_count())
         ]
 
         pool: "multiprocessing.pool.Pool" = Pool(processes=cpu_count())
-        results: list[tuple[_IntArray, _FloatArray]] = \
+        results: list[PartitionCoefficients2D] = \
             pool.starmap(partition_coefficients_2D_serial,
                          [(G, partition_chunk) for partition_chunk in partition_chunks])
         pool.close()
@@ -306,8 +307,8 @@ def partition_coefficients_2D(
 
 
 def halfspaces_from_coefficients_2D(
-    A_hats: _IntArray, P_hats: _FloatArray
-) -> _FloatArray:
+    A_hats: IntArray, P_hats: FloatArray
+) -> FloatArray:
     """Converts partitions' coefficients to halfspace normal, offset
 
     Q >= -P_hat*gamma + A_hat
@@ -318,8 +319,8 @@ def halfspaces_from_coefficients_2D(
 
 
 def halfspaces_from_coefficients_3D(
-    A_hats: _IntArray, P_hats: _FloatArray, C_hats: _IntArray
-) -> _FloatArray:
+    A_hats: IntArray, P_hats: FloatArray, C_hats: IntArray
+) -> FloatArray:
     """Converts partitions' coefficients to halfspace normal, offset
 
     Q >= C_hat*omega - P_hat*gamma + A_hat
@@ -329,8 +330,9 @@ def halfspaces_from_coefficients_3D(
     return np.vstack((-P_hats, C_hats, -np.ones_like(P_hats), A_hats)).T.astype(np.float64)
 
 
-def partition_coefficients_3D_serial(G_intralayer: "igraph.Graph", G_interlayer: "igraph.Graph", layer_vec: _IntArray,
-                                     partitions: list[_IntArray]) -> tuple[_IntArray, _FloatArray, _IntArray]:
+def partition_coefficients_3D_serial(G_intralayer: "igraph.Graph", G_interlayer: "igraph.Graph",
+                                     layer_vec: LayerVector,
+                                     partitions: list[Membership]) -> PartitionCoefficients3D:
     """Computes A_hat, P_hat, C_hat for partitions of a graph with intralayer edges given in :G_intralayer:,
     interlayer edges given in :G_interlayer:, and layer membership :layer_vec:
 
@@ -380,25 +382,25 @@ def partition_coefficients_3D_serial(G_intralayer: "igraph.Graph", G_interlayer:
 
 
 def partition_coefficients_3D(
-    G_intralayer: "igraph.Graph", G_interlayer: "igraph.Graph", layer_vec: list[int],
-    partitions: list[tuple[int, ...]]
-) -> tuple[_IntArray, _FloatArray, _IntArray]:
+    G_intralayer: "igraph.Graph", G_interlayer: "igraph.Graph", layer_vec: LayerVector,
+    partitions: Partitions
+) -> PartitionCoefficients3D:
     """Computes partitions coefficients in parallel by calling partition_coefficients_3D_serial"""
     partitions = list(partitions)
-    partition_chunks: list[list[tuple[int, ...]]] = [
+    partition_chunks: list[list[Membership]] = [
         partitions[floor(i * len(partitions) / cpu_count()):floor((i + 1) * len(partitions) / cpu_count())]
         for i in range(cpu_count())
     ]
 
     pool: "multiprocessing.pool.Pool" = Pool(processes=cpu_count())
-    results: list[tuple[_FloatArray, ...] | tuple[_IntArray, _FloatArray, _IntArray]] = pool.starmap(
+    results: list[PartitionCoefficients3D] = pool.starmap(
         partition_coefficients_3D_serial, [(G_intralayer, G_interlayer, layer_vec, partition_chunk)
                                            for partition_chunk in partition_chunks])
     pool.close()
 
-    A_hats: np.ndarray[Any, np.dtype[np.int64]] = np.array([v for A_hats, P_hats, C_hats in results for v in A_hats])
-    P_hats: np.ndarray[Any, np.dtype[np.float64]] = np.array([v for A_hats, P_hats, C_hats in results for v in P_hats])
-    C_hats: np.ndarray[Any, np.dtype[np.int64]] = np.array([v for A_hats, P_hats, C_hats in results for v in C_hats])
+    A_hats: IntArray = np.array([v for A_hats, P_hats, C_hats in results for v in A_hats])
+    P_hats: FloatArray = np.array([v for A_hats, P_hats, C_hats in results for v in P_hats])
+    C_hats: IntArray = np.array([v for A_hats, P_hats, C_hats in results for v in C_hats])
 
     assert len(A_hats) == len(P_hats) == len(C_hats) == len(partitions)
 

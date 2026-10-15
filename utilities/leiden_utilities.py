@@ -1,5 +1,5 @@
 from collections.abc import Iterable
-from typing import Any, cast, overload, Literal
+from typing import overload, Literal
 import functools
 from multiprocessing import Pool, cpu_count
 
@@ -8,11 +8,14 @@ import leidenalg
 import numpy as np
 from tqdm import tqdm
 
+from .types import (FloatSequence, IntSequence, LayerTuple, LayerVector, LeidenPartition,
+                     Membership, MultilayerLeidenParts, MultilayerLeidenResult, SingleLayerLeidenResult)
+
 LOW_MEMORY_THRESHOLD: float = 1e9  # 1 GB
 
 
 @functools.lru_cache(maxsize=1000)
-def sorted_tuple(t: tuple[int, ...]) -> tuple[int, ...]:
+def sorted_tuple(t: Membership) -> Membership:
     """Converts a tuple to a canonical form in which the labels' first occurrences are sorted (e.g. label 0 will always
     occur before label 1 in the tuple).
 
@@ -22,15 +25,30 @@ def sorted_tuple(t: tuple[int, ...]) -> tuple[int, ...]:
     :rtype: tuple[int]
     """
 
-    sort_map: dict[np.int64 | int, int] = (
+    sort_map: dict[int, int] = (
         {x[0]: i for i, x in enumerate(sorted(zip(*np.unique(t, return_index=True)), key=lambda x: x[1]))}
     )
     return tuple(sort_map[x] for x in t)
 
 
+# explain to mypy that the return type depends on the return_partition argument
+@overload
+def singlelayer_leiden(
+    G: ig.Graph, gamma: float, *, return_partition: Literal[True],
+) -> LeidenPartition:
+    ...
+
+
+@overload
+def singlelayer_leiden(
+    G: ig.Graph, gamma: float, *, return_partition: Literal[False] = False,
+) -> Membership:
+    ...
+
+
 def singlelayer_leiden(
     G: ig.Graph, gamma: float, return_partition: bool = False,
-) -> leidenalg.RBConfigurationVertexPartition | tuple[int, ...]:
+) -> SingleLayerLeidenResult:
     r"""Run the Leiden modularity maximization algorithm at a single :math:`\gamma` value.
 
     :param G: graph of interest
@@ -45,7 +63,7 @@ def singlelayer_leiden(
     if 'weight' not in G.es:
         G.es['weight'] = [1.0] * G.ecount()
 
-    partition: leidenalg.RBConfigurationVertexPartition = leidenalg.find_partition(
+    partition: LeidenPartition = leidenalg.find_partition(
         G, leidenalg.RBConfigurationVertexPartition, weights='weight', resolution_parameter=gamma
     )
 
@@ -55,26 +73,26 @@ def singlelayer_leiden(
         return tuple(partition.membership)
 
 
-def _wrapped_singlelayer_leiden(args: tuple[ig.Graph, float]) -> tuple[int, ...]:
+def _wrapped_singlelayer_leiden(args: tuple[ig.Graph, float]) -> Membership:
     """Wrapped singlelayer_leiden() for use in multiprocessing.Pool.imap_unordered."""
-    return cast(tuple[int, ...], singlelayer_leiden(*args))
+    return singlelayer_leiden(*args)
 
 
-def leiden_part(G: ig.Graph) -> leidenalg.RBConfigurationVertexPartition:
+def leiden_part(G: ig.Graph) -> LeidenPartition:
     return leidenalg.RBConfigurationVertexPartition(G)
 
 
 def leiden_part_with_membership(
-    G: ig.Graph, membership: list[int] | tuple[int, ...]
-) -> leidenalg.RBConfigurationVertexPartition:
+    G: ig.Graph, membership: IntSequence
+) -> LeidenPartition:
     if isinstance(membership, np.ndarray):
         membership = membership.tolist()
-    part: leidenalg.RBConfigurationVertexPartition = leiden_part(G)
+    part: LeidenPartition = leiden_part(G)
     part.set_membership(membership)
     return part
 
 
-def split_intralayer_leiden_graph(G_intralayer: ig.Graph, layer_membership: list[int]) -> list[ig.Graph]:
+def split_intralayer_leiden_graph(G_intralayer: ig.Graph, layer_membership: LayerVector) -> list[ig.Graph]:
     """
     Split intralayer network into a separate network for each layer.
 
@@ -83,7 +101,7 @@ def split_intralayer_leiden_graph(G_intralayer: ig.Graph, layer_membership: list
     :param G_intralayer: intralayer graph of interest
     :type G_intralayer: igraph.Graph
     :param layer_vec: list of each vertex's layer membership
-    :type layer_vec: list[int]
+    :type layer_vec: LayerVector
     :return: list of intralayer networks
     :rtype: list[igraph.Graph]
     """
@@ -95,7 +113,7 @@ def split_intralayer_leiden_graph(G_intralayer: ig.Graph, layer_membership: list
 
 @functools.lru_cache(maxsize=1)
 def _split_leiden_graph_layers_cached(
-    n: int, G_es: tuple[ig.Edge, ...], is_directed: bool, layer_membership: tuple[int, ...]
+    n: int, G_es: tuple[ig.Edge, ...], is_directed: bool, layer_membership: LayerTuple
 ) -> list[ig.Graph]:
     T: int = max(layer_membership) + 1
 
@@ -117,24 +135,24 @@ def _split_leiden_graph_layers_cached(
 # explain to mypy that the return type depends on the return_partition argument
 @overload
 def multilayer_leiden(
-    G_intralayer: ig.Graph, G_interlayer: ig.Graph, layer_vec: list[int], gamma: float,
+    G_intralayer: ig.Graph, G_interlayer: ig.Graph, layer_vec: LayerVector, gamma: float,
     omega: float, optimiser: leidenalg.Optimiser | None = None, *, return_partition: Literal[True],
-) -> list[leidenalg.RBConfigurationVertexPartition]:
+) -> list[LeidenPartition]:
     ...
 
 
 @overload
 def multilayer_leiden(
-    G_intralayer: ig.Graph, G_interlayer: ig.Graph, layer_vec: list[int], gamma: float,
+    G_intralayer: ig.Graph, G_interlayer: ig.Graph, layer_vec: LayerVector, gamma: float,
     omega: float, optimiser: leidenalg.Optimiser | None = None, *, return_partition: Literal[False] = False,
-) -> tuple[int, ...]:
+) -> Membership:
     ...
 
 
 def multilayer_leiden(
-    G_intralayer: ig.Graph, G_interlayer: ig.Graph, layer_vec: list[int], gamma: float,
+    G_intralayer: ig.Graph, G_interlayer: ig.Graph, layer_vec: LayerVector, gamma: float,
     omega: float, optimiser: leidenalg.Optimiser | None = None, return_partition: bool = False,
-) -> list[leidenalg.RBConfigurationVertexPartition] | tuple[int, ...]:
+) -> MultilayerLeidenResult:
     r"""Run the Leiden modularity maximization algorithm at a single (:math:`\gamma, \omega`) value.
 
     WARNING: Optimization can be EXTREMELY slow for large numbers of layers! Leidenalg does not properly implement
@@ -145,7 +163,7 @@ def multilayer_leiden(
     :param G_interlayer: interlayer graph of interest
     :type G_interlayer: igraph.Graph
     :param layer_vec: list of each vertex's layer membership
-    :type layer_vec: list[int]
+    :type layer_vec: LayerVector
     :param gamma: gamma (intralayer resolution parameter) to run Leiden at
     :type gamma: float
     :param omega: omega (interlayer resolution parameter) to run Leiden at
@@ -168,7 +186,7 @@ def multilayer_leiden(
     if optimiser is None:
         optimiser = leidenalg.Optimiser()
 
-    intralayer_parts: list[leidenalg.RBConfigurationVertexPartition] = (
+    intralayer_parts: list[LeidenPartition] = (
         [leidenalg.RBConfigurationVertexPartition(G_layer, weights='weight', resolution_parameter=gamma)
          for G_layer in G_split_layers]
     )
@@ -184,15 +202,15 @@ def multilayer_leiden(
         return tuple(intralayer_parts[0].membership)
 
 
-def _wrapped_multilayer_leiden(args: tuple[ig.Graph, ig.Graph, list[int], float, float]
-                               ) -> tuple[int, ...]:
+def _wrapped_multilayer_leiden(args: tuple[ig.Graph, ig.Graph, LayerVector, float, float]
+                               ) -> Membership:
     """Wrapped multilayer_leiden() for use in multiprocessing.Pool.imap_unordered."""
     return multilayer_leiden(*args)
 
 
 def multilayer_leiden_part(
-    G_intralayer: ig.Graph, G_interlayer: ig.Graph, layer_membership: list[int]
-) -> tuple[list[leidenalg.RBConfigurationVertexPartition], leidenalg.CPMVertexPartition]:
+    G_intralayer: ig.Graph, G_interlayer: ig.Graph, layer_membership: LayerVector
+) -> MultilayerLeidenParts:
     if 'weight' not in G_intralayer.es:
         G_intralayer.es['weight'] = [1.0] * G_intralayer.ecount()
 
@@ -200,7 +218,7 @@ def multilayer_leiden_part(
         G_interlayer.es['weight'] = [1.0] * G_interlayer.ecount()
 
     G_split_layers: list[ig.Graph] = split_intralayer_leiden_graph(G_intralayer, layer_membership)
-    intralayer_parts: list[leidenalg.RBConfigurationVertexPartition] = (
+    intralayer_parts: list[LeidenPartition] = (
         [leidenalg.RBConfigurationVertexPartition(G_layer, weights='weight') for G_layer in G_split_layers]
     )
     interlayer_part: leidenalg.CPMVertexPartition = leidenalg.CPMVertexPartition(
@@ -210,9 +228,9 @@ def multilayer_leiden_part(
 
 
 def multilayer_leiden_part_with_membership(
-    G_intralayer: ig.Graph, G_interlayer: ig.Graph, layer_membership: list[int],
-    community_membership: tuple[int, ...]
-) -> tuple[list[leidenalg.RBConfigurationVertexPartition], leidenalg.CPMVertexPartition]:
+    G_intralayer: ig.Graph, G_interlayer: ig.Graph, layer_membership: LayerVector,
+    community_membership: IntSequence
+) -> MultilayerLeidenParts:
     if isinstance(community_membership, np.ndarray):
         community_membership = community_membership.tolist()
     intralayer_parts, interlayer_part = multilayer_leiden_part(G_intralayer, G_interlayer, layer_membership)
@@ -222,13 +240,13 @@ def multilayer_leiden_part_with_membership(
     return intralayer_parts, interlayer_part
 
 
-def repeated_leiden_from_gammas(G: ig.Graph, gammas: list[float]) -> set[tuple[int, ...]]:
+def repeated_leiden_from_gammas(G: ig.Graph, gammas: FloatSequence) -> set[Membership]:
     return {sorted_tuple(singlelayer_leiden(G, gamma)) for gamma in gammas}
 
 
 def repeated_parallel_leiden_from_gammas(
-    G: ig.Graph, gammas: np.ndarray[Any, np.dtype[np.float64]], show_progress: bool = True
-) -> set[tuple[int, ...]]:
+    G: ig.Graph, gammas: FloatSequence, show_progress: bool = True
+) -> set[Membership]:
     r"""Runs the Leiden modularity maximization algorithm at each provided :math:`\gamma` value, using all CPU cores.
 
     :param G: graph of interest
@@ -240,10 +258,10 @@ def repeated_parallel_leiden_from_gammas(
     :return: a set of all unique partitions returned by the Leiden algorithm
     :rtype: set of tuple[int]
     """
-    total: set[tuple[int, ...]] = set()
+    total: set[Membership] = set()
     pool_chunk_size: int = max(1, len(gammas) // (cpu_count() * 100))
     with Pool(processes=cpu_count()) as pool:
-        pool_iterator: Iterable[tuple[int, ...]] = (
+        pool_iterator: Iterable[Membership] = (
             pool.imap_unordered(_wrapped_singlelayer_leiden, [(G, g) for g in gammas],
                                 chunksize=pool_chunk_size)
         )
@@ -257,18 +275,18 @@ def repeated_parallel_leiden_from_gammas(
 
 
 def repeated_leiden_from_gammas_omegas(
-    G_intralayer: ig.Graph, G_interlayer: ig.Graph, layer_vec: list[int],
-    gammas: list[float], omegas: list[float]
-) -> set[tuple[int, ...]]:
+    G_intralayer: ig.Graph, G_interlayer: ig.Graph, layer_vec: LayerVector,
+    gammas: FloatSequence, omegas: FloatSequence
+) -> set[Membership]:
     return {sorted_tuple(tuple(multilayer_leiden(G_intralayer, G_interlayer, layer_vec, gamma, omega)))
             for gamma in gammas for omega in omegas}
 
 
 def repeated_parallel_leiden_from_gammas_omegas(
-    G_intralayer: ig.Graph, G_interlayer: ig.Graph, layer_vec: list[int],
-    gammas: np.ndarray[Any, np.dtype[np.float64]], omegas: np.ndarray[Any, np.dtype[np.float64]],
+    G_intralayer: ig.Graph, G_interlayer: ig.Graph, layer_vec: LayerVector,
+    gammas: FloatSequence, omegas: FloatSequence,
     show_progress: bool = True
-) -> set[tuple[int, ...]]:
+) -> set[Membership]:
     """
     Runs leidenalg at each gamma and omega in ``gammas`` and ``omegas``, using all CPU cores available.
 
@@ -280,7 +298,7 @@ def repeated_parallel_leiden_from_gammas_omegas(
     :param G_interlayer: interlayer graph of interest
     :type G_interlayer: igraph.Graph
     :param layer_vec: list of each vertex's layer membership
-    :type layer_vec: list[int]
+    :type layer_vec: LayerVector
     :param gammas: list of gammas to run leidenalg at
     :type gammas: list[float]
     :param omegas: list of omegas to run leidenalg at
@@ -290,14 +308,14 @@ def repeated_parallel_leiden_from_gammas_omegas(
     :return: a set of all unique partitions encountered
     :rtype: set of tuple[int]
     """
-    resolution_parameter_points: list[tuple[np.float64, np.float64]] = (
+    resolution_parameter_points: list[tuple[float, float]] = (
         [(gamma, omega) for gamma in gammas for omega in omegas]
     )
 
-    total: set[tuple[int, ...]] = set()
+    total: set[Membership] = set()
     pool_chunk_size: int = max(1, len(resolution_parameter_points) // (cpu_count() * 100))
     with Pool(processes=cpu_count()) as pool:
-        pool_iterator: Iterable[tuple[int, ...]] = (
+        pool_iterator: Iterable[Membership] = (
             pool.imap_unordered(
                 _wrapped_multilayer_leiden,
                 [(G_intralayer, G_interlayer, layer_vec, gamma, omega)

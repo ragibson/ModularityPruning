@@ -1,10 +1,9 @@
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import matplotlib.axes
     import matplotlib.colorbar
     import matplotlib.colors
 from collections import defaultdict
-from collections.abc import Sequence
 from random import sample, shuffle
 from numpy.typing import ArrayLike
 
@@ -16,6 +15,8 @@ from matplotlib.collections import PatchCollection
 from matplotlib.patches import Polygon
 
 from .partition_utilities import num_communities, ami
+from .types import (AxisLimits, DomainPoint, FlexibleDomain, FlexibleDomainWithEstimates, FloatArray,
+                    FlexibleDomainVertices, GammaEstimate, IntArray, PlotColor)
 
 
 def plot_adjacency(adj: ArrayLike) -> None:
@@ -24,8 +25,7 @@ def plot_adjacency(adj: ArrayLike) -> None:
 
 
 def plot_estimates(
-    gamma_estimates: list[tuple[np.float64, np.float64, tuple[int, ...], None]
-                          | tuple[np.float64, np.float64, tuple[int, ...], np.float64]]
+    gamma_estimates: list[GammaEstimate]
 ) -> None:
     """Plot partition dominance ranges with gamma estimates.
 
@@ -49,7 +49,7 @@ def plot_estimates(
         g_0, g_f, part, g_est = gamma_estimates[i]
         k = num_communities(part)
         if g_est is not None:
-            middle: np.float64 = (g_0 + g_f) / 2
+            middle: float = (g_0 + g_f) / 2
             k_new: int = 0
             for gamma_start, gamma_end, part, _ in gamma_estimates:
                 if gamma_start <= g_est <= gamma_end:
@@ -82,10 +82,9 @@ def plot_estimates(
                 #           length_includes_head=True, alpha=0.5, zorder=2, **{"overhang": 0.5})
 
 
-# TODO: remove Anys
 def plot_2d_domains(
-    domains: list[tuple[Sequence[np.ndarray[Any, np.dtype[np.float64]] | tuple[Any, Any]], tuple[int, ...]]],
-        xlim: tuple[int, int], ylim: tuple[float, float], flip_axes: bool = True, use_current_axes: bool = False
+    domains: list[FlexibleDomain],
+        xlim: AxisLimits, ylim: AxisLimits, flip_axes: bool = True, use_current_axes: bool = False
 ) -> None:
     """Plot partition dominance ranges in the (gamma, omega) plane, using the domains from CHAMP_3D.
 
@@ -109,19 +108,19 @@ def plot_2d_domains(
 
     cnorm: "matplotlib.colors.Normalize" = matplotlib.colors.Normalize(vmin=0, vmax=len(domains))
     cmap: "matplotlib.colors.Colormap" = plt.get_cmap("Set1")
-    available_colors: set[tuple[float, ...]] = {cmap(cnorm(i)) for i in range(len(domains))}
+    available_colors: set[PlotColor] = {cmap(cnorm(i)) for i in range(len(domains))}
 
-    colors: list[tuple[float, ...] | None]
+    colors: list[PlotColor | None]
     if len(available_colors) == len(domains):
         colors = list(available_colors)
         shuffle(colors)
     else:
         # ensure that no adjacent domains have the same color
         colors = [None] * len(domains)
-        domain_polygons: list[Sequence[np.ndarray[Any, np.dtype[np.float64]] | tuple[Any, Any]]] = (
+        domain_polygons: list[FlexibleDomainVertices] = (
             [polyverts for polyverts, membership in domains])
 
-        vertex_to_neighbor_domain_indices: defaultdict[tuple[np.float64, np.float64], set[int]] = defaultdict(set)
+        vertex_to_neighbor_domain_indices: defaultdict[DomainPoint, set[int]] = defaultdict(set)
         for i, polyverts in enumerate(domain_polygons):
             for v in polyverts:
                 # it turns out that scipy's halfspace intersection (using Qhull) maintains
@@ -132,7 +131,7 @@ def plot_2d_domains(
             neighboring_domains: set[int] = set()
             for v in this_polyverts:
                 neighboring_domains.update(vertex_to_neighbor_domain_indices[tuple(v)])
-            neighbor_colors: set[tuple[float, ...] | None] = {colors[i] for i in neighboring_domains}
+            neighbor_colors: set[PlotColor | None] = {colors[i] for i in neighboring_domains}
             colors[i] = sample(sorted(available_colors.difference(neighbor_colors)), 1)[0]
 
     p: PatchCollection = PatchCollection(patches, facecolors=colors, alpha=1.0, edgecolors='black', linewidths=1.5)
@@ -142,9 +141,8 @@ def plot_2d_domains(
 
 
 def plot_2d_domains_with_estimates(
-    domains_with_estimates: list[tuple[Sequence[np.ndarray[Any, np.dtype[np.float64]] | tuple[Any, Any]],
-                                       tuple[int, ...], np.float64, float]],
-    xlim: tuple[int, int], ylim: tuple[float, float],
+    domains_with_estimates: list[FlexibleDomainWithEstimates],
+    xlim: AxisLimits, ylim: AxisLimits,
         plot_estimate_points: bool = True, flip_axes: bool = True
 ) -> None:
     """Plot partition dominance ranges in the (gamma, omega) plane, using the domains from CHAMP_3D with their gamma
@@ -172,7 +170,7 @@ def plot_2d_domains_with_estimates(
         centroid_y: float = np.mean([x[1] for x in polyverts])
 
         if gamma_est is not None and omega_est is not None:
-            width: int = xlim[1] - xlim[0]
+            width: float = xlim[1] - xlim[0]
 
             # prune arrows too far outside plotting range to avoid excess visual noise
             if centroid_x < xlim[0] - 0.05 * width or centroid_x > xlim[1] + 0.05 * width:
@@ -195,9 +193,8 @@ def plot_2d_domains_with_estimates(
 
 
 def plot_2d_domains_with_num_communities(
-    domains_with_estimates: list[tuple[Sequence[np.ndarray[Any, np.dtype[np.float64]] | tuple[Any, Any]],
-                                       tuple[int, ...], np.float64, float]],
-    xlim: tuple[int, int], ylim: tuple[float, float],
+    domains_with_estimates: list[FlexibleDomainWithEstimates],
+    xlim: AxisLimits, ylim: AxisLimits,
         flip_axes: bool = True, K_max: int | None = None, tick_step: int = 2
 ) -> None:
     """Plot partition dominance ranges in the (gamma, omega) plane, using the domains from CHAMP_3D and coloring by the
@@ -237,9 +234,8 @@ def plot_2d_domains_with_num_communities(
 
 
 def plot_2d_domains_with_ami(
-    domains_with_estimates: list[tuple[Sequence[np.ndarray[Any, np.dtype[np.float64]] | tuple[Any, Any]],
-                                       tuple[int, ...], np.float64, float]],
-        ground_truth: list[int], xlim: tuple[int, int], ylim: tuple[float, float],
+    domains_with_estimates: list[FlexibleDomainWithEstimates],
+        ground_truth: list[int], xlim: AxisLimits, ylim: AxisLimits,
         flip_axes: bool = True
 ) -> None:
     """Plot partition dominance ranges in the (gamma, omega) plane, using the domains from CHAMP_3D and coloring by the
@@ -272,8 +268,8 @@ def plot_2d_domains_with_ami(
     plt.ylim(ylim)
 
 
-def plot_multiplex_community(membership: np.ndarray[Any, np.dtype[np.int64]],
-                             layer_vec: np.ndarray[Any, np.dtype[np.int64]]) -> "matplotlib.axes.Axes":
+def plot_multiplex_community(membership: IntArray,
+                             layer_vec: IntArray) -> "matplotlib.axes.Axes":
     """Plot a visualization of multiplex community membership
 
     :param membership: partition membership vector
@@ -281,9 +277,9 @@ def plot_multiplex_community(membership: np.ndarray[Any, np.dtype[np.int64]],
     :param layer_vec: list of each vertex's layer membership
     :type layer_vec: list[int]
     """
-    T: np.int64 = max(layer_vec) + 1
-    N: np.int64 = len(membership) // T
-    communities_per_layer: np.ndarray[Any, np.dtype[np.float64]] = np.zeros((N, T))
+    T: int = max(layer_vec) + 1
+    N: int = len(membership) // T
+    communities_per_layer: FloatArray = np.zeros((N, T))
     for i, layer in enumerate(range(T)):
         communities_per_layer[:, i] = membership[layer_vec == layer]
 

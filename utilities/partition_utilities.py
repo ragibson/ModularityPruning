@@ -1,15 +1,12 @@
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import igraph
 from collections import defaultdict
-from collections.abc import Sequence
 
 import numpy as np
 from sklearn.metrics import adjusted_mutual_info_score, normalized_mutual_info_score
 
-# mypy doesn't consider numpy arrays to be a sequence
-# TODO: remove Anys
-IntSequence = Sequence[int] | np.ndarray[Any, Any]
+from .types import IntSequence
 
 
 def ami(p1: IntSequence, p2: IntSequence) -> float:
