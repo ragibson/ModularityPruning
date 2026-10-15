@@ -2,13 +2,12 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import igraph
 import leidenalg
-import numpy as np
 
 from .leiden_utilities import singlelayer_leiden, multilayer_leiden, leiden_part_with_membership
 from .parameter_estimation_utilities import estimate_singlelayer_SBM_parameters, gamma_estimate_from_parameters, \
     omega_function_from_model, estimate_multilayer_SBM_parameters
 from .partition_utilities import in_degrees
-from .types import (LayerVector, LeidenPartition, MultilayerSBMParameters,
+from .types import (GammaUpdateFunc, LayerVector, LeidenPartition, MultilayerSBMParameters,
                     OmegaUpdateFunc, SinglelayerSBMParameters)
 
 
@@ -57,9 +56,7 @@ def iterative_monolayer_resolution_parameter_estimation(
     def estimate_SBM_parameters(partition: LeidenPartition) -> SinglelayerSBMParameters:
         return estimate_singlelayer_SBM_parameters(G, partition, m=m)
 
-    def update_gamma(omega_in: float, omega_out: float) -> float:
-        g = gamma_estimate_from_parameters(omega_in, omega_out)
-        return g if g else np.float64(0.0)
+    update_gamma: GammaUpdateFunc = gamma_estimate_from_parameters
 
     part = None
     last_gamma = gamma
@@ -68,10 +65,12 @@ def iterative_monolayer_resolution_parameter_estimation(
         omega_in, omega_out = estimate_SBM_parameters(part)
 
         last_gamma = gamma
-        gamma = update_gamma(omega_in, omega_out)
+        new_gamma = update_gamma(omega_in, omega_out)
 
-        if gamma is None:
+        if new_gamma is None:
             raise ValueError(f"gamma={last_gamma:.3f} resulted in degenerate partition")
+
+        gamma = float(new_gamma)
 
         if verbose:
             print(f"Iter {iteration:>2}: {len(part) if part else 0} communities with Q={part.q:.3f} and "
@@ -85,7 +84,7 @@ def iterative_monolayer_resolution_parameter_estimation(
                   f"Final move of {abs(gamma - last_gamma):.3f} was not within tolerance {tol}")
 
     if verbose:
-        print(f"Returned {len(part) if part else 0} communities with Q={part.q if part else None:.3f} and "
+        print(f"Returned {len(part) if part else 0} communities with Q={part.q if part else -1:.3f} and "
               f"gamma={gamma:.3f}")
 
     return gamma, part
@@ -206,12 +205,8 @@ def iterative_multilayer_resolution_parameter_estimation(
         Nt[layer] += 1
 
     check_multilayer_graph_consistency(G_intralayer, G_interlayer, layer_vec, model, m_t, T, N, Nt)
-    update_omega: OmegaUpdateFunc = (
-        omega_function_from_model(model, omega_max, T=T))
-
-    def update_gamma(omega_in: float, omega_out: float) -> float:
-        g = gamma_estimate_from_parameters(omega_in, omega_out)
-        return g if g else np.float64(0.0)
+    update_omega: OmegaUpdateFunc = omega_function_from_model(model, omega_max, T=T)
+    update_gamma: GammaUpdateFunc = gamma_estimate_from_parameters
 
     def maximize_modularity(
         intralayer_resolution: float, interlayer_resolution: float
@@ -234,11 +229,12 @@ def iterative_multilayer_resolution_parameter_estimation(
             raise ValueError(f"gamma={gamma:.3f}, omega={omega:.3f} resulted in impossible estimate p={p:.3f}")
 
         last_gamma, last_omega = gamma, omega
-        gamma = update_gamma(theta_in, theta_out)
+        new_gamma = update_gamma(theta_in, theta_out)
 
-        if gamma is None:
+        if new_gamma is None:
             raise ValueError(f"gamma={last_gamma:.3f}, omega={last_omega:.3f} resulted in degenerate partition")
 
+        gamma = float(new_gamma)
         omega = update_omega(theta_in, theta_out, p, K)
 
         if verbose:
@@ -255,7 +251,7 @@ def iterative_multilayer_resolution_parameter_estimation(
                   f"was not within tolerance ({gamma_tol}, {omega_tol})")
 
     if verbose:
-        part_Q = sum(p.q for p in parts) if parts else None
+        part_Q = sum(p.q for p in parts) if parts else -1
         print(f"Returned {K} communities with Q={part_Q:.3f}, gamma={gamma:.3f}, and omega={omega:.3f}")
 
     return gamma, omega, parts

@@ -3,7 +3,6 @@ if TYPE_CHECKING:
     import igraph
 from collections import defaultdict
 
-import numpy as np
 from sklearn.metrics import adjusted_mutual_info_score, normalized_mutual_info_score
 
 from .types import IntSequence
