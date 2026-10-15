@@ -29,7 +29,7 @@ def estimate_singlelayer_SBM_parameters(
     :param partition: partition of interest
     :type partition: leidenalg.RBConfigurationVertexPartition
     :param m: total edge weight of graph (if None, will be computed)
-    :type m: float
+    :type m: float | None
     :return: SBM parameter estimates :math:`(\omega_{in}, \omega_{out})`
     :rtype: tuple[float, float]
     """
@@ -68,19 +68,19 @@ def estimate_multilayer_SBM_parameters(
     :param G_interlayer: interlayer graph of interest
     :type G_interlayer: igraph.Graph
     :param layer_vec: list of each vertex's layer membership
-    :type layer_vec: LayerVector
+    :type layer_vec: list[int]
     :param partition: partition of interest
     :type partition: leidenalg.RBConfigurationVertexPartition
     :param model: network layer topology (temporal, multilevel, multiplex)
     :type model: str
     :param N: number of nodes per layer (automatically computed if None)
-    :type N: int
+    :type N: int | None
     :param T: number of layers in input graph (automatically computed if None)
-    :type T: int
+    :type T: int | None
     :param Nt: vector of nodes per layer (automatically computed if None)
-    :type Nt: int
+    :type Nt: list[int] | None
     :param m_t: vector of total edge weights per layer (automatically computed if None)
-    :type m_t: int
+    :type m_t: list[float] | None
     :return: theta_in, theta_out, p, K
     :rtype: float, float, float, int
     """
@@ -162,9 +162,9 @@ def gamma_estimate(G: ig.Graph, partition: LeidenPartition | Membership) -> Gamm
     :param G: graph of interest
     :type G: igraph.Graph
     :param partition: partition of interest
-    :type partition: tuple[int] or leidenalg.RBConfigurationVertexPartition
+    :type partition: tuple[int, ...] or leidenalg.RBConfigurationVertexPartition
     :return: gamma estimate
-    :rtype: float
+    :rtype: float | None
     """
 
     if 'weight' not in G.es:
@@ -187,7 +187,7 @@ def gamma_estimate_from_parameters(omega_in: float, omega_out: float) -> GammaEs
     :param omega_out: within-community edge propensity of a degree-corrected, planted partition SBM
     :type omega_out: float
     :return: gamma estimate
-    :rtype: float
+    :rtype: float | None
     """
 
     if omega_in == 0 or omega_out == 0:
@@ -366,23 +366,23 @@ def gamma_omega_estimate(
     :param G_interlayer: interlayer graph of interest
     :type G_interlayer: igraph.Graph
     :param layer_vec: list of each vertex's layer membership
-    :type layer_vec: LayerVector
+    :type layer_vec: list[int]
     :param membership: partition membership vector
-    :type membership: tuple[int]
+    :type membership: tuple[int, ...]
     :param omega_max: maximum allowed value for omega
     :type omega_max: float
     :param model: network layer topology (temporal, multilevel, multiplex)
     :type model: str
     :param N: number of nodes per layer (automatically computed if None)
-    :type N: int
+    :type N: int | None
     :param T: number of layers in input graph (automatically computed if None)
-    :type T: int
+    :type T: int | None
     :param Nt: vector of nodes per layer (automatically computed if None)
-    :type Nt: int
+    :type Nt: list[int] | None
     :param m_t: vector of total edge weights per layer (automatically computed if None)
-    :type m_t: int
+    :type m_t: list[float] | None
     :return: gamma estimate, omega estimate
-    :rtype: float, float
+    :rtype: float | None, float
     """
     if T is None:
         T = max(layer_vec) + 1  # layer  count
@@ -409,9 +409,9 @@ def ranges_to_gamma_estimates(G: ig.Graph, ranges: list[GammaRange]) -> list[Gam
     :type G: igraph.Graph
     :param ranges: list of ``(gamma_start, gamma_end, membership)`` tuples as returned from
                    :meth:`~modularitypruning.champ_utilities.CHAMP_2D`
-    :type ranges: list of tuple[float, float, tuple[int]]
+    :type ranges: list of tuple[float, float, tuple[int, ...]]
     :return: a copy of input ranges with the corresponding gamma estimate appended to each tuple
-    :rtype: list of tuple[float, float, tuple[int], float]
+    :rtype: list of tuple[float, float, tuple[int, ...], float | None]
     """
 
     return [(gamma_start, gamma_end, part, gamma_estimate(G, part)) for
@@ -426,9 +426,9 @@ def gamma_estimates_to_stable_partitions(gamma_estimates: list[GammaEstimate]) -
 
     :param gamma_estimates: list of ``(gamma_start, gamma_end, membership, gamma_estimate)`` tuples as returned from
                             :meth:`~modularitypruning.champ_utilities.CHAMP_2D`
-    :type gamma_estimates: list[tuple]
+    :type gamma_estimates: list of tuple[float, float, tuple[int, ...], float | None]
     :return: list of community membership tuples of the stable partitions
-    :rtype: list of tuple[int]
+    :rtype: list of tuple[int, ...]
     """
 
     return [membership for gamma_start, gamma_end, membership, gamma_estimate in gamma_estimates
@@ -450,14 +450,14 @@ def domains_to_gamma_omega_estimates(
     :param G_interlayer: interlayer graph of interest
     :type G_interlayer: igraph.Graph
     :param layer_vec: list of each vertex's layer membership
-    :type layer_vec: LayerVector
+    :type layer_vec: list[int]
     :param domains: list of ``(domain_vertices, membership)`` tuples as returned from
                     :meth:`~modularitypruning.champ_utilities.CHAMP_3D`
-    :type domains: list of tuple[list[float], tuple[int]]
+    :type domains: list of tuple[list[numpy.ndarray], tuple[int, ...]]
     :param model: network layer topology (temporal, multilevel, multiplex)
     :type model: str
     :return: a copy of input domains with the corresponding gamma and omega estimates appended to each tuple
-    :rtype: list of tuple[list[float], tuple[int], float | None, float | None]
+    :rtype: list of tuple[list[numpy.ndarray], tuple[int, ...], float | None, float]
     """
 
     domains_with_estimates: list[DomainWithEstimates] = []
@@ -497,9 +497,10 @@ def gamma_omega_estimates_to_stable_partitions(
 
     :param domains_with_estimates: list of ``(domain_vertices, membership, gamma_estimate, omega_estimate)`` tuples as
         returned from :meth:`~modularitypruning.champ_utilities.CHAMP_3D`
-    :type domains_with_estimates: list[tuple]
-    :return: list of community membership tuples of the stable partitions
-    :rtype: list of tuple[int]
+    :param return_membership_only: if True, return only community membership tuples. Otherwise, return list of domains
+        with estimates
+    :type return_membership_only: bool
+    :return: list of community membership tuples or domains with estimates
     """
 
     def left_or_right(
@@ -557,17 +558,17 @@ def prune_to_stable_partitions(
     :param G: graph of interest
     :type G: igraph.Graph
     :param parts: partitions to prune
-    :type parts: iterable[tuple]
+    :type parts: set[tuple[int, ...]]
     :param gamma_start: starting gamma value for CHAMP
     :type gamma_start: float
     :param gamma_end: ending gamma value for CHAMP
     :type gamma_end: float
     :param restrict_num_communities: if not None, only use input partitions of this many communities
-    :type restrict_num_communities: int or None
+    :type restrict_num_communities: int | None
     :param single_threaded: if True, run the CHAMP step in serial
     :type single_threaded: bool
     :return: list of community membership tuples
-    :rtype: list[tuple[int]]
+    :rtype: list[tuple[int, ...]]
     """
 
     if not G.is_connected():
@@ -637,11 +638,11 @@ def prune_to_multilayer_stable_partitions(
     :param G_interlayer: interlayer graph of interest
     :type G_interlayer: igraph.Graph
     :param layer_vec: list of each vertex's layer membership
-    :type layer_vec: LayerVector
+    :type layer_vec: list[int]
     :param model: network layer topology (temporal, multilevel, multiplex)
     :type model: str
     :param parts: partitions to prune
-    :type parts: iterable[tuple]
+    :type parts: set[tuple[int, ...]]
     :param gamma_start: starting gamma value for CHAMP
     :type gamma_start: float
     :param gamma_end: ending gamma value for CHAMP
@@ -651,11 +652,11 @@ def prune_to_multilayer_stable_partitions(
     :param omega_end: ending omega value for CHAMP
     :type omega_end: float
     :param restrict_num_communities: if not None, only use input partitions of this many communities
-    :type restrict_num_communities: int or None
+    :type restrict_num_communities: int | None
     :param single_threaded: if True, run the CHAMP step in serial
     :type single_threaded: bool
     :return: list of community membership tuples
-    :rtype: list[tuple[int]]
+    :rtype: list[tuple[int, ...]]
     """
     if single_threaded:
         raise NotImplementedError("Single-threaded multilayer CHAMP was never implemented. This would be fairly easy"

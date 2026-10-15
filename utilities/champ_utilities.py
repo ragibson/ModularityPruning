@@ -111,7 +111,7 @@ def CHAMP_2D(
     :param G: graph of interest
     :type G: igraph.Graph
     :param all_parts: partitions to prune
-    :type all_parts: list[tuple] or set[tuple]
+    :type all_parts: Sequence[tuple[int, ...]] | set[tuple[int, ...]]
     :param gamma_0: starting gamma value for CHAMP
     :type gamma_0: float
     :param gamma_f: ending gamma value for CHAMP
@@ -123,7 +123,7 @@ def CHAMP_2D(
         - starting gamma value for the partition's domain of optimality
         - ending gamma value for the partition's domain of optimality
         - community membership tuple for the partition
-    :rtype: list of tuple[float, float, tuple[int]]
+    :rtype: list of tuple[float, float, tuple[int, ...]]
     """
 
     if len(all_parts) == 0:
@@ -197,7 +197,7 @@ def CHAMP_3D(
 
         - list of polygon vertices in (gamma, omega) plane for the partition's domain of optimality
         - community membership tuple for the partition
-    :rtype: list of tuple[list[float], tuple[int]]
+    :rtype: list of tuple[list[numpy.ndarray], tuple[int, ...]]
     """
 
     if len(all_parts) == 0:

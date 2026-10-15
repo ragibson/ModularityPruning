@@ -126,8 +126,8 @@ def check_multilayer_graph_consistency(
                                "Intralayer graph should not contain edges across layers",
                                model != 'temporal' or G_interlayer.ecount() == N * (T - 1),
                                "Interlayer temporal graph must contain (nodes per layer) * (number of layers - 1) edges",
-                               model != 'temporal' or (G_interlayer.vcount() %
-                                                       T == 0 and G_intralayer.vcount() % T == 0),
+                               model != 'temporal' or (G_interlayer.vcount() % T == 0
+                                                       and G_intralayer.vcount() % T == 0),
                                "Vertex count of a temporal graph should be a multiple of the number of layers",
                                model != 'temporal' or all(nt == N for nt in Nt),
                                "Temporal networks must have the same number of nodes in every layer",
@@ -181,7 +181,7 @@ def iterative_multilayer_resolution_parameter_estimation(
         - gamma to which the iteration converged
         - omega to which the iteration converged
         - the resulting partition
-    :rtype: tuple[float, float, tuple[int]]
+    :rtype: tuple[float, float, list[leidenalg.RBConfigurationVertexPartition]]
     """
 
     if 'weight' not in G_intralayer.es:

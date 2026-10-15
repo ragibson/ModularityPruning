@@ -9,7 +9,7 @@ import numpy as np
 from tqdm import tqdm
 
 from .types import (FloatSequence, IntSequence, LayerTuple, LayerVector, LeidenPartition,
-                     Membership, MultilayerLeidenParts, MultilayerLeidenResult, SingleLayerLeidenResult)
+                    Membership, MultilayerLeidenParts, MultilayerLeidenResult, SingleLayerLeidenResult)
 
 LOW_MEMORY_THRESHOLD: float = 1e9  # 1 GB
 
@@ -20,9 +20,9 @@ def sorted_tuple(t: Membership) -> Membership:
     occur before label 1 in the tuple).
 
     :param t: community membership of a partition
-    :type t: tuple[int]
+    :type t: tuple[int, ...]
     :return: a canonical representation of the membership tuple
-    :rtype: tuple[int]
+    :rtype: tuple[int, ...]
     """
 
     sort_map: dict[int, int] = (
@@ -58,7 +58,7 @@ def singlelayer_leiden(
     :param return_partition: if True, return a leidenalg partition. Otherwise, return a community membership tuple
     :type return_partition: bool
     :return: partition from leidenalg
-    :rtype: tuple[int] or leidenalg.RBConfigurationVertexPartition
+    :rtype: tuple[int, ...] or leidenalg.RBConfigurationVertexPartition
     """
     if 'weight' not in G.es:
         G.es['weight'] = [1.0] * G.ecount()
@@ -100,8 +100,8 @@ def split_intralayer_leiden_graph(G_intralayer: ig.Graph, layer_membership: Laye
 
     :param G_intralayer: intralayer graph of interest
     :type G_intralayer: igraph.Graph
-    :param layer_vec: list of each vertex's layer membership
-    :type layer_vec: LayerVector
+    :param layer_membership: list of each vertex's layer membership
+    :type layer_membership: list[int]
     :return: list of intralayer networks
     :rtype: list[igraph.Graph]
     """
@@ -163,17 +163,17 @@ def multilayer_leiden(
     :param G_interlayer: interlayer graph of interest
     :type G_interlayer: igraph.Graph
     :param layer_vec: list of each vertex's layer membership
-    :type layer_vec: LayerVector
+    :type layer_vec: list[int]
     :param gamma: gamma (intralayer resolution parameter) to run Leiden at
     :type gamma: float
     :param omega: omega (interlayer resolution parameter) to run Leiden at
     :type omega: float
     :param optimiser: if not None, use passed-in (potentially custom) leidenalg optimiser
-    :type optimiser: leidenalg.Optimiser
+    :type optimiser: leidenalg.Optimiser | None
     :param return_partition: if True, return a leidenalg partition. Otherwise, return a community membership tuple
     :type return_partition: bool
     :return: partition from leidenalg
-    :rtype: tuple[int] or leidenalg.RBConfigurationVertexPartitionWeightedLayers
+    :rtype: tuple[int, ...] or list[leidenalg.RBConfigurationVertexPartition]
     """
     if 'weight' not in G_intralayer.es:
         G_intralayer.es['weight'] = [1.0] * G_intralayer.ecount()
@@ -252,11 +252,11 @@ def repeated_parallel_leiden_from_gammas(
     :param G: graph of interest
     :type G: igraph.Graph
     :param gammas: list of gammas (resolution parameters) to run Leiden at
-    :type gammas: list[float]
+    :type gammas: Sequence[float] | numpy.ndarray
     :param show_progress: if True, render a progress bar
     :type show_progress: bool
     :return: a set of all unique partitions returned by the Leiden algorithm
-    :rtype: set of tuple[int]
+    :rtype: set of tuple[int, ...]
     """
     total: set[Membership] = set()
     pool_chunk_size: int = max(1, len(gammas) // (cpu_count() * 100))
@@ -298,15 +298,15 @@ def repeated_parallel_leiden_from_gammas_omegas(
     :param G_interlayer: interlayer graph of interest
     :type G_interlayer: igraph.Graph
     :param layer_vec: list of each vertex's layer membership
-    :type layer_vec: LayerVector
+    :type layer_vec: list[int]
     :param gammas: list of gammas to run leidenalg at
-    :type gammas: list[float]
+    :type gammas: Sequence[float] | numpy.ndarray
     :param omegas: list of omegas to run leidenalg at
-    :type omegas: list[float]
+    :type omegas: Sequence[float] | numpy.ndarray
     :param show_progress: if True, render a progress bar
     :type show_progress: bool
     :return: a set of all unique partitions encountered
-    :rtype: set of tuple[int]
+    :rtype: set of tuple[int, ...]
     """
     resolution_parameter_points: list[tuple[float, float]] = (
         [(gamma, omega) for gamma in gammas for omega in omegas]

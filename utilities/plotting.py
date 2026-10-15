@@ -273,9 +273,9 @@ def plot_multiplex_community(membership: IntArray,
     """Plot a visualization of multiplex community membership
 
     :param membership: partition membership vector
-    :type membership: tuple[int]
+    :type membership: numpy.ndarray
     :param layer_vec: list of each vertex's layer membership
-    :type layer_vec: list[int]
+    :type layer_vec: numpy.ndarray
     """
     T: int = max(layer_vec) + 1
     N: int = len(membership) // T
