@@ -86,7 +86,7 @@ def generate_multilayer_intralayer_SBM(copying_probability, p_in, p_out, first_l
                     if random() < p_out:
                         intralayer_edges.append((u, v))
 
-    G_intralayer = ig.Graph(intralayer_edges, directed=False)
+    G_intralayer = ig.Graph(n=len(combined_community_labels), edges=intralayer_edges, directed=False)
 
     return G_intralayer, layer_membership
 

@@ -44,8 +44,8 @@ def determine_target_parallelization_speedup(num_calculations=32):
     cpu_utilization = psutil.cpu_percent(interval=5)
     if cpu_utilization > 20:
         PERFORMANCE_TARGET_RELATIVE_TO_PERFECT_SCALING = 0.5
-        warnings.warn(f"System CPU utilization is non-negligible during parallel performance test! "
-                      f"Dropping performance scaling target to 50%.")
+        warnings.warn("System CPU utilization is non-negligible during parallel performance test! "
+                      "Dropping performance scaling target to 50%.")
 
     start_time = time()
     _ = [mock_calculation(i) for i in range(num_calculations)]

@@ -1,13 +1,20 @@
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    import igraph
 import leidenalg
 
-from .leiden_utilities import singlelayer_leiden, multilayer_leiden
-from .parameter_estimation_utilities import leiden_part_with_membership, estimate_singlelayer_SBM_parameters, \
-    gamma_estimate_from_parameters, omega_function_from_model, estimate_multilayer_SBM_parameters
+from .leiden_utilities import singlelayer_leiden, multilayer_leiden, leiden_part_with_membership
+from .parameter_estimation_utilities import estimate_singlelayer_SBM_parameters, gamma_estimate_from_parameters, \
+    omega_function_from_model, estimate_multilayer_SBM_parameters
 from .partition_utilities import in_degrees
+from .types import (GammaUpdateFunc, LayerVector, LeidenPartition, MultilayerSBMParameters,
+                    OmegaUpdateFunc, SinglelayerSBMParameters)
 
 
-def iterative_monolayer_resolution_parameter_estimation(G, gamma=1.0, tol=1e-2, max_iter=25, verbose=False,
-                                                        method="leiden"):
+def iterative_monolayer_resolution_parameter_estimation(
+    G: "igraph.Graph", gamma: float = 1.0, tol: float = 1e-2, max_iter: int = 25,
+    verbose: bool = False, method: str = "leiden"
+) -> tuple[float, LeidenPartition]:
     """Monolayer variant of ALG. 1 from "Relating modularity maximization and stochastic block models in multilayer
     networks." This is intended to determine an "optimal" value for gamma by repeatedly maximizing modularity and
     estimating new values for the resolution parameter.
@@ -34,37 +41,39 @@ def iterative_monolayer_resolution_parameter_estimation(G, gamma=1.0, tol=1e-2, 
 
     if 'weight' not in G.es:
         G.es['weight'] = [1.0] * G.ecount()
-    m = sum(G.es['weight'])
+    m: float = sum(G.es['weight'])
 
     if method == "louvain" or method == "leiden":
-        def maximize_modularity(resolution_param):
+        def maximize_modularity(resolution_param: float) -> LeidenPartition:
             return singlelayer_leiden(G, resolution_param, return_partition=True)
     elif method == "2-spinglass":
-        def maximize_modularity(resolution_param):
+        def maximize_modularity(resolution_param: float) -> LeidenPartition:
             membership = G.community_spinglass(spins=2, gamma=resolution_param).membership
             return leiden_part_with_membership(G, membership)
     else:
         raise ValueError(f"Community detection method {method} not supported")
 
-    def estimate_SBM_parameters(partition):
+    def estimate_SBM_parameters(partition: LeidenPartition) -> SinglelayerSBMParameters:
         return estimate_singlelayer_SBM_parameters(G, partition, m=m)
 
-    def update_gamma(omega_in, omega_out):
-        return gamma_estimate_from_parameters(omega_in, omega_out)
+    update_gamma: GammaUpdateFunc = gamma_estimate_from_parameters
 
-    part, last_gamma = None, None
+    part = None
+    last_gamma = gamma
     for iteration in range(max_iter):
         part = maximize_modularity(gamma)
         omega_in, omega_out = estimate_SBM_parameters(part)
 
         last_gamma = gamma
-        gamma = update_gamma(omega_in, omega_out)
+        new_gamma = update_gamma(omega_in, omega_out)
 
-        if gamma is None:
+        if new_gamma is None:
             raise ValueError(f"gamma={last_gamma:.3f} resulted in degenerate partition")
 
+        gamma = float(new_gamma)
+
         if verbose:
-            print(f"Iter {iteration:>2}: {len(part)} communities with Q={part.q:.3f} and "
+            print(f"Iter {iteration:>2}: {len(part) if part else 0} communities with Q={part.q:.3f} and "
                   f"gamma={last_gamma:.3f}->{gamma:.3f}")
 
         if abs(gamma - last_gamma) < tol:
@@ -75,12 +84,16 @@ def iterative_monolayer_resolution_parameter_estimation(G, gamma=1.0, tol=1e-2, 
                   f"Final move of {abs(gamma - last_gamma):.3f} was not within tolerance {tol}")
 
     if verbose:
-        print(f"Returned {len(part)} communities with Q={part.q:.3f} and gamma={gamma:.3f}")
+        print(f"Returned {len(part) if part else 0} communities with Q={part.q if part else -1:.3f} and "
+              f"gamma={gamma:.3f}")
 
     return gamma, part
 
 
-def check_multilayer_graph_consistency(G_intralayer, G_interlayer, layer_vec, model, m_t, T, N=None, Nt=None):
+def check_multilayer_graph_consistency(
+    G_intralayer: "igraph.Graph", G_interlayer: "igraph.Graph", layer_vec: LayerVector,
+    model: str, m_t: list[float], T: int, N: int | None = None, Nt: list[int] | None = None
+) -> None:
     """
     Checks that the structures of the intralayer and interlayer graphs are consistent and match the given model.
 
@@ -93,43 +106,52 @@ def check_multilayer_graph_consistency(G_intralayer, G_interlayer, layer_vec, mo
     :param N: number of nodes per layer
     :param Nt: vector of nodes per layer
     """
+    # force omitted values to fail the checks below if they were actually needed
+    if not N:
+        N = -1
+    if not Nt:
+        Nt = [0] * T
 
-    rules = [T > 1,
-             "Graph must have multiple layers",
-             G_interlayer.is_directed(),
-             "Interlayer graph should be directed",
-             G_interlayer.vcount() == G_intralayer.vcount(),
-             "Inter-layer and Intra-layer graphs must be of the same size",
-             len(layer_vec) == G_intralayer.vcount(),
-             "Layer membership vector must have length matching graph size",
-             all(m > 0 for m in m_t),
-             "All layers of graph must contain edges",
-             all(layer_vec[e.source] == layer_vec[e.target] for e in G_intralayer.es),
-             "Intralayer graph should not contain edges across layers",
-             model != 'temporal' or G_interlayer.ecount() == N * (T - 1),
-             "Interlayer temporal graph must contain (nodes per layer) * (number of layers - 1) edges",
-             model != 'temporal' or (G_interlayer.vcount() % T == 0 and G_intralayer.vcount() % T == 0),
-             "Vertex count of a temporal graph should be a multiple of the number of layers",
-             model != 'temporal' or all(nt == N for nt in Nt),
-             "Temporal networks must have the same number of nodes in every layer",
-             model != 'multilevel' or all(nt > 0 for nt in Nt),
-             "All layers of a multilevel graph must be consecutive and nonempty",
-             model != 'multilevel' or all(in_degree <= 1 for in_degree in in_degrees(G_interlayer)),
-             "Multilevel networks should have at most one interlayer in-edge per node",
-             model != 'multiplex' or all(nt == N for nt in Nt),
-             "Multiplex networks must have the same number of nodes in every layer",
-             model != 'multiplex' or G_interlayer.ecount() == N * T * (T - 1),
-             "Multiplex interlayer networks must contain edges between all pairs of layers"]
+    rules: list[bool | str] \
+        = [T > 1,
+           "Graph must have multiple layers",
+           G_interlayer.is_directed(),
+           "Interlayer graph should be directed",
+           G_interlayer.vcount() == G_intralayer.vcount(),
+           "Inter-layer and Intra-layer graphs must be of the same size",
+           len(layer_vec) == G_intralayer.vcount(),
+           "Layer membership vector must have length matching graph size",
+           all(m > 0 for m in m_t),
+           "All layers of graph must contain edges",
+           all(layer_vec[e.source] == layer_vec[e.target] for e in G_intralayer.es),
+           "Intralayer graph should not contain edges across layers",
+           model != 'temporal' or G_interlayer.ecount() == N * (T - 1),
+           "Interlayer temporal graph must contain (nodes per layer) * (number of layers - 1) edges",
+           model != 'temporal' or (G_interlayer.vcount() % T == 0
+                                   and G_intralayer.vcount() % T == 0),
+           "Vertex count of a temporal graph should be a multiple of the number of layers",
+           model != 'temporal' or all(nt == N for nt in Nt),
+           "Temporal networks must have the same number of nodes in every layer",
+           model != 'multilevel' or all(nt > 0 for nt in Nt),
+           "All layers of a multilevel graph must be consecutive and nonempty",
+           model != 'multilevel' or all(in_degree <= 1 for in_degree in in_degrees(G_interlayer)),
+           "Multilevel networks should have at most one interlayer in-edge per node",
+           model != 'multiplex' or all(nt == N for nt in Nt),
+           "Multiplex networks must have the same number of nodes in every layer",
+           model != 'multiplex' or G_interlayer.ecount() == N * T * (T - 1),
+           "Multiplex interlayer networks must contain edges between all pairs of layers"]
 
     checks, messages = rules[::2], rules[1::2]
 
     if not all(checks):
-        raise ValueError("Input graph is malformed\n" + "\n".join(m for c, m in zip(checks, messages) if not c))
+        raise ValueError("Input graph is malformed\n" + "\n".join(str(m) for c, m in zip(checks, messages) if not c))
 
 
-def iterative_multilayer_resolution_parameter_estimation(G_intralayer, G_interlayer, layer_vec, gamma=1.0, omega=1.0,
-                                                         gamma_tol=1e-2, omega_tol=5e-2, omega_max=1000, max_iter=25,
-                                                         model='temporal', verbose=False):
+def iterative_multilayer_resolution_parameter_estimation(
+    G_intralayer: "igraph.Graph", G_interlayer: "igraph.Graph", layer_vec: LayerVector,
+    gamma: float = 1.0, omega: float = 1.0, gamma_tol: float = 1e-2, omega_tol: float = 5e-2,
+    omega_max: float = 1000, max_iter: int = 25, model: str = 'temporal', verbose: bool = False
+) -> tuple[float, float, list[LeidenPartition]]:
     """
     Multilayer variant of ALG. 1 from "Relating modularity maximization and stochastic block models in multilayer
     networks." The nested functions here are just used to match the pseudocode in the paper.
@@ -160,43 +182,46 @@ def iterative_multilayer_resolution_parameter_estimation(G_intralayer, G_interla
         - gamma to which the iteration converged
         - omega to which the iteration converged
         - the resulting partition
-    :rtype: tuple[float, float, tuple[int]]
+    :rtype: tuple[float, float, list[leidenalg.RBConfigurationVertexPartition]]
     """
 
-    global parts
     if 'weight' not in G_intralayer.es:
         G_intralayer.es['weight'] = [1.0] * G_intralayer.ecount()
 
     if 'weight' not in G_interlayer.es:
         G_interlayer.es['weight'] = [1.0] * G_interlayer.ecount()
 
-    T = max(layer_vec) + 1  # layer count
-    optimiser = leidenalg.Optimiser()
+    T: int = max(layer_vec) + 1  # layer count
+    optimiser: leidenalg.Optimiser = leidenalg.Optimiser()
 
     # compute total edge weights per layer
-    m_t = [0] * T
+    m_t: list[float] = [0] * T
     for e in G_intralayer.es:
         m_t[layer_vec[e.source]] += e['weight']
 
     # compute total node counts per layer
-    N = G_intralayer.vcount() // T
-    Nt = [0] * T
+    N: int = G_intralayer.vcount() // T
+    Nt: list[int] = [0] * T
     for layer in layer_vec:
         Nt[layer] += 1
 
     check_multilayer_graph_consistency(G_intralayer, G_interlayer, layer_vec, model, m_t, T, N, Nt)
-    update_omega = omega_function_from_model(model, omega_max, T=T)
-    update_gamma = gamma_estimate_from_parameters
+    update_omega: OmegaUpdateFunc = omega_function_from_model(model, omega_max, T=T)
+    update_gamma: GammaUpdateFunc = gamma_estimate_from_parameters
 
-    def maximize_modularity(intralayer_resolution, interlayer_resolution):
+    def maximize_modularity(
+        intralayer_resolution: float, interlayer_resolution: float
+    ) -> list[LeidenPartition]:
         return multilayer_leiden(G_intralayer, G_interlayer, layer_vec, intralayer_resolution, interlayer_resolution,
                                  optimiser=optimiser, return_partition=True)
 
-    def estimate_SBM_parameters(partition):
+    def estimate_SBM_parameters(partition: LeidenPartition) -> MultilayerSBMParameters:
         return estimate_multilayer_SBM_parameters(G_intralayer, G_interlayer, layer_vec, partition, model,
                                                   N=N, T=T, Nt=Nt, m_t=m_t)
 
-    part, K, last_gamma, last_omega = (None,) * 4
+    parts = []
+    K = None
+    last_gamma, last_omega = gamma, omega
     for iteration in range(max_iter):
         parts = maximize_modularity(gamma, omega)
         theta_in, theta_out, p, K = estimate_SBM_parameters(parts[0])
@@ -205,11 +230,12 @@ def iterative_multilayer_resolution_parameter_estimation(G_intralayer, G_interla
             raise ValueError(f"gamma={gamma:.3f}, omega={omega:.3f} resulted in impossible estimate p={p:.3f}")
 
         last_gamma, last_omega = gamma, omega
-        gamma = update_gamma(theta_in, theta_out)
+        new_gamma = update_gamma(theta_in, theta_out)
 
-        if gamma is None:
+        if new_gamma is None:
             raise ValueError(f"gamma={last_gamma:.3f}, omega={last_omega:.3f} resulted in degenerate partition")
 
+        gamma = float(new_gamma)
         omega = update_omega(theta_in, theta_out, p, K)
 
         if verbose:
@@ -226,7 +252,7 @@ def iterative_multilayer_resolution_parameter_estimation(G_intralayer, G_interla
                   f"was not within tolerance ({gamma_tol}, {omega_tol})")
 
     if verbose:
-        part_Q = sum(p.q for p in parts)
+        part_Q = sum(p.q for p in parts) if parts else -1
         print(f"Returned {K} communities with Q={part_Q:.3f}, gamma={gamma:.3f}, and omega={omega:.3f}")
 
     return gamma, omega, parts

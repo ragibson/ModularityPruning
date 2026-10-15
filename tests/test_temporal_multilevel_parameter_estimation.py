@@ -77,6 +77,7 @@ class TestTemporalAndMultilevelParameterEstimation(unittest.TestCase):
                     if not isinstance(e, AssertionError):
                         # test failed in unusual way (perhaps keyboard interrupt?), raising immediately
                         raise e
+        assert last_error is not None
         raise last_error
 
     def test_temporal_SBM_correct_convergence_varying_copying_probabilty(self):
