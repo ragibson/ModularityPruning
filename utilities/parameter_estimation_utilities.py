@@ -556,6 +556,8 @@ def prune_to_stable_partitions(
     Runs our full pruning pipeline on a singlelayer network. Returns the pruned list of stable partitions whose
     parameter estimates are within the provided ``gamma_start`` and ``gamma_end`` bounds.
 
+    Weighted graphs are supported via the ``weight`` edge attribute. Edge weights must be non-negative.
+
     See https://doi.org/10.1038/s41598-022-20142-6 for more details.
 
     :param G: graph of interest
@@ -617,6 +619,12 @@ def prune_to_multilayer_stable_partitions(
     Runs our full pruning pipeline on a multilayer network. Returns the pruned list of stable partitions whose
     parameter estimates are within the provided ``gamma_start``, ``gamma_end``, ``omega_start``, and ``omega_end``
     bounds.
+
+    Weighted graphs are supported via the ``weight`` edge attribute. Edge weights must be non-negative.
+
+    Interlayer weights are not fully supported by the underlying multilayer SBM theory (uniform interlayer coupling).
+    As such, they are used in the CHAMP step, but parameter estimation treats interlayer edges as unweighted. The code
+    will emit a warning if this is the case.
 
     There are three network layer topology models available, all from Pamfil et al.
 
