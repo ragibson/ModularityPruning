@@ -12,6 +12,12 @@ def generate_connected_ER(n, m, directed):
     return G
 
 
+def generate_connected_weighted_ER(n, m, directed, low=0.1, high=10.0):
+    G = generate_connected_ER(n=n, m=m, directed=directed)
+    G.es['weight'] = [uniform(low, high) for _ in range(G.ecount())]
+    return G
+
+
 def generate_connected_multilayer_ER(num_nodes_per_layer, m, num_layers, directed):
     total_num_nodes = num_nodes_per_layer * num_layers
     G = generate_connected_ER(n=total_num_nodes, m=m, directed=directed)
