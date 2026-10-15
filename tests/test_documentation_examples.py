@@ -256,7 +256,7 @@ class TestDocumentationExamples(unittest.TestCase):
         ax = plot_multiplex_community(np.array(membership), np.array(layer_vec))
         ax.set_xticks(np.linspace(0, num_layers, 2 * num_layers + 1))
         ax.set_xticklabels(["", "Advice", "", "Coworker", "", "Friend", ""], fontsize=14)
-        plt.title(f"Multiplex Communities", fontsize=14)
+        plt.title("Multiplex Communities", fontsize=14)
         plt.ylabel("Node ID", fontsize=14)
         plt.close()  # closing this these figures instead of showing
 

@@ -112,33 +112,34 @@ def check_multilayer_graph_consistency(
     if not Nt:
         Nt = [0] * T
 
-    rules: list[bool | str] = [T > 1,
-                               "Graph must have multiple layers",
-                               G_interlayer.is_directed(),
-                               "Interlayer graph should be directed",
-                               G_interlayer.vcount() == G_intralayer.vcount(),
-                               "Inter-layer and Intra-layer graphs must be of the same size",
-                               len(layer_vec) == G_intralayer.vcount(),
-                               "Layer membership vector must have length matching graph size",
-                               all(m > 0 for m in m_t),
-                               "All layers of graph must contain edges",
-                               all(layer_vec[e.source] == layer_vec[e.target] for e in G_intralayer.es),
-                               "Intralayer graph should not contain edges across layers",
-                               model != 'temporal' or G_interlayer.ecount() == N * (T - 1),
-                               "Interlayer temporal graph must contain (nodes per layer) * (number of layers - 1) edges",
-                               model != 'temporal' or (G_interlayer.vcount() % T == 0
-                                                       and G_intralayer.vcount() % T == 0),
-                               "Vertex count of a temporal graph should be a multiple of the number of layers",
-                               model != 'temporal' or all(nt == N for nt in Nt),
-                               "Temporal networks must have the same number of nodes in every layer",
-                               model != 'multilevel' or all(nt > 0 for nt in Nt),
-                               "All layers of a multilevel graph must be consecutive and nonempty",
-                               model != 'multilevel' or all(in_degree <= 1 for in_degree in in_degrees(G_interlayer)),
-                               "Multilevel networks should have at most one interlayer in-edge per node",
-                               model != 'multiplex' or all(nt == N for nt in Nt),
-                               "Multiplex networks must have the same number of nodes in every layer",
-                               model != 'multiplex' or G_interlayer.ecount() == N * T * (T - 1),
-                               "Multiplex interlayer networks must contain edges between all pairs of layers"]
+    rules: list[bool | str] \
+        = [T > 1,
+           "Graph must have multiple layers",
+           G_interlayer.is_directed(),
+           "Interlayer graph should be directed",
+           G_interlayer.vcount() == G_intralayer.vcount(),
+           "Inter-layer and Intra-layer graphs must be of the same size",
+           len(layer_vec) == G_intralayer.vcount(),
+           "Layer membership vector must have length matching graph size",
+           all(m > 0 for m in m_t),
+           "All layers of graph must contain edges",
+           all(layer_vec[e.source] == layer_vec[e.target] for e in G_intralayer.es),
+           "Intralayer graph should not contain edges across layers",
+           model != 'temporal' or G_interlayer.ecount() == N * (T - 1),
+           "Interlayer temporal graph must contain (nodes per layer) * (number of layers - 1) edges",
+           model != 'temporal' or (G_interlayer.vcount() % T == 0
+                                   and G_intralayer.vcount() % T == 0),
+           "Vertex count of a temporal graph should be a multiple of the number of layers",
+           model != 'temporal' or all(nt == N for nt in Nt),
+           "Temporal networks must have the same number of nodes in every layer",
+           model != 'multilevel' or all(nt > 0 for nt in Nt),
+           "All layers of a multilevel graph must be consecutive and nonempty",
+           model != 'multilevel' or all(in_degree <= 1 for in_degree in in_degrees(G_interlayer)),
+           "Multilevel networks should have at most one interlayer in-edge per node",
+           model != 'multiplex' or all(nt == N for nt in Nt),
+           "Multiplex networks must have the same number of nodes in every layer",
+           model != 'multiplex' or G_interlayer.ecount() == N * T * (T - 1),
+           "Multiplex interlayer networks must contain edges between all pairs of layers"]
 
     checks, messages = rules[::2], rules[1::2]
 

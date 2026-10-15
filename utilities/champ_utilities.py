@@ -2,7 +2,6 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import igraph
     import multiprocessing.pool
-    import scipy.optimize
 import warnings
 from collections import defaultdict
 from math import floor
