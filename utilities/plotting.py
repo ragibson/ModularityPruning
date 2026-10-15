@@ -4,6 +4,7 @@ if TYPE_CHECKING:
     import matplotlib.colorbar
     import matplotlib.colors
 from collections import defaultdict
+from collections.abc import Sequence
 from random import sample, shuffle
 from numpy.typing import ArrayLike
 
@@ -25,7 +26,7 @@ def plot_adjacency(adj: ArrayLike) -> None:
 
 
 def plot_estimates(
-    gamma_estimates: list[GammaEstimate]
+    gamma_estimates: Sequence[GammaEstimate]
 ) -> None:
     """Plot partition dominance ranges with gamma estimates.
 
@@ -83,7 +84,7 @@ def plot_estimates(
 
 
 def plot_2d_domains(
-    domains: list[FlexibleDomain],
+    domains: Sequence[FlexibleDomain],
         xlim: AxisLimits, ylim: AxisLimits, flip_axes: bool = True, use_current_axes: bool = False
 ) -> None:
     """Plot partition dominance ranges in the (gamma, omega) plane, using the domains from CHAMP_3D.
@@ -141,7 +142,7 @@ def plot_2d_domains(
 
 
 def plot_2d_domains_with_estimates(
-    domains_with_estimates: list[FlexibleDomainWithEstimates],
+    domains_with_estimates: Sequence[FlexibleDomainWithEstimates],
     xlim: AxisLimits, ylim: AxisLimits,
         plot_estimate_points: bool = True, flip_axes: bool = True
 ) -> None:
@@ -193,7 +194,7 @@ def plot_2d_domains_with_estimates(
 
 
 def plot_2d_domains_with_num_communities(
-    domains_with_estimates: list[FlexibleDomainWithEstimates],
+    domains_with_estimates: Sequence[FlexibleDomainWithEstimates],
     xlim: AxisLimits, ylim: AxisLimits,
         flip_axes: bool = True, K_max: int | None = None, tick_step: int = 2
 ) -> None:
@@ -234,7 +235,7 @@ def plot_2d_domains_with_num_communities(
 
 
 def plot_2d_domains_with_ami(
-    domains_with_estimates: list[FlexibleDomainWithEstimates],
+    domains_with_estimates: Sequence[FlexibleDomainWithEstimates],
         ground_truth: list[int], xlim: AxisLimits, ylim: AxisLimits,
         flip_axes: bool = True
 ) -> None:

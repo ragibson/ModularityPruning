@@ -24,7 +24,8 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
     "Programming Language :: Python :: 3.15",
-    "Programming Language :: Python :: 3 :: Only"
+    "Programming Language :: Python :: 3 :: Only",
+    "Typing :: Typed"
 ]
 dependencies = [
     "leidenalg",
@@ -43,6 +44,9 @@ packages = ["modularitypruning"]
 
 [tool.setuptools.package-dir]
 modularitypruning = "utilities"
+
+[tool.setuptools.package-data]
+modularitypruning = ["py.typed"]
 
 [tool.autopep8]
 max_line_length = 120
