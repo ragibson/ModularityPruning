@@ -71,7 +71,8 @@ def generate_igraph_famous():
     return [ig.Graph.Famous(name) for name in ['meredith', 'nonline', 'thomassen', 'tutte', 'zachary']]
 
 
-def generate_multilayer_intralayer_SBM(copying_probability, p_in, p_out, first_layer_membership, num_layers):
+def generate_multilayer_intralayer_SBM(copying_probability, p_in, p_out, first_layer_membership, num_layers,
+                                       weighted=False, low=0.5, high=5.0):
     num_nodes_per_layer = len(first_layer_membership)
     community_labels_per_layer = [[0] * num_nodes_per_layer for _ in range(num_layers)]
     community_labels_per_layer[0] = list(first_layer_membership)
@@ -101,6 +102,9 @@ def generate_multilayer_intralayer_SBM(copying_probability, p_in, p_out, first_l
                         intralayer_edges.append((u, v))
 
     G_intralayer = ig.Graph(n=len(combined_community_labels), edges=intralayer_edges, directed=False)
+
+    if weighted:
+        G_intralayer.es['weight'] = generate_random_values(G_intralayer.ecount(), low, high)
 
     return G_intralayer, layer_membership
 

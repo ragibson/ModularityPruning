@@ -14,9 +14,11 @@ from .shared_testing_functions import assert_almost_equal_or_both_none_or_nan, g
 
 
 class TestMultiplexParameterEstimation(unittest.TestCase):
-    def generate_multiplex_SBM(self, copying_probability, p_in, p_out, first_layer_membership, num_layers):
+    def generate_multiplex_SBM(self, copying_probability, p_in, p_out, first_layer_membership, num_layers,
+                               weighted=False):
         G_intralayer, layer_membership = generate_multilayer_intralayer_SBM(copying_probability, p_in, p_out,
-                                                                            first_layer_membership, num_layers)
+                                                                            first_layer_membership, num_layers,
+                                                                            weighted=weighted)
 
         # connect each node to itself in all other layers
         num_nodes_per_layer = len(first_layer_membership)
@@ -29,11 +31,11 @@ class TestMultiplexParameterEstimation(unittest.TestCase):
         return G_intralayer, G_interlayer, layer_membership
 
     def assert_multiplex_SBM_correct_convergence(self, first_layer_membership, copying_probability=0.75, num_layers=10,
-                                                 p_in=0.25, p_out=0.05):
+                                                 p_in=0.25, p_out=0.05, weighted=False):
         K = num_communities(first_layer_membership)
         G_intralayer, G_interlayer, layer_membership = self.generate_multiplex_SBM(copying_probability, p_in, p_out,
                                                                                    first_layer_membership,
-                                                                                   num_layers)
+                                                                                   num_layers, weighted=weighted)
 
         # compute ground truth gamma
         k = mean(all_degrees(G_intralayer))
@@ -57,30 +59,46 @@ class TestMultiplexParameterEstimation(unittest.TestCase):
         self.assertLess(abs(true_omega - omega), 0.2)
 
     def test_multiplex_SBM_correct_convergence_varying_copying_probabilty(self):
-        for eta in [0.25, 0.5, 0.75, 0.9]:
-            membership = generate_random_partition(num_nodes=200, K=2)
-            self.assert_multiplex_SBM_correct_convergence(copying_probability=eta,
-                                                          first_layer_membership=membership)
+        for weighted in [False, True]:
+            with self.subTest(weighted=weighted):
+                for eta in [0.25, 0.5, 0.75, 0.9]:
+                    membership = generate_random_partition(num_nodes=200, K=2)
+                    self.assert_multiplex_SBM_correct_convergence(copying_probability=eta,
+                                                                  first_layer_membership=membership,
+                                                                  weighted=weighted)
 
     def test_multiplex_SBM_correct_convergence_varying_p_in(self):
-        for p_in in [0.5, 0.4, 0.3, 0.2]:
-            membership = generate_random_partition(num_nodes=200, K=2)
-            self.assert_multiplex_SBM_correct_convergence(p_in=p_in, p_out=0.025, first_layer_membership=membership)
+        for weighted in [False, True]:
+            with self.subTest(weighted=weighted):
+                for p_in in [0.5, 0.4, 0.3, 0.2]:
+                    membership = generate_random_partition(num_nodes=200, K=2)
+                    self.assert_multiplex_SBM_correct_convergence(p_in=p_in, p_out=0.025,
+                                                                  first_layer_membership=membership,
+                                                                  weighted=weighted)
 
     def test_multiplex_SBM_correct_convergence_varying_p_out(self):
-        for p_out in [0.05, 0.04, 0.03, 0.02]:
-            membership = generate_random_partition(num_nodes=100, K=2)
-            self.assert_multiplex_SBM_correct_convergence(p_out=p_out, first_layer_membership=membership)
+        for weighted in [False, True]:
+            with self.subTest(weighted=weighted):
+                for p_out in [0.05, 0.04, 0.03, 0.02]:
+                    membership = generate_random_partition(num_nodes=200, K=2)
+                    self.assert_multiplex_SBM_correct_convergence(p_out=p_out, first_layer_membership=membership,
+                                                                  weighted=weighted)
 
     def test_multiplex_SBM_correct_convergence_varying_num_communities(self):
-        for K in [2, 3, 4, 5]:
-            membership = generate_random_partition(num_nodes=300, K=K)
-            self.assert_multiplex_SBM_correct_convergence(first_layer_membership=membership)
+        for weighted in [False, True]:
+            with self.subTest(weighted=weighted):
+                for K in [2, 3, 4, 5]:
+                    membership = generate_random_partition(num_nodes=300, K=K)
+                    self.assert_multiplex_SBM_correct_convergence(first_layer_membership=membership,
+                                                                  weighted=weighted)
 
     def test_multiplex_SBM_correct_convergence_varying_num_layers(self):
-        for num_layers in [3, 5, 7, 10]:
-            membership = generate_random_partition(num_nodes=300, K=2)
-            self.assert_multiplex_SBM_correct_convergence(first_layer_membership=membership, num_layers=num_layers)
+        for weighted in [False, True]:
+            with self.subTest(weighted=weighted):
+                for num_layers in [3, 5, 7, 10]:
+                    membership = generate_random_partition(num_nodes=300, K=2)
+                    self.assert_multiplex_SBM_correct_convergence(first_layer_membership=membership,
+                                                                  num_layers=num_layers, weighted=weighted)
 
     def test_directed_consistency_multiplex_SBM_leiden(self):
         """Test parameter estimate consistency on a multiplex SBM when the intralayer edges are directed."""

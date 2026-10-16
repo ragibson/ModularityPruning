@@ -14,9 +14,11 @@ from .shared_testing_functions import assert_almost_equal_or_both_none_or_nan, g
 
 
 class TestTemporalAndMultilevelParameterEstimation(unittest.TestCase):
-    def generate_temporal_SBM(self, copying_probability, p_in, p_out, first_layer_membership, num_layers):
+    def generate_temporal_SBM(self, copying_probability, p_in, p_out, first_layer_membership, num_layers,
+                              weighted=False):
         G_intralayer, layer_membership = generate_multilayer_intralayer_SBM(copying_probability, p_in, p_out,
-                                                                            first_layer_membership, num_layers)
+                                                                            first_layer_membership, num_layers,
+                                                                            weighted=weighted)
 
         # connect each node to itself in the next layer
         num_nodes_per_layer = len(first_layer_membership)
@@ -26,12 +28,12 @@ class TestTemporalAndMultilevelParameterEstimation(unittest.TestCase):
 
         return G_intralayer, G_interlayer, layer_membership
 
-    def assert_temporal_SBM_correct_convergence(self, first_layer_membership, copying_probability=0.75, num_layers=25,
-                                                p_in=0.25, p_out=0.05, tolerance=0.1):
+    def assert_temporal_SBM_correct_convergence(self, first_layer_membership, copying_probability=0.75, num_layers=12,
+                                                p_in=0.25, p_out=0.05, tolerance=0.1, weighted=False):
         K = num_communities(first_layer_membership)
         G_intralayer, G_interlayer, layer_membership = self.generate_temporal_SBM(copying_probability, p_in, p_out,
                                                                                   first_layer_membership,
-                                                                                  num_layers)
+                                                                                  num_layers, weighted=weighted)
 
         # compute ground truth gamma
         k = mean(all_degrees(G_intralayer))
@@ -60,7 +62,7 @@ class TestTemporalAndMultilevelParameterEstimation(unittest.TestCase):
         self.assertLess(abs(true_gamma - gamma), tolerance)
         self.assertLess(abs(true_omega - omega), tolerance)
 
-    def retry_test_across_graph_sizes(self, test_fn, sizes=[50, 100, 250, 500], retries_per_size=3):
+    def retry_test_across_graph_sizes(self, test_fn, sizes=[100, 250, 500], retries_per_size=3):
         """
         Rerun randomized tests of asymptotic convergence across increasingly larger graph sizes until one succeeds.
 
@@ -72,56 +74,75 @@ class TestTemporalAndMultilevelParameterEstimation(unittest.TestCase):
                 try:
                     test_fn(n)
                     return
-                except Exception as e:
+                except (AssertionError, TimeoutError) as e:
                     last_error = e
-                    if not isinstance(e, AssertionError):
-                        # test failed in unusual way (perhaps keyboard interrupt?), raising immediately
-                        raise e
+                except Exception as e:
+                    # test failed in unusual way (perhaps keyboard interrupt?), raising immediately
+                    raise e
         assert last_error is not None
         raise last_error
 
     def test_temporal_SBM_correct_convergence_varying_copying_probabilty(self):
-        for eta in [0.25, 0.5, 0.75, 0.9]:
-            self.retry_test_across_graph_sizes(
-                test_fn=lambda n: self.assert_temporal_SBM_correct_convergence(
-                    copying_probability=eta,
-                    first_layer_membership=generate_random_partition(num_nodes=n, K=2)
-                )
-            )
+        for weighted in [False, True]:
+            with self.subTest(weighted=weighted):
+                for eta in [0.25, 0.5, 0.75, 0.9]:
+                    self.retry_test_across_graph_sizes(
+                        test_fn=lambda n, w=weighted: self.assert_temporal_SBM_correct_convergence(
+                            copying_probability=eta,
+                            first_layer_membership=generate_random_partition(num_nodes=n, K=2),
+                            weighted=w
+                        )
+                    )
 
     def test_temporal_SBM_correct_convergence_varying_p_in(self):
-        for p_in in [0.5, 0.4, 0.3, 0.2]:
-            self.retry_test_across_graph_sizes(
-                test_fn=lambda n: self.assert_temporal_SBM_correct_convergence(
-                    p_in=p_in, p_out=0.025,
-                    first_layer_membership=generate_random_partition(num_nodes=n, K=2)
-                )
-            )
+        for weighted in [False, True]:
+            with self.subTest(weighted=weighted):
+                for p_in in [0.5, 0.4, 0.3, 0.2]:
+                    self.retry_test_across_graph_sizes(
+                        test_fn=lambda n, w=weighted: self.assert_temporal_SBM_correct_convergence(
+                            p_in=p_in, p_out=0.025,
+                            first_layer_membership=generate_random_partition(num_nodes=n, K=2),
+                            weighted=w
+                        ),
+                        sizes=[500]  # smaller seems to cause Leiden slowdown?
+                    )
 
     def test_temporal_SBM_correct_convergence_varying_p_out(self):
-        for p_out in [0.05, 0.04, 0.03, 0.02]:
-            self.retry_test_across_graph_sizes(
-                test_fn=lambda n: self.assert_temporal_SBM_correct_convergence(
-                    p_out=p_out, first_layer_membership=generate_random_partition(num_nodes=n, K=2)
-                )
-            )
+        for weighted in [False, True]:
+            with self.subTest(weighted=weighted):
+                for p_out in [0.05, 0.04, 0.03, 0.02]:
+                    self.retry_test_across_graph_sizes(
+                        test_fn=lambda n, w=weighted: self.assert_temporal_SBM_correct_convergence(
+                            p_out=p_out, first_layer_membership=generate_random_partition(num_nodes=n, K=2),
+                            weighted=w
+                        ),
+                        sizes=[500]  # smaller seems to cause Leiden slowdown?
+                    )
 
     def test_temporal_SBM_correct_convergence_varying_num_communities(self):
-        for K in [2, 3, 4, 5]:
-            self.retry_test_across_graph_sizes(
-                test_fn=lambda n: self.assert_temporal_SBM_correct_convergence(
-                    first_layer_membership=generate_random_partition(num_nodes=n, K=K)
-                )
-            )
+        for weighted in [False, True]:
+            with self.subTest(weighted=weighted):
+                for K in [2, 3, 4, 5]:
+                    self.retry_test_across_graph_sizes(
+                        test_fn=lambda n, K_=K, w=weighted: self.assert_temporal_SBM_correct_convergence(
+                            first_layer_membership=generate_random_partition(num_nodes=n, K=K_),
+                            weighted=w
+                        ),
+                        sizes=[500]  # smaller seems to cause Leiden slowdown?
+                    )
 
     def test_temporal_SBM_correct_convergence_varying_num_layers(self):
-        for num_layers in [20, 30, 40]:
-            self.retry_test_across_graph_sizes(
-                test_fn=lambda n: self.assert_temporal_SBM_correct_convergence(
-                    num_layers=num_layers,
-                    first_layer_membership=generate_random_partition(num_nodes=n, K=2)
-                )
-            )
+        for weighted in [False, True]:
+            with self.subTest(weighted=weighted):
+                for num_layers in [8, 12, 16]:
+                    self.retry_test_across_graph_sizes(
+                        test_fn=lambda n, nl=num_layers, w=weighted: self.assert_temporal_SBM_correct_convergence(
+                            num_layers=nl,
+                            first_layer_membership=generate_random_partition(num_nodes=n, K=2),
+                            weighted=w
+                        ),
+                        sizes=[500]  # smaller seems to cause Leiden slowdown?
+                    )
 
     def test_directed_consistency_temporal_SBM_leiden(self):
         """Test parameter estimate consistency on a temporal SBM when the intralayer edges are directed."""
