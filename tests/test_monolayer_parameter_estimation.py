@@ -20,8 +20,8 @@ class TestMonolayerParameterEstimation(unittest.TestCase):
         methods for community detection', albeit using Leiden for modularity maximization."""
 
         for weighted in [False, True]:
-            with self.subTest(weighted=weighted):
-                for q in range(3, 15):
+            for q in range(3, 15):
+                with self.subTest(q=q, weighted=weighted):
                     self.assert_newman_synthetic_convergence(q, weighted=weighted)
 
     @staticmethod
@@ -62,14 +62,15 @@ class TestMonolayerParameterEstimation(unittest.TestCase):
     def test_directed_consistency_igraph_famous(self):
         """Test gamma estimate consistency on undirected and (symmetric) directed versions of various famous graphs."""
 
-        for G in generate_igraph_famous():
+        for name, G in generate_igraph_famous():
             random_membership = generate_random_partition(G.vcount(), 5)
 
             gamma_undirected = gamma_estimate(G, random_membership)
             G.to_directed()
             gamma_directed = gamma_estimate(G, random_membership)
 
-            assert_almost_equal_or_both_none_or_nan(self, gamma_undirected, gamma_directed, places=10)
+            with self.subTest(graph=name):
+                assert_almost_equal_or_both_none_or_nan(self, gamma_undirected, gamma_directed, places=10)
 
 
 if __name__ == "__main__":

@@ -120,14 +120,14 @@ class TestCHAMP3D(unittest.TestCase):
     def test_partition_coefficient_correctness_undirected_varying_gamma_range(self):
         for gamma_start, gamma_end in zip([0.0, 1.0, 2.0, 3.0, 4.0], [10.0, 9.0, 8.0, 7.0, 6.0]):
             for weighted in [False, True]:
-                with self.subTest(gamma_start=gamma_start, weighted=weighted):
+                with self.subTest(gamma_start=gamma_start, gamma_end=gamma_end, weighted=weighted):
                     self.assert_champ_correctness_ER(gamma_start=gamma_start, gamma_end=gamma_end,
                                                      weighted=weighted)
 
     def test_partition_coefficient_correctness_undirected_varying_omega_range(self):
         for omega_start, omega_end in zip([0.0, 1.0, 2.0, 3.0, 4.0], [10.0, 9.0, 8.0, 7.0, 6.0]):
             for weighted in [False, True]:
-                with self.subTest(omega_start=omega_start, weighted=weighted):
+                with self.subTest(omega_start=omega_start, omega_end=omega_end, weighted=weighted):
                     self.assert_champ_correctness_ER(omega_start=omega_start, omega_end=omega_end,
                                                      weighted=weighted)
 
@@ -168,7 +168,7 @@ class TestCHAMP3D(unittest.TestCase):
     def test_partition_coefficient_correctness_directed_varying_gamma_range(self):
         for gamma_start, gamma_end in zip([0.0, 1.0, 2.0, 3.0, 4.0], [10.0, 9.0, 8.0, 7.0, 6.0]):
             for weighted in [False, True]:
-                with self.subTest(gamma_start=gamma_start, weighted=weighted):
+                with self.subTest(gamma_start=gamma_start, gamma_end=gamma_end, weighted=weighted):
                     self.assert_champ_correctness_ER(directed=True,
                                                      gamma_start=gamma_start, gamma_end=gamma_end,
                                                      weighted=weighted)
@@ -176,7 +176,7 @@ class TestCHAMP3D(unittest.TestCase):
     def test_partition_coefficient_correctness_directed_varying_omega_range(self):
         for omega_start, omega_end in zip([0.0, 1.0, 2.0, 3.0, 4.0], [10.0, 9.0, 8.0, 7.0, 6.0]):
             for weighted in [False, True]:
-                with self.subTest(omega_start=omega_start, weighted=weighted):
+                with self.subTest(omega_start=omega_start, omega_end=omega_end, weighted=weighted):
                     self.assert_champ_correctness_ER(directed=True,
                                                      omega_start=omega_start, omega_end=omega_end,
                                                      weighted=weighted)

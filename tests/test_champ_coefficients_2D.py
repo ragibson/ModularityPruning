@@ -96,16 +96,18 @@ class TestCHAMPCoefficients2D(unittest.TestCase):
         The correctness is checked for the original undirected and (symmetric) directed variants.
         """
 
-        for G in generate_igraph_famous():
+        for name, G in generate_igraph_famous():
             gammas = generate_random_values(100, start_value=0, end_value=5)
-            partitions = repeated_leiden_from_gammas(G, gammas)
-            coefficients = partition_coefficients_2D(G, partitions)
-            self.assert_partition_coefficient_correctness(G, partitions, coefficients)
+            with self.subTest(graph=name, directed=False):
+                partitions = repeated_leiden_from_gammas(G, gammas)
+                coefficients = partition_coefficients_2D(G, partitions)
+                self.assert_partition_coefficient_correctness(G, partitions, coefficients)
 
             G.to_directed()  # check the directed version of the graph as well
-            partitions = repeated_leiden_from_gammas(G, gammas)
-            coefficients = partition_coefficients_2D(G, partitions)
-            self.assert_partition_coefficient_correctness(G, partitions, coefficients)
+            with self.subTest(graph=name, directed=True):
+                partitions = repeated_leiden_from_gammas(G, gammas)
+                coefficients = partition_coefficients_2D(G, partitions)
+                self.assert_partition_coefficient_correctness(G, partitions, coefficients)
 
 
 if __name__ == "__main__":

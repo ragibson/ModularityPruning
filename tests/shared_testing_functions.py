@@ -58,7 +58,7 @@ def generate_random_partitions(num_nodes, num_partitions, K_max):
 
 
 def generate_igraph_famous():
-    """Generate various famous graphs from igraph.
+    """Generate various famous graphs from igraph as (name, graph) pairs.
 
     In particular, we use
         Meredith (n=70, m=140): a counterexample to a conjecture regarding 4-regular 4-connected Hamiltonian graphs
@@ -68,7 +68,7 @@ def generate_igraph_famous():
         Zachary (n=34, m=78): popular network of the social interactions between 34 members of a karate club
     """
 
-    return [ig.Graph.Famous(name) for name in ['meredith', 'nonline', 'thomassen', 'tutte', 'zachary']]
+    return [(name, ig.Graph.Famous(name)) for name in ['meredith', 'nonline', 'thomassen', 'tutte', 'zachary']]
 
 
 def generate_connected_multilayer_intralayer_SBM(copying_probability, p_in, p_out, first_layer_membership, num_layers,

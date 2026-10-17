@@ -133,10 +133,11 @@ class TestCHAMPCoefficients3D(unittest.TestCase):
     def test_partition_coefficient_correctness_interleaved_directedness(self):
         """Test partition coefficient correctness when directedness of interlayer and intralayer edges do not match."""
         for weighted in [False, True]:
-            with self.subTest(weighted=weighted):
-                generate_ER = (generate_connected_weighted_multilayer_ER if weighted
-                               else generate_connected_multilayer_ER)
-                # Intralayer directed edges, but interlayer undirected ones
+            generate_ER = (generate_connected_weighted_multilayer_ER if weighted
+                           else generate_connected_multilayer_ER)
+
+            # Intralayer directed edges, but interlayer undirected ones
+            with self.subTest(intralayer_directed=True, weighted=weighted):
                 G_intralayer, G_interlayer, layer_membership = generate_ER(num_nodes_per_layer=100, m=5000,
                                                                            num_layers=10, directed=False)
                 G_intralayer.to_directed()
@@ -145,7 +146,8 @@ class TestCHAMPCoefficients3D(unittest.TestCase):
                 self.assert_partition_coefficient_correctness(G_intralayer, G_interlayer, layer_membership, partitions,
                                                               coefficients)
 
-                # Interlayer directed edges, but intralayer undirected ones
+            # Interlayer directed edges, but intralayer undirected ones
+            with self.subTest(intralayer_directed=False, weighted=weighted):
                 G_intralayer, G_interlayer, layer_membership = generate_ER(num_nodes_per_layer=100, m=5000,
                                                                            num_layers=10, directed=False)
                 G_interlayer.to_directed()

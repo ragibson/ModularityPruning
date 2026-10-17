@@ -84,8 +84,8 @@ class TestTemporalAndMultilevelParameterEstimation(unittest.TestCase):
 
     def test_temporal_SBM_correct_convergence_varying_copying_probabilty(self):
         for weighted in [False, True]:
-            with self.subTest(weighted=weighted):
-                for eta in [0.25, 0.5, 0.75, 0.9]:
+            for eta in [0.25, 0.5, 0.75, 0.9]:
+                with self.subTest(eta=eta, weighted=weighted):
                     self.retry_test_across_graph_sizes(
                         test_fn=lambda n, w=weighted: self.assert_temporal_SBM_correct_convergence(
                             copying_probability=eta,
@@ -96,8 +96,8 @@ class TestTemporalAndMultilevelParameterEstimation(unittest.TestCase):
 
     def test_temporal_SBM_correct_convergence_varying_p_in(self):
         for weighted in [False, True]:
-            with self.subTest(weighted=weighted):
-                for p_in in [0.5, 0.4, 0.3, 0.2]:
+            for p_in in [0.5, 0.4, 0.3, 0.2]:
+                with self.subTest(p_in=p_in, weighted=weighted):
                     self.retry_test_across_graph_sizes(
                         test_fn=lambda n, w=weighted: self.assert_temporal_SBM_correct_convergence(
                             p_in=p_in, p_out=0.025,
@@ -108,8 +108,8 @@ class TestTemporalAndMultilevelParameterEstimation(unittest.TestCase):
 
     def test_temporal_SBM_correct_convergence_varying_p_out(self):
         for weighted in [False, True]:
-            with self.subTest(weighted=weighted):
-                for p_out in [0.05, 0.04, 0.03, 0.02]:
+            for p_out in [0.05, 0.04, 0.03, 0.02]:
+                with self.subTest(p_out=p_out, weighted=weighted):
                     self.retry_test_across_graph_sizes(
                         test_fn=lambda n, w=weighted: self.assert_temporal_SBM_correct_convergence(
                             p_out=p_out, first_layer_membership=generate_random_partition(num_nodes=n, K=2),
@@ -119,8 +119,8 @@ class TestTemporalAndMultilevelParameterEstimation(unittest.TestCase):
 
     def test_temporal_SBM_correct_convergence_varying_num_communities(self):
         for weighted in [False, True]:
-            with self.subTest(weighted=weighted):
-                for K in [2, 3, 4, 5]:
+            for K in [2, 3, 4, 5]:
+                with self.subTest(K=K, weighted=weighted):
                     self.retry_test_across_graph_sizes(
                         test_fn=lambda n, K_=K, w=weighted: self.assert_temporal_SBM_correct_convergence(
                             first_layer_membership=generate_random_partition(num_nodes=n, K=K_),
@@ -130,8 +130,8 @@ class TestTemporalAndMultilevelParameterEstimation(unittest.TestCase):
 
     def test_temporal_SBM_correct_convergence_varying_num_layers(self):
         for weighted in [False, True]:
-            with self.subTest(weighted=weighted):
-                for num_layers in [8, 12, 16]:
+            for num_layers in [8, 12, 16]:
+                with self.subTest(num_layers=num_layers, weighted=weighted):
                     self.retry_test_across_graph_sizes(
                         test_fn=lambda n, nl=num_layers, w=weighted: self.assert_temporal_SBM_correct_convergence(
                             num_layers=nl,
@@ -151,29 +151,32 @@ class TestTemporalAndMultilevelParameterEstimation(unittest.TestCase):
         partitions = repeated_leiden_from_gammas_omegas(G_intralayer, G_interlayer, layer_membership,
                                                         gammas=[0.5, 1.0, 1.5], omegas=[0.5, 1.0, 1.5])
 
-        for partition in partitions:
-            # here, undirected/directed refers to the intralayer edges only
-            # in Pamfil et al.'s temporal networks, interlayer edges are taken to be directed
-            gamma_undirected, omega_undirected = gamma_omega_estimate(G_intralayer, G_interlayer, layer_membership,
+        for i, partition in enumerate(partitions):
+            with self.subTest(partition=i):
+                # here, undirected/directed refers to the intralayer edges only
+                # in Pamfil et al.'s temporal networks, interlayer edges are taken to be directed
+                G_intralayer.to_undirected()
+                gamma_undirected, omega_undirected = gamma_omega_estimate(G_intralayer, G_interlayer, layer_membership,
+                                                                          partition, model="temporal")
+
+                G_intralayer.to_directed()
+                gamma_directed, omega_directed = gamma_omega_estimate(G_intralayer, G_interlayer, layer_membership,
                                                                       partition, model="temporal")
 
-            G_intralayer.to_directed()
-            gamma_directed, omega_directed = gamma_omega_estimate(G_intralayer, G_interlayer, layer_membership,
-                                                                  partition, model="temporal")
+                assert_almost_equal_or_both_none_or_nan(self, gamma_undirected, gamma_directed, places=10)
+                assert_almost_equal_or_both_none_or_nan(self, omega_undirected, omega_directed, places=10)
 
-            assert_almost_equal_or_both_none_or_nan(self, gamma_undirected, gamma_directed, places=10)
-            assert_almost_equal_or_both_none_or_nan(self, omega_undirected, omega_directed, places=10)
+                # check multilevel parameter estimation as well
+                G_intralayer.to_undirected()
+                gamma_undirected, omega_undirected = gamma_omega_estimate(G_intralayer, G_interlayer, layer_membership,
+                                                                          partition, model="multilevel")
 
-            # check multilevel parameter estimation as well
-            gamma_undirected, omega_undirected = gamma_omega_estimate(G_intralayer, G_interlayer, layer_membership,
+                G_intralayer.to_directed()
+                gamma_directed, omega_directed = gamma_omega_estimate(G_intralayer, G_interlayer, layer_membership,
                                                                       partition, model="multilevel")
 
-            G_intralayer.to_directed()
-            gamma_directed, omega_directed = gamma_omega_estimate(G_intralayer, G_interlayer, layer_membership,
-                                                                  partition, model="multilevel")
-
-            assert_almost_equal_or_both_none_or_nan(self, gamma_undirected, gamma_directed, places=10)
-            assert_almost_equal_or_both_none_or_nan(self, omega_undirected, omega_directed, places=10)
+                assert_almost_equal_or_both_none_or_nan(self, gamma_undirected, gamma_directed, places=10)
+                assert_almost_equal_or_both_none_or_nan(self, omega_undirected, omega_directed, places=10)
 
 
 if __name__ == "__main__":

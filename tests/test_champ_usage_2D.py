@@ -67,7 +67,7 @@ class TestCHAMP2D(unittest.TestCase):
     def test_champ_correctness_undirected_varying_gamma_range(self):
         for gamma_start, gamma_end in zip([0.0, 1.0, 2.0, 3.0, 4.0], [10.0, 9.0, 8.0, 7.0, 6.0]):
             for weighted in [False, True]:
-                with self.subTest(gamma_start=gamma_start, weighted=weighted):
+                with self.subTest(gamma_start=gamma_start, gamma_end=gamma_end, weighted=weighted):
                     self.assert_champ_correctness_ER(gamma_start=gamma_start, gamma_end=gamma_end,
                                                      weighted=weighted)
 
@@ -99,7 +99,7 @@ class TestCHAMP2D(unittest.TestCase):
     def test_champ_correctness_directed_varying_gamma_range(self):
         for gamma_start, gamma_end in zip([0.0, 1.0, 2.0, 3.0, 4.0], [10.0, 9.0, 8.0, 7.0, 6.0]):
             for weighted in [False, True]:
-                with self.subTest(gamma_start=gamma_start, weighted=weighted):
+                with self.subTest(gamma_start=gamma_start, gamma_end=gamma_end, weighted=weighted):
                     self.assert_champ_correctness_ER(directed=True, gamma_start=gamma_start, gamma_end=gamma_end,
                                                      weighted=weighted)
 
@@ -109,16 +109,18 @@ class TestCHAMP2D(unittest.TestCase):
         The correctness of the CHAMP domains are checked for the original undirected and (symmetric) directed variants.
         """
 
-        for G in generate_igraph_famous():
+        for name, G in generate_igraph_famous():
             gammas = generate_random_values(100, start_value=0, end_value=5)
-            partitions = repeated_leiden_from_gammas(G, gammas)
-            champ_ranges = CHAMP_2D(G, partitions, gamma_0=0, gamma_f=5)
-            self.assert_best_partitions_match_champ_set(G, partitions, champ_ranges, gammas)
+            with self.subTest(graph=name, directed=False):
+                partitions = repeated_leiden_from_gammas(G, gammas)
+                champ_ranges = CHAMP_2D(G, partitions, gamma_0=0, gamma_f=5)
+                self.assert_best_partitions_match_champ_set(G, partitions, champ_ranges, gammas)
 
             G.to_directed()  # check the directed version of the graph as well
-            partitions = repeated_leiden_from_gammas(G, gammas)
-            champ_ranges = CHAMP_2D(G, partitions, gamma_0=0, gamma_f=5)
-            self.assert_best_partitions_match_champ_set(G, partitions, champ_ranges, gammas)
+            with self.subTest(graph=name, directed=True):
+                partitions = repeated_leiden_from_gammas(G, gammas)
+                champ_ranges = CHAMP_2D(G, partitions, gamma_0=0, gamma_f=5)
+                self.assert_best_partitions_match_champ_set(G, partitions, champ_ranges, gammas)
 
 
 if __name__ == "__main__":
