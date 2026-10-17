@@ -4,8 +4,7 @@ from random import seed
 from modularitypruning.champ_utilities import partition_coefficients_3D
 from modularitypruning.leiden_utilities import multilayer_leiden_part_with_membership, leiden_part_with_membership
 
-from .shared_testing_functions import generate_connected_multilayer_ER, \
-    generate_connected_weighted_multilayer_ER, generate_random_partitions
+from .shared_testing_functions import generate_connected_multilayer_ER, generate_random_partitions
 
 
 class TestCHAMPCoefficients3D(unittest.TestCase):
@@ -51,12 +50,9 @@ class TestCHAMPCoefficients3D(unittest.TestCase):
 
     def assert_partition_coefficient_correctness_ER(self, num_nodes_per_layer=100, m=25000, num_layers=10,
                                                     directed=False, num_partitions=10, K_max=10, weighted=False):
-        if weighted:
-            G_intralayer, G_interlayer, layer_membership = generate_connected_weighted_multilayer_ER(
-                num_nodes_per_layer=num_nodes_per_layer, m=m, num_layers=num_layers, directed=directed)
-        else:
-            G_intralayer, G_interlayer, layer_membership = generate_connected_multilayer_ER(
-                num_nodes_per_layer=num_nodes_per_layer, m=m, num_layers=num_layers, directed=directed)
+        G_intralayer, G_interlayer, layer_membership = generate_connected_multilayer_ER(
+            num_nodes_per_layer=num_nodes_per_layer, m=m, num_layers=num_layers, directed=directed,
+            weighted=weighted)
         partitions = generate_random_partitions(num_nodes=G_intralayer.vcount(), num_partitions=num_partitions,
                                                 K_max=K_max)
         coefficients = partition_coefficients_3D(G_intralayer, G_interlayer, layer_membership, partitions)
@@ -133,13 +129,10 @@ class TestCHAMPCoefficients3D(unittest.TestCase):
     def test_partition_coefficient_correctness_interleaved_directedness(self):
         """Test partition coefficient correctness when directedness of interlayer and intralayer edges do not match."""
         for weighted in [False, True]:
-            generate_ER = (generate_connected_weighted_multilayer_ER if weighted
-                           else generate_connected_multilayer_ER)
-
             # Intralayer directed edges, but interlayer undirected ones
             with self.subTest(intralayer_directed=True, weighted=weighted):
-                G_intralayer, G_interlayer, layer_membership = generate_ER(num_nodes_per_layer=100, m=5000,
-                                                                           num_layers=10, directed=False)
+                G_intralayer, G_interlayer, layer_membership = generate_connected_multilayer_ER(
+                    num_nodes_per_layer=100, m=5000, num_layers=10, directed=False, weighted=weighted)
                 G_intralayer.to_directed()
                 partitions = generate_random_partitions(num_nodes=G_intralayer.vcount(), num_partitions=10, K_max=10)
                 coefficients = partition_coefficients_3D(G_intralayer, G_interlayer, layer_membership, partitions)
@@ -148,8 +141,8 @@ class TestCHAMPCoefficients3D(unittest.TestCase):
 
             # Interlayer directed edges, but intralayer undirected ones
             with self.subTest(intralayer_directed=False, weighted=weighted):
-                G_intralayer, G_interlayer, layer_membership = generate_ER(num_nodes_per_layer=100, m=5000,
-                                                                           num_layers=10, directed=False)
+                G_intralayer, G_interlayer, layer_membership = generate_connected_multilayer_ER(
+                    num_nodes_per_layer=100, m=5000, num_layers=10, directed=False, weighted=weighted)
                 G_interlayer.to_directed()
                 partitions = generate_random_partitions(num_nodes=G_intralayer.vcount(), num_partitions=10, K_max=10)
                 coefficients = partition_coefficients_3D(G_intralayer, G_interlayer, layer_membership, partitions)

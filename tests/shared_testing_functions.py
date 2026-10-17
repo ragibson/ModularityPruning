@@ -5,40 +5,31 @@ import igraph as ig
 from modularitypruning.partition_utilities import num_communities
 
 
-def generate_connected_ER(n, m, directed):
+def generate_random_values(num_values, start_value, end_value):
+    return [uniform(start_value, end_value) for _ in range(num_values)]
+
+
+def generate_connected_ER(n, m, directed, weighted=False, low=0.1, high=10.0):
     G = ig.Graph.Erdos_Renyi(n=n, m=m, directed=directed)
     while not G.is_connected():
         G = ig.Graph.Erdos_Renyi(n=n, m=m, directed=directed)
+    if weighted:
+        G.es['weight'] = generate_random_values(G.ecount(), low, high)
     return G
 
 
-def generate_connected_weighted_ER(n, m, directed, low=0.1, high=10.0):
-    G = generate_connected_ER(n=n, m=m, directed=directed)
-    G.es['weight'] = [uniform(low, high) for _ in range(G.ecount())]
-    return G
-
-
-def generate_connected_multilayer_ER(num_nodes_per_layer, m, num_layers, directed):
+def generate_connected_multilayer_ER(num_nodes_per_layer, m, num_layers, directed, weighted=False, low=0.1, high=10.0):
     total_num_nodes = num_nodes_per_layer * num_layers
     G = generate_connected_ER(n=total_num_nodes, m=m, directed=directed)
     layer_membership = [i // num_nodes_per_layer for i in range(total_num_nodes)]
     intralayer_edges = [(e.source, e.target) for e in G.es if layer_membership[e.source] == layer_membership[e.target]]
     interlayer_edges = [(e.source, e.target) for e in G.es if layer_membership[e.source] != layer_membership[e.target]]
-    return (ig.Graph(n=total_num_nodes, edges=intralayer_edges, directed=directed),
-            ig.Graph(n=total_num_nodes, edges=interlayer_edges, directed=directed),
-            layer_membership)
-
-
-def generate_connected_weighted_multilayer_ER(num_nodes_per_layer, m, num_layers, directed, low=0.1, high=10.0):
-    G_intralayer, G_interlayer, layer_membership = generate_connected_multilayer_ER(
-        num_nodes_per_layer=num_nodes_per_layer, m=m, num_layers=num_layers, directed=directed)
-    G_intralayer.es['weight'] = [uniform(low, high) for _ in range(G_intralayer.ecount())]
-    G_interlayer.es['weight'] = [uniform(low, high) for _ in range(G_interlayer.ecount())]
+    G_intralayer = ig.Graph(n=total_num_nodes, edges=intralayer_edges, directed=directed)
+    G_interlayer = ig.Graph(n=total_num_nodes, edges=interlayer_edges, directed=directed)
+    if weighted:
+        G_intralayer.es['weight'] = generate_random_values(G_intralayer.ecount(), low, high)
+        G_interlayer.es['weight'] = generate_random_values(G_interlayer.ecount(), low, high)
     return G_intralayer, G_interlayer, layer_membership
-
-
-def generate_random_values(num_values, start_value, end_value):
-    return [uniform(start_value, end_value) for _ in range(num_values)]
 
 
 def generate_random_partition(num_nodes, K):

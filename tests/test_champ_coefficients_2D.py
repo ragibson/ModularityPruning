@@ -4,7 +4,7 @@ from random import seed
 from modularitypruning.champ_utilities import partition_coefficients_2D
 from modularitypruning.leiden_utilities import leiden_part_with_membership, repeated_leiden_from_gammas
 
-from .shared_testing_functions import generate_connected_ER, generate_connected_weighted_ER, \
+from .shared_testing_functions import generate_connected_ER, \
     generate_random_values, generate_random_partitions, generate_igraph_famous
 
 
@@ -29,10 +29,7 @@ class TestCHAMPCoefficients2D(unittest.TestCase):
 
     def assert_partition_coefficient_correctness_ER(self, n=100, m=500, directed=False,
                                                     num_partitions=10, K_max=5, weighted=False):
-        if weighted:
-            G = generate_connected_weighted_ER(n=n, m=m, directed=directed)
-        else:
-            G = generate_connected_ER(n=n, m=m, directed=directed)
+        G = generate_connected_ER(n=n, m=m, directed=directed, weighted=weighted)
         partitions = generate_random_partitions(num_nodes=n, num_partitions=num_partitions, K_max=K_max)
         coefficients = partition_coefficients_2D(G, partitions)
         self.assert_partition_coefficient_correctness(G, partitions, coefficients)

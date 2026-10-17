@@ -6,7 +6,7 @@ from modularitypruning.leiden_utilities import multilayer_leiden_part_with_membe
 from numpy import mean
 
 from .shared_testing_functions import generate_connected_multilayer_ER, \
-    generate_connected_weighted_multilayer_ER, generate_random_values, generate_random_partitions
+    generate_random_values, generate_random_partitions
 
 
 def point_is_inside_champ_domain(gamma, omega, domain_vertices):
@@ -70,12 +70,9 @@ class TestCHAMP3D(unittest.TestCase):
                                     num_partitions=10, num_sample_points=100, K_max=10,
                                     gamma_start=0.0, gamma_end=2.0, omega_start=0.0, omega_end=2.0,
                                     weighted=False):
-        if weighted:
-            G_intralayer, G_interlayer, layer_membership = generate_connected_weighted_multilayer_ER(
-                num_nodes_per_layer=num_nodes_per_layer, m=m, num_layers=num_layers, directed=directed)
-        else:
-            G_intralayer, G_interlayer, layer_membership = generate_connected_multilayer_ER(
-                num_nodes_per_layer=num_nodes_per_layer, m=m, num_layers=num_layers, directed=directed)
+        G_intralayer, G_interlayer, layer_membership = generate_connected_multilayer_ER(
+            num_nodes_per_layer=num_nodes_per_layer, m=m, num_layers=num_layers, directed=directed,
+            weighted=weighted)
         partitions = generate_random_partitions(num_nodes=G_intralayer.vcount(), num_partitions=num_partitions,
                                                 K_max=K_max)
         gammas = generate_random_values(num_sample_points, start_value=gamma_start, end_value=gamma_end)
