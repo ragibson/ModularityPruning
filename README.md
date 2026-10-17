@@ -4,12 +4,13 @@
 
 ModularityPruning is a pruning tool to identify small subsets of network
 partitions that are significant from the perspective of stochastic block model
-inference. This method works for single-layer and multi-layer networks, as well
-as for restricting focus to a fixed number of communities when desired.
+inference. It:
 
-This package also contains a faster and more robust implementation of the
-CHAMP (Convex Hull of Admissible Modularity Partitions) algorithm (see
-`CHAMP_2D` and `CHAMP_3D`).
+- Works for single-layer and multi-layer networks
+- Supports weighted networks via the `weight` edge attribute
+- Restricts focus to a fixed number of communities when desired
+- Contains a faster and more robust implementation of the CHAMP (Convex Hull of
+  Admissible Modularity Partitions) algorithm (see `CHAMP_2D` and `CHAMP_3D`)
 
 See the [documentation](https://modularitypruning.readthedocs.io/en/latest/)
 or the journal article at https://doi.org/10.1038/s41598-022-20142-6 for more
