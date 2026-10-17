@@ -32,7 +32,12 @@ Alternatively, you can install it from this repository directly:
 
     git clone https://github.com/ragibson/ModularityPruning
     cd ModularityPruning
-    python3 setup.py install
+    pip install .
+
+For modularitypruning development, it is best to use a strict editable install
+so that `pytest` and `mypy` can pick up changes immediately.
+
+    pip install --editable . --config-settings editable_mode=strict
 
 <a name = "Basic Usage"></a>
 
