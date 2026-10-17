@@ -10,15 +10,15 @@ from modularitypruning.partition_utilities import num_communities, all_degrees
 from numpy import mean
 
 from .shared_testing_functions import assert_almost_equal_or_both_none_or_nan, generate_random_partition, \
-    generate_multilayer_intralayer_SBM
+    generate_connected_multilayer_intralayer_SBM
 
 
 class TestMultiplexParameterEstimation(unittest.TestCase):
     def generate_multiplex_SBM(self, copying_probability, p_in, p_out, first_layer_membership, num_layers,
                                weighted=False):
-        G_intralayer, layer_membership = generate_multilayer_intralayer_SBM(copying_probability, p_in, p_out,
-                                                                            first_layer_membership, num_layers,
-                                                                            weighted=weighted)
+        G_intralayer, layer_membership = generate_connected_multilayer_intralayer_SBM(
+            copying_probability, p_in, p_out, first_layer_membership, num_layers, weighted=weighted
+        )
 
         # connect each node to itself in all other layers
         num_nodes_per_layer = len(first_layer_membership)

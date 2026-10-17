@@ -10,15 +10,15 @@ from modularitypruning.partition_utilities import num_communities, all_degrees
 from numpy import mean
 
 from .shared_testing_functions import assert_almost_equal_or_both_none_or_nan, generate_random_partition, \
-    generate_multilayer_intralayer_SBM
+    generate_connected_multilayer_intralayer_SBM
 
 
 class TestTemporalAndMultilevelParameterEstimation(unittest.TestCase):
     def generate_temporal_SBM(self, copying_probability, p_in, p_out, first_layer_membership, num_layers,
                               weighted=False):
-        G_intralayer, layer_membership = generate_multilayer_intralayer_SBM(copying_probability, p_in, p_out,
-                                                                            first_layer_membership, num_layers,
-                                                                            weighted=weighted)
+        G_intralayer, layer_membership = generate_connected_multilayer_intralayer_SBM(
+            copying_probability, p_in, p_out, first_layer_membership, num_layers, weighted=weighted
+        )
 
         # connect each node to itself in the next layer
         num_nodes_per_layer = len(first_layer_membership)
@@ -62,7 +62,7 @@ class TestTemporalAndMultilevelParameterEstimation(unittest.TestCase):
         self.assertLess(abs(true_gamma - gamma), tolerance)
         self.assertLess(abs(true_omega - omega), tolerance)
 
-    def retry_test_across_graph_sizes(self, test_fn, sizes=[100, 250, 500], retries_per_size=3):
+    def retry_test_across_graph_sizes(self, test_fn, sizes=[250, 500, 750], retries_per_size=3):
         """
         Rerun randomized tests of asymptotic convergence across increasingly larger graph sizes until one succeeds.
 
@@ -103,8 +103,7 @@ class TestTemporalAndMultilevelParameterEstimation(unittest.TestCase):
                             p_in=p_in, p_out=0.025,
                             first_layer_membership=generate_random_partition(num_nodes=n, K=2),
                             weighted=w
-                        ),
-                        sizes=[500]  # smaller seems to cause Leiden slowdown?
+                        )
                     )
 
     def test_temporal_SBM_correct_convergence_varying_p_out(self):
@@ -115,8 +114,7 @@ class TestTemporalAndMultilevelParameterEstimation(unittest.TestCase):
                         test_fn=lambda n, w=weighted: self.assert_temporal_SBM_correct_convergence(
                             p_out=p_out, first_layer_membership=generate_random_partition(num_nodes=n, K=2),
                             weighted=w
-                        ),
-                        sizes=[500]  # smaller seems to cause Leiden slowdown?
+                        )
                     )
 
     def test_temporal_SBM_correct_convergence_varying_num_communities(self):
@@ -127,8 +125,7 @@ class TestTemporalAndMultilevelParameterEstimation(unittest.TestCase):
                         test_fn=lambda n, K_=K, w=weighted: self.assert_temporal_SBM_correct_convergence(
                             first_layer_membership=generate_random_partition(num_nodes=n, K=K_),
                             weighted=w
-                        ),
-                        sizes=[500]  # smaller seems to cause Leiden slowdown?
+                        )
                     )
 
     def test_temporal_SBM_correct_convergence_varying_num_layers(self):
@@ -140,8 +137,7 @@ class TestTemporalAndMultilevelParameterEstimation(unittest.TestCase):
                             num_layers=nl,
                             first_layer_membership=generate_random_partition(num_nodes=n, K=2),
                             weighted=w
-                        ),
-                        sizes=[500]  # smaller seems to cause Leiden slowdown?
+                        )
                     )
 
     def test_directed_consistency_temporal_SBM_leiden(self):

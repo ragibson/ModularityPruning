@@ -13,7 +13,7 @@ from modularitypruning.leiden_utilities import (repeated_leiden_from_gammas, rep
                                                 repeated_leiden_from_gammas_omegas,
                                                 repeated_parallel_leiden_from_gammas_omegas)
 
-from .shared_testing_functions import generate_connected_ER, generate_multilayer_intralayer_SBM
+from .shared_testing_functions import generate_connected_ER, generate_connected_multilayer_intralayer_SBM
 
 # this set of tests ensures that we achieve >= 75% parallel performance compared to perfect scaling of
 # single-threaded jobs to multiple cores (with no memory contention). This threshold will be decreased in
@@ -115,7 +115,7 @@ class TestParallelLeidenPerformance(unittest.TestCase):
 
     def test_tiny_multilayer_graph_many_runs(self):
         """Single-threaded equivalent is 10k runs on G(n=50, m=150)."""
-        G_intralayer, layer_membership = generate_multilayer_intralayer_SBM(
+        G_intralayer, layer_membership = generate_connected_multilayer_intralayer_SBM(
             copying_probability=0.9, p_in=0.8, p_out=0.2, first_layer_membership=[0] * 5 + [1] * 5, num_layers=5
         )
         interlayer_edges = [(10 * layer + v, 10 * layer + v + 10)
@@ -130,7 +130,7 @@ class TestParallelLeidenPerformance(unittest.TestCase):
 
     def test_larger_multilayer_graph_few_runs(self):
         """Single-threaded equivalent is 49 runs on approximately G(n=2500, m=15000)."""
-        G_intralayer, layer_membership = generate_multilayer_intralayer_SBM(
+        G_intralayer, layer_membership = generate_connected_multilayer_intralayer_SBM(
             copying_probability=0.9, p_in=0.15, p_out=0.05, first_layer_membership=[0] * 50 + [1] * 50, num_layers=25
         )
         interlayer_edges = [(100 * layer + v, 100 * layer + v + 100)

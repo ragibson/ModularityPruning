@@ -71,8 +71,8 @@ def generate_igraph_famous():
     return [ig.Graph.Famous(name) for name in ['meredith', 'nonline', 'thomassen', 'tutte', 'zachary']]
 
 
-def generate_multilayer_intralayer_SBM(copying_probability, p_in, p_out, first_layer_membership, num_layers,
-                                       weighted=False, low=0.5, high=5.0):
+def generate_connected_multilayer_intralayer_SBM(copying_probability, p_in, p_out, first_layer_membership, num_layers,
+                                                 weighted=False, low=0.5, high=5.0):
     num_nodes_per_layer = len(first_layer_membership)
     community_labels_per_layer = [[0] * num_nodes_per_layer for _ in range(num_layers)]
     community_labels_per_layer[0] = list(first_layer_membership)
@@ -100,6 +100,17 @@ def generate_multilayer_intralayer_SBM(copying_probability, p_in, p_out, first_l
                 else:
                     if random() < p_out:
                         intralayer_edges.append((u, v))
+
+    # force disconnected intralayer nodes to have at least one edge
+    intralayer_degrees = [0] * len(combined_community_labels)
+    for u, v in intralayer_edges:
+        intralayer_degrees[u] += 1
+        intralayer_degrees[v] += 1
+    for v, degree in enumerate(intralayer_degrees):
+        if degree == 0:
+            same_layer = [u for u in range(len(combined_community_labels))
+                          if layer_membership[u] == layer_membership[v] and u != v]
+            intralayer_edges.append((v, same_layer[randint(0, len(same_layer) - 1)]))
 
     G_intralayer = ig.Graph(n=len(combined_community_labels), edges=intralayer_edges, directed=False)
 
