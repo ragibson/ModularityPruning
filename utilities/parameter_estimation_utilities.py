@@ -24,6 +24,9 @@ def estimate_singlelayer_SBM_parameters(
 
     See https://doi.org/10.1103/PhysRevE.94.052315 for more details.
 
+    For directed graphs, the convention of Leicht and Newman is used: each directed edge is counted once, and the total
+    edge weight is :math:`M = \sum_i k_i^{in}`. Self-loops count as internal edges.
+
     :param G: graph of interest
     :type G: igraph.Graph
     :param partition: partition of interest
@@ -44,15 +47,31 @@ def estimate_singlelayer_SBM_parameters(
     community: list[int] = partition.membership
 
     m_in: float = sum(e['weight'] * (community[e.source] == community[e.target]) for e in G.es)
-    kappa_r_list: list[float] = [0] * len(partition)
-    for e in G.es:
-        kappa_r_list[community[e.source]] += e['weight']
-        kappa_r_list[community[e.target]] += e['weight']
-    sum_kappa_sqr: float = sum(x ** 2 for x in kappa_r_list)
 
-    omega_in: float = (2 * m_in) / (sum_kappa_sqr / (2 * m))
-    # guard for div by zero with single community partition
-    omega_out: float = (2 * m - 2 * m_in) / (2 * m - sum_kappa_sqr / (2 * m)) if len(partition) > 1 else 0
+    if G.is_directed():
+        # directed modularity of Leicht and Newman
+        #   null model term sum_c k_c^{in} * k_c^{out} / M
+        #   internal edge weights are counted once per directed edge
+        kappa_in_list: list[float] = [0] * len(partition)
+        kappa_out_list: list[float] = [0] * len(partition)
+        for e in G.es:
+            kappa_out_list[community[e.source]] += e['weight']
+            kappa_in_list[community[e.target]] += e['weight']
+        sum_kappa_in_kappa_out: float = sum(k_in * k_out for k_in, k_out in zip(kappa_in_list, kappa_out_list))
+
+        omega_in: float = m_in / (sum_kappa_in_kappa_out / m)
+        # guard for div by zero with single community partition
+        omega_out: float = (m - m_in) / (m - sum_kappa_in_kappa_out / m) if len(partition) > 1 else 0
+    else:
+        kappa_r_list: list[float] = [0] * len(partition)
+        for e in G.es:
+            kappa_r_list[community[e.source]] += e['weight']
+            kappa_r_list[community[e.target]] += e['weight']
+        sum_kappa_sqr: float = sum(x ** 2 for x in kappa_r_list)
+
+        omega_in = (2 * m_in) / (sum_kappa_sqr / (2 * m))
+        # guard for div by zero with single community partition
+        omega_out = (2 * m - 2 * m_in) / (2 * m - sum_kappa_sqr / (2 * m)) if len(partition) > 1 else 0
 
     # return estimates for omega_in, omega_out
     return omega_in, omega_out
@@ -117,17 +136,39 @@ def estimate_multilayer_SBM_parameters(
             m_t_in[layer_vec[e.source]] += e['weight']
 
     kappa_t_r_list: list[list[int]] = [[0] * K for _ in range(T)]
-    for e in G_intralayer.es:
-        layer = layer_vec[e.source]
-        kappa_t_r_list[layer][community[e.source]] += e['weight']
-        kappa_t_r_list[layer][community[e.target]] += e['weight']
-    sum_kappa_t_sqr: list[float] = [sum(x ** 2 for x in kappa_t_r_list[t]) for t in range(T)]
 
-    theta_in: float = sum(2 * m_t_in[t] for t in range(T)) / sum(sum_kappa_t_sqr[t] / (2 * m_t[t]) for t in range(T))
+    if G_intralayer.is_directed():
+        # directed modularity per layer as in estimate_singlelayer_SBM_parameters
+        kappa_t_in_list: list[list[float]] = [[0] * K for _ in range(T)]
+        kappa_t_out_list: list[list[float]] = [[0] * K for _ in range(T)]
+        for e in G_intralayer.es:
+            layer = layer_vec[e.source]
+            kappa_t_out_list[layer][community[e.source]] += e['weight']
+            kappa_t_in_list[layer][community[e.target]] += e['weight']
+        sum_kappa_in_kappa_out_t: list[float] = [
+            sum(k_in * k_out for k_in, k_out in zip(kappa_t_in_list[t], kappa_t_out_list[t]))
+            for t in range(T)]
 
-    # guard for div by zero with e.g. a single community partition
-    theta_out_numerator: float = sum(2 * m_t[t] - 2 * m_t_in[t] for t in range(T))
-    theta_out_denominator: float = sum(2 * m_t[t] - sum_kappa_t_sqr[t] / (2 * m_t[t]) for t in range(T))
+        theta_in: float = sum(m_t_in[t] for t in range(T)) / sum(sum_kappa_in_kappa_out_t[t] / m_t[t]
+                                                                 for t in range(T))
+
+        # guard for div by zero with e.g. a single community partition
+        theta_out_numerator: float = sum(m_t[t] - m_t_in[t] for t in range(T))
+        theta_out_denominator: float = sum(m_t[t] - sum_kappa_in_kappa_out_t[t] / m_t[t] for t in range(T))
+    else:
+        for e in G_intralayer.es:
+            layer = layer_vec[e.source]
+            kappa_t_r_list[layer][community[e.source]] += e['weight']
+            kappa_t_r_list[layer][community[e.target]] += e['weight']
+        sum_kappa_t_sqr: list[float] = [sum(x ** 2 for x in kappa_t_r_list[t]) for t in range(T)]
+
+        theta_in = sum(2 * m_t_in[t] for t in range(T)) / sum(sum_kappa_t_sqr[t] / (2 * m_t[t])
+                                                              for t in range(T))
+
+        # guard for div by zero with e.g. a single community partition
+        theta_out_numerator = sum(2 * m_t[t] - 2 * m_t_in[t] for t in range(T))
+        theta_out_denominator = sum(2 * m_t[t] - sum_kappa_t_sqr[t] / (2 * m_t[t]) for t in range(T))
+
     if theta_out_denominator == 0:
         theta_out: float = 0
     else:
