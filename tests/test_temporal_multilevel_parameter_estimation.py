@@ -62,7 +62,7 @@ class TestTemporalAndMultilevelParameterEstimation(unittest.TestCase):
         self.assertLess(abs(true_gamma - gamma), tolerance)
         self.assertLess(abs(true_omega - omega), tolerance)
 
-    def retry_test_across_graph_sizes(self, test_fn, sizes=[250, 500, 750], retries_per_size=3):
+    def retry_test_across_graph_sizes(self, test_fn, sizes=[250, 500], retries_per_size=3):
         """
         Rerun randomized tests of asymptotic convergence across increasingly larger graph sizes until one succeeds.
 

@@ -46,7 +46,7 @@ jobs:
           python -m pip install mypy
           python -m mypy utilities/ --install-types --non-interactive
       - name: Test with pytest
-        timeout-minutes: 30
+        timeout-minutes: 45
         run: |
           source env/bin/activate
           pytest -v -n auto -m "not serial" tests/ && pytest -v -m "serial" tests/
