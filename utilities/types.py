@@ -41,8 +41,8 @@ GammaOmegaEstimate = tuple[GammaEstimateValue, float]
 DomainWithEstimates = tuple[DomainVertices, Membership, GammaEstimateValue, float]
 
 # (A_hats, P_hats) and (A_hats, P_hats, C_hats) coefficients from CHAMP
-PartitionCoefficients2D = tuple[IntArray, FloatArray]
-PartitionCoefficients3D = tuple[IntArray, FloatArray, IntArray]
+PartitionCoefficients2D = tuple[FloatArray, FloatArray]
+PartitionCoefficients3D = tuple[FloatArray, FloatArray, FloatArray]
 
 # SBM parameter estimates
 SinglelayerSBMParameters = tuple[float, float]

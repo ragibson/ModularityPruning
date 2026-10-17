@@ -5,8 +5,8 @@ from modularitypruning.champ_utilities import CHAMP_3D
 from modularitypruning.leiden_utilities import multilayer_leiden_part_with_membership
 from numpy import mean
 
-from .shared_testing_functions import generate_connected_multilayer_ER, generate_random_values, \
-    generate_random_partitions
+from .shared_testing_functions import generate_connected_multilayer_ER, \
+    generate_random_values, generate_random_partitions
 
 
 def point_is_inside_champ_domain(gamma, omega, domain_vertices):
@@ -51,26 +51,28 @@ class TestCHAMP3D(unittest.TestCase):
                 if point_is_inside_champ_domain(gamma, omega, domain_vertices):
                     # check that the best partition quality matches that of the champ domains at this gamma
                     champ_quality = (
-                            sum(p_intra.quality(resolution_parameter=gamma)
-                                for p_intra in membership_to_intralayer_leiden_partitions[membership])
-                            + omega *
-                            membership_to_interlayer_leiden_partition[membership].quality(resolution_parameter=0)
+                        sum(p_intra.quality(resolution_parameter=gamma)
+                            for p_intra in membership_to_intralayer_leiden_partitions[membership])
+                        + omega *
+                        membership_to_interlayer_leiden_partition[membership].quality(resolution_parameter=0)
                     )
 
                     # note that this is float comparision to within ~10^{-10}
                     self.assertAlmostEqual(best_partition_quality, champ_quality, places=10,
                                            msg=f"CHAMP domain quality does not match best input partition "
-                                               f"at gamma {gamma:.2f} omega {omega:.2f}")
+                                           f"at gamma {gamma:.2f} omega {omega:.2f}")
                     break
             else:
                 self.assertFalse(True, msg=f"gamma {gamma:.2f}, omega {omega:.2f} "
-                                           f"was not found within any CHAMP domain")
+                                 f"was not found within any CHAMP domain")
 
-    def assert_champ_correctness_unweighted_ER(self, num_nodes_per_layer=100, m=10000, num_layers=10, directed=False,
-                                               num_partitions=10, num_sample_points=100, K_max=10,
-                                               gamma_start=0.0, gamma_end=2.0, omega_start=0.0, omega_end=2.0):
+    def assert_champ_correctness_ER(self, num_nodes_per_layer=100, m=10000, num_layers=10, directed=False,
+                                    num_partitions=10, num_sample_points=100, K_max=10,
+                                    gamma_start=0.0, gamma_end=2.0, omega_start=0.0, omega_end=2.0,
+                                    weighted=False):
         G_intralayer, G_interlayer, layer_membership = generate_connected_multilayer_ER(
-            num_nodes_per_layer=num_nodes_per_layer, m=m, num_layers=num_layers, directed=directed)
+            num_nodes_per_layer=num_nodes_per_layer, m=m, num_layers=num_layers, directed=directed,
+            weighted=weighted)
         partitions = generate_random_partitions(num_nodes=G_intralayer.vcount(), num_partitions=num_partitions,
                                                 K_max=K_max)
         gammas = generate_random_values(num_sample_points, start_value=gamma_start, end_value=gamma_end)
@@ -81,65 +83,100 @@ class TestCHAMP3D(unittest.TestCase):
         self.assert_best_partitions_match_champ_set(G_intralayer, G_interlayer, layer_membership, partitions,
                                                     champ_domains, gammas, omegas)
 
-    def test_partition_coefficient_correctness_undirected_unweighted_varying_num_nodes_per_layer(self):
+    def test_partition_coefficient_correctness_undirected_varying_num_nodes_per_layer(self):
         for num_nodes_per_layer in [50, 100, 250, 500]:
-            self.assert_champ_correctness_unweighted_ER(num_nodes_per_layer=num_nodes_per_layer,
-                                                        m=50 * num_nodes_per_layer)
+            for weighted in [False, True]:
+                with self.subTest(num_nodes_per_layer=num_nodes_per_layer, weighted=weighted):
+                    self.assert_champ_correctness_ER(num_nodes_per_layer=num_nodes_per_layer,
+                                                     m=50 * num_nodes_per_layer, weighted=weighted)
 
-    def test_partition_coefficient_correctness_undirected_unweighted_varying_m(self):
+    def test_partition_coefficient_correctness_undirected_varying_m(self):
         for m in [5000, 10000, 15000, 20000]:
-            self.assert_champ_correctness_unweighted_ER(m=m)
+            for weighted in [False, True]:
+                with self.subTest(m=m, weighted=weighted):
+                    self.assert_champ_correctness_ER(m=m, weighted=weighted)
 
-    def test_partition_coefficient_correctness_undirected_unweighted_varying_num_layers(self):
+    def test_partition_coefficient_correctness_undirected_varying_num_layers(self):
         for num_layers in [5, 10, 20, 30]:
-            self.assert_champ_correctness_unweighted_ER(m=15000, num_layers=num_layers)
+            for weighted in [False, True]:
+                with self.subTest(num_layers=num_layers, weighted=weighted):
+                    self.assert_champ_correctness_ER(m=15000, num_layers=num_layers, weighted=weighted)
 
-    def test_partition_coefficient_correctness_undirected_unweighted_varying_num_partitions(self):
+    def test_partition_coefficient_correctness_undirected_varying_num_partitions(self):
         for num_partitions in [5, 10, 100, 250]:
-            self.assert_champ_correctness_unweighted_ER(num_partitions=num_partitions)
+            for weighted in [False, True]:
+                with self.subTest(num_partitions=num_partitions, weighted=weighted):
+                    self.assert_champ_correctness_ER(num_partitions=num_partitions, weighted=weighted)
 
-    def test_partition_coefficient_correctness_undirected_unweighted_varying_K_max(self):
+    def test_partition_coefficient_correctness_undirected_varying_K_max(self):
         for K_max in [2, 5, 10, 25]:
-            self.assert_champ_correctness_unweighted_ER(K_max=K_max)
+            for weighted in [False, True]:
+                with self.subTest(K_max=K_max, weighted=weighted):
+                    self.assert_champ_correctness_ER(K_max=K_max, weighted=weighted)
 
-    def test_partition_coefficient_correctness_undirected_unweighted_varying_gamma_range(self):
+    def test_partition_coefficient_correctness_undirected_varying_gamma_range(self):
         for gamma_start, gamma_end in zip([0.0, 1.0, 2.0, 3.0, 4.0], [10.0, 9.0, 8.0, 7.0, 6.0]):
-            self.assert_champ_correctness_unweighted_ER(gamma_start=gamma_start, gamma_end=gamma_end)
+            for weighted in [False, True]:
+                with self.subTest(gamma_start=gamma_start, gamma_end=gamma_end, weighted=weighted):
+                    self.assert_champ_correctness_ER(gamma_start=gamma_start, gamma_end=gamma_end,
+                                                     weighted=weighted)
 
-    def test_partition_coefficient_correctness_undirected_unweighted_varying_omega_range(self):
+    def test_partition_coefficient_correctness_undirected_varying_omega_range(self):
         for omega_start, omega_end in zip([0.0, 1.0, 2.0, 3.0, 4.0], [10.0, 9.0, 8.0, 7.0, 6.0]):
-            self.assert_champ_correctness_unweighted_ER(omega_start=omega_start, omega_end=omega_end)
+            for weighted in [False, True]:
+                with self.subTest(omega_start=omega_start, omega_end=omega_end, weighted=weighted):
+                    self.assert_champ_correctness_ER(omega_start=omega_start, omega_end=omega_end,
+                                                     weighted=weighted)
 
-    def test_partition_coefficient_correctness_directed_unweighted_varying_num_nodes_per_layer(self):
+    def test_partition_coefficient_correctness_directed_varying_num_nodes_per_layer(self):
         for num_nodes_per_layer in [50, 100, 250, 500]:
-            self.assert_champ_correctness_unweighted_ER(num_nodes_per_layer=num_nodes_per_layer,
-                                                        m=100 * num_nodes_per_layer, directed=True)
+            for weighted in [False, True]:
+                with self.subTest(num_nodes_per_layer=num_nodes_per_layer, weighted=weighted):
+                    self.assert_champ_correctness_ER(num_nodes_per_layer=num_nodes_per_layer,
+                                                     m=100 * num_nodes_per_layer, directed=True,
+                                                     weighted=weighted)
 
-    def test_partition_coefficient_correctness_directed_unweighted_varying_m(self):
+    def test_partition_coefficient_correctness_directed_varying_m(self):
         for m in [10000, 20000, 30000, 40000]:
-            self.assert_champ_correctness_unweighted_ER(m=m, directed=True)
+            for weighted in [False, True]:
+                with self.subTest(m=m, weighted=weighted):
+                    self.assert_champ_correctness_ER(m=m, directed=True, weighted=weighted)
 
-    def test_partition_coefficient_correctness_directed_unweighted_varying_num_layers(self):
+    def test_partition_coefficient_correctness_directed_varying_num_layers(self):
         for num_layers in [5, 10, 20, 30]:
-            self.assert_champ_correctness_unweighted_ER(m=30000, num_layers=num_layers, directed=True)
+            for weighted in [False, True]:
+                with self.subTest(num_layers=num_layers, weighted=weighted):
+                    self.assert_champ_correctness_ER(m=30000, num_layers=num_layers, directed=True,
+                                                     weighted=weighted)
 
-    def test_partition_coefficient_correctness_directed_unweighted_varying_num_partitions(self):
+    def test_partition_coefficient_correctness_directed_varying_num_partitions(self):
         for num_partitions in [5, 10, 100, 250]:
-            self.assert_champ_correctness_unweighted_ER(directed=True, num_partitions=num_partitions)
+            for weighted in [False, True]:
+                with self.subTest(num_partitions=num_partitions, weighted=weighted):
+                    self.assert_champ_correctness_ER(directed=True, num_partitions=num_partitions,
+                                                     weighted=weighted)
 
-    def test_partition_coefficient_correctness_directed_unweighted_varying_K_max(self):
+    def test_partition_coefficient_correctness_directed_varying_K_max(self):
         for K_max in [2, 5, 10, 25]:
-            self.assert_champ_correctness_unweighted_ER(directed=True, K_max=K_max)
+            for weighted in [False, True]:
+                with self.subTest(K_max=K_max, weighted=weighted):
+                    self.assert_champ_correctness_ER(directed=True, K_max=K_max, weighted=weighted)
 
-    def test_partition_coefficient_correctness_directed_unweighted_varying_gamma_range(self):
+    def test_partition_coefficient_correctness_directed_varying_gamma_range(self):
         for gamma_start, gamma_end in zip([0.0, 1.0, 2.0, 3.0, 4.0], [10.0, 9.0, 8.0, 7.0, 6.0]):
-            self.assert_champ_correctness_unweighted_ER(directed=True,
-                                                        gamma_start=gamma_start, gamma_end=gamma_end)
+            for weighted in [False, True]:
+                with self.subTest(gamma_start=gamma_start, gamma_end=gamma_end, weighted=weighted):
+                    self.assert_champ_correctness_ER(directed=True,
+                                                     gamma_start=gamma_start, gamma_end=gamma_end,
+                                                     weighted=weighted)
 
-    def test_partition_coefficient_correctness_directed_unweighted_varying_omega_range(self):
+    def test_partition_coefficient_correctness_directed_varying_omega_range(self):
         for omega_start, omega_end in zip([0.0, 1.0, 2.0, 3.0, 4.0], [10.0, 9.0, 8.0, 7.0, 6.0]):
-            self.assert_champ_correctness_unweighted_ER(directed=True,
-                                                        omega_start=omega_start, omega_end=omega_end)
+            for weighted in [False, True]:
+                with self.subTest(omega_start=omega_start, omega_end=omega_end, weighted=weighted):
+                    self.assert_champ_correctness_ER(directed=True,
+                                                     omega_start=omega_start, omega_end=omega_end,
+                                                     weighted=weighted)
 
 
 if __name__ == "__main__":

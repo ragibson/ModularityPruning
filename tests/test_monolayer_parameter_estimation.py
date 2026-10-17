@@ -5,11 +5,11 @@ from random import seed
 import igraph as ig
 from modularitypruning.parameter_estimation import iterative_monolayer_resolution_parameter_estimation
 from modularitypruning.parameter_estimation_utilities import gamma_estimate
-from modularitypruning.partition_utilities import all_degrees
+from modularitypruning.partition_utilities import all_degrees, all_strengths
 from numpy import mean
 
 from .shared_testing_functions import assert_almost_equal_or_both_none_or_nan, generate_igraph_famous, \
-    generate_random_partition
+    generate_random_partition, generate_random_values
 
 
 class TestMonolayerParameterEstimation(unittest.TestCase):
@@ -19,36 +19,58 @@ class TestMonolayerParameterEstimation(unittest.TestCase):
         The setup here is the same as in FIG 1 of 'Equivalence between modularity optimization and maximum likelihood
         methods for community detection', albeit using Leiden for modularity maximization."""
 
-        for q in range(3, 15):
-            community_sizes = [250] * q  # q equally sized groups of 250 nodes
-            n = sum(community_sizes)
-            p_in = 16 * n / (q * 250 * 249)  # ~16 in-edges per node
-            p_out = 8 * n / (q * (q - 1) * 250 * 250)  # ~8 out-edges per node to each community
-            pref_matrix = [[p_in if i == j else p_out for j in range(q)] for i in range(q)]
-            G = ig.Graph.SBM(pref_matrix, community_sizes)
+        for weighted in [False, True]:
+            for q in range(3, 15):
+                with self.subTest(q=q, weighted=weighted):
+                    self.assert_newman_synthetic_convergence(q, weighted=weighted)
 
-            # compute "ground truth" gamma estimate
+    @staticmethod
+    def generate_monolayer_SBM(q, weighted=False):
+        community_sizes = [250] * q  # q equally sized groups of 250 nodes
+        n = sum(community_sizes)
+        p_in = 16 * n / (q * 250 * 249)  # ~16 in-edges per node
+        p_out = 8 * n / (q * (q - 1) * 250 * 250)  # ~8 out-edges per node to each community
+        pref_matrix = [[p_in if i == j else p_out for j in range(q)] for i in range(q)]
+        G = ig.Graph.SBM(pref_matrix, community_sizes)
+
+        if weighted:
+            G.es['weight'] = generate_random_values(G.ecount(), 0.5, 5.0)
+
+        return G, p_in, p_out
+
+    def assert_newman_synthetic_convergence(self, q, weighted=False):
+        G, p_in, p_out = self.generate_monolayer_SBM(q, weighted=weighted)
+
+        # compute "ground truth" gamma estimate
+        if weighted:
+            k = mean(all_strengths(G))
+            m = sum(G.es['weight'])
+            mean_weight = m / G.ecount()
+            true_omega_in = mean_weight * p_in * (2 * m) / (k * k)
+            true_omega_out = mean_weight * p_out * (2 * m) / (k * k)
+        else:
             k = mean(all_degrees(G))
             true_omega_in = p_in * (2 * G.ecount()) / (k * k)
             true_omega_out = p_out * (2 * G.ecount()) / (k * k)
-            true_gamma = (true_omega_in - true_omega_out) / (log(true_omega_in) - log(true_omega_out))
+        true_gamma = (true_omega_in - true_omega_out) / (log(true_omega_in) - log(true_omega_out))
 
-            gamma, _ = iterative_monolayer_resolution_parameter_estimation(G, gamma=1.0)
+        gamma, _ = iterative_monolayer_resolution_parameter_estimation(G, gamma=1.0)
 
-            # check we converged close to the ground truth "correct" value
-            self.assertLess(abs(true_gamma - gamma), 0.05)
+        # check we converged close to the ground truth "correct" value
+        self.assertLess(abs(true_gamma - gamma), 0.05)
 
     def test_directed_consistency_igraph_famous(self):
         """Test gamma estimate consistency on undirected and (symmetric) directed versions of various famous graphs."""
 
-        for G in generate_igraph_famous():
+        for name, G in generate_igraph_famous():
             random_membership = generate_random_partition(G.vcount(), 5)
 
             gamma_undirected = gamma_estimate(G, random_membership)
             G.to_directed()
             gamma_directed = gamma_estimate(G, random_membership)
 
-            assert_almost_equal_or_both_none_or_nan(self, gamma_undirected, gamma_directed, places=10)
+            with self.subTest(graph=name):
+                assert_almost_equal_or_both_none_or_nan(self, gamma_undirected, gamma_directed, places=10)
 
 
 if __name__ == "__main__":

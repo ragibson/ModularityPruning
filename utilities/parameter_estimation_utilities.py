@@ -34,6 +34,9 @@ def estimate_singlelayer_SBM_parameters(
     :rtype: tuple[float, float]
     """
 
+    if not G.is_weighted():
+        G.es['weight'] = [1.0] * G.ecount()
+
     if m is None:
         m = sum(G.es['weight'])
 
@@ -85,7 +88,7 @@ def estimate_multilayer_SBM_parameters(
     :rtype: float, float, float, int
     """
 
-    if 'weight' not in G_intralayer.es:
+    if not G_intralayer.is_weighted():
         G_intralayer.es['weight'] = [1.0] * G_intralayer.ecount()
 
     # TODO: check if these None parameters and potentially caching calculate_persistence helps performance
@@ -167,8 +170,8 @@ def gamma_estimate(G: ig.Graph, partition: LeidenPartition | Membership) -> Gamm
     :rtype: float | None
     """
 
-    if 'weight' not in G.es:
-        G.es['weight'] = [1.0] * G.vcount()
+    if not G.is_weighted():
+        G.es['weight'] = [1.0] * G.ecount()
 
     if not isinstance(partition, leidenalg.RBConfigurationVertexPartition):
         partition = leiden_part_with_membership(G, partition)
@@ -553,6 +556,8 @@ def prune_to_stable_partitions(
     Runs our full pruning pipeline on a singlelayer network. Returns the pruned list of stable partitions whose
     parameter estimates are within the provided ``gamma_start`` and ``gamma_end`` bounds.
 
+    Weighted graphs are supported via the ``weight`` edge attribute. Edge weights must be non-negative.
+
     See https://doi.org/10.1038/s41598-022-20142-6 for more details.
 
     :param G: graph of interest
@@ -575,9 +580,11 @@ def prune_to_stable_partitions(
         warnings.warn("The pruning pipeline has not been thoroughly tested on disconnected graphs. If you run into "
                       "problems, consider using the largest connected component of your graph.")
 
-    if G.is_weighted() and any(x != 1.0 for x in G.es['weight']):
-        warnings.warn("The pruning pipeline does not fully handle weighted graphs and will proceed as though the input "
-                      "graph is unweighted.")
+    if G.is_weighted():
+        if any(w < 0 for w in G.es['weight']):
+            raise ValueError("Edge weights must be non-negative.")
+        if sum(G.es['weight']) <= 0:
+            raise ValueError("Total edge weight must be positive.")
 
     if isinstance(parts, leidenalg.RBConfigurationVertexPartition):
         # convert to (canonically represented) membership vectors if necessary
@@ -612,6 +619,12 @@ def prune_to_multilayer_stable_partitions(
     Runs our full pruning pipeline on a multilayer network. Returns the pruned list of stable partitions whose
     parameter estimates are within the provided ``gamma_start``, ``gamma_end``, ``omega_start``, and ``omega_end``
     bounds.
+
+    Weighted graphs are supported via the ``weight`` edge attribute. Edge weights must be non-negative.
+
+    Interlayer weights are not fully supported by the underlying multilayer SBM theory (uniform interlayer coupling).
+    As such, they are used in the CHAMP step, but parameter estimation treats interlayer edges as unweighted. The code
+    will emit a warning if this is the case.
 
     There are three network layer topology models available, all from Pamfil et al.
 
@@ -669,10 +682,16 @@ def prune_to_multilayer_stable_partitions(
         warnings.warn("The pruning pipeline has not been thoroughly tested on disconnected graphs. If you run into "
                       "problems, consider using the largest connected component of your graph.")
 
-    if (G_intralayer.is_weighted() and any(x != 1.0 for x in G_intralayer.es['weight'])) or (
-            G_interlayer.is_weighted() and any(x != 1.0 for x in G_interlayer.es['weight'])):
-        warnings.warn("The pruning pipeline does not fully handle weighted graphs and will proceed as though the input "
-                      "graph is unweighted.")
+    for G in (G_intralayer, G_interlayer):
+        if G.is_weighted():
+            if any(w < 0 for w in G.es['weight']):
+                raise ValueError("Edge weights must be non-negative.")
+            if sum(G.es['weight']) <= 0:
+                raise ValueError("Total edge weight must be positive.")
+
+    if G_interlayer.is_weighted() and any(x != 1.0 for x in G_interlayer.es['weight']):
+        warnings.warn("Parameter estimation treats interlayer edges as unweighted and will proceed as though all "
+                      "interlayer weights are 1.0.")
 
     if isinstance(parts, leidenalg.RBConfigurationVertexPartition):
         # convert to (canonically represented) membership vectors if necessary
