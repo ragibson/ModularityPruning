@@ -5,10 +5,13 @@ On a machine with
 - CPU: i7-9700K (8 cores, stock, up to 4.9 GHz)
 - RAM: 16 GB DDR4 3200 MHz
 
-the figure generation runtimes that exceed ~5 seconds are as follows.
+the figure generation runtimes that exceeded ~5 seconds for the original
+publication are as follows.
+
+Note that these reflect runtimes for a much older version of the codebase.
 
 | Figures                                                                                                               | Runtime | Saves Progress/Results? |
-|-----------------------------------------------------------------------------------------------------------------------|---------|-------------------------|
+| --------------------------------------------------------------------------------------------------------------------- | ------- | ----------------------- |
 | [karate_club_gamma_estimates](experiments/karate_club_gamma_estimates/karate_club_gamma_estimates.py)                 | ~50 s   | No                      |
 | [karate_club_estimates_per_community](experiments/karate_club_gamma_estimates/karate_club_estimates_per_community.py) | ~40 s   | No                      |
 | [plot_champ_example](experiments/example_figures/plot_champ_example.py)                                               | ~10 s   | No                      |
