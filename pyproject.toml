@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "modularitypruning"
-version = "1.5.1"
+version = "2.0.0"
 description = "Pruning tool to identify small subsets of network partitions that are significant from the perspective of stochastic block model inference."
 readme = "README.md"
 requires-python = ">=3.10"
