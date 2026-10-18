@@ -1,4 +1,7 @@
 # Generates figures 5.7 through 5.10
+# TODO: We support directed parameter estimation now, but Roxana et al. only used the undirected theory.
+#   Small tweaks would be needed to this script to avoid changing the gamma estimates, probably by using a
+#   directed=False copy of the intralayer graph for the parameter estimation step.
 
 import os
 from modularitypruning.champ_utilities import CHAMP_3D
