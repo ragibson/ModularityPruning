@@ -118,6 +118,45 @@ def generate_connected_multilayer_intralayer_SBM(copying_probability, p_in, p_ou
     return G_intralayer, layer_membership
 
 
+def generate_temporal_interlayer_edges(num_nodes_per_layer, num_layers):
+    """Directed interlayer temporal edges (each node connects to itself in the next layer)."""
+    return [(num_nodes_per_layer * layer + v, num_nodes_per_layer * (layer + 1) + v)
+            for layer in range(num_layers - 1) for v in range(num_nodes_per_layer)]
+
+
+def generate_multiplex_interlayer_edges(num_nodes_per_layer, num_layers):
+    """Directed interlayer multiplex edges (each node connects to itself in all other layers)."""
+    return [(num_nodes_per_layer * layer_start + v, num_nodes_per_layer * layer_end + v)
+            for layer_start in range(num_layers) for layer_end in range(num_layers) if layer_start != layer_end
+            for v in range(num_nodes_per_layer)]
+
+
+def generate_temporal_SBM(copying_probability, p_in, p_out, first_layer_membership, num_layers,
+                          weighted=False, directed=False):
+    """Generate an intralayer SBM with temporal interlayer edges.
+
+    As in Pamfil et al., the interlayer edges are directed in one direction."""
+    G_intralayer, layer_membership = generate_connected_multilayer_intralayer_SBM(
+        copying_probability, p_in, p_out, first_layer_membership, num_layers, weighted=weighted,
+        directed=directed)
+    G_interlayer = ig.Graph(generate_temporal_interlayer_edges(len(first_layer_membership), num_layers),
+                            directed=True)
+    return G_intralayer, G_interlayer, layer_membership
+
+
+def generate_multiplex_SBM(copying_probability, p_in, p_out, first_layer_membership, num_layers,
+                           weighted=False, directed=False):
+    """Generate an intralayer SBM with multiplex interlayer edges.
+
+    As in Pamfil et al., the interlayer edges are directed in both directions."""
+    G_intralayer, layer_membership = generate_connected_multilayer_intralayer_SBM(
+        copying_probability, p_in, p_out, first_layer_membership, num_layers, weighted=weighted,
+        directed=directed)
+    G_interlayer = ig.Graph(generate_multiplex_interlayer_edges(len(first_layer_membership), num_layers),
+                            directed=True)
+    return G_intralayer, G_interlayer, layer_membership
+
+
 def generate_SBM(q, directed=False, weighted=False, low=0.5, high=5.0):
     """Generate a planted-partition SBM, optionally directed and/or weighted.
 
