@@ -14,10 +14,10 @@ inference. It:
 
 - Works for single-layer and multi-layer networks
 - Supports both directed and undirected networks
-- Supports weighted networks via the `weight` edge attribute
+- Supports weighted networks via the ``weight`` edge attribute
 - Restricts focus to a fixed number of communities when desired
 - Contains a faster and more robust implementation of the CHAMP (Convex Hull of
-  Admissible Modularity Partitions) algorithm (see `CHAMP_2D` and `CHAMP_3D`)
+  Admissible Modularity Partitions) algorithm (see ``CHAMP_2D`` and ``CHAMP_3D``)
 
 Additional information can be found in the journal article at https://doi.org/10.1038/s41598-022-20142-6 or the
 article's significantly more detailed `Supplementary Information`_.
@@ -27,9 +27,8 @@ article's significantly more detailed `Supplementary Information`_.
 Note: support for weighted and directed networks is an extension beyond the original publication.
 
 Prior to version v1.3.0, we used the Louvain algorithm for modularity maximization instead of Leiden. The deprecated
-module ``modularitypruning.louvain_utilities`` now shims single-layer functions to their corresponding Leiden versions
-in ``modularitypruning.leiden_utilities`` (though it still contains the legacy multi-layer functions since they can be
-faster in general -- leidenalg does not efficiently implement multilayer optimization).
+module ``modularitypruning.louvain_utilities`` now shims functions to their corresponding Leiden versions in
+``modularitypruning.leiden_utilities``.
 
 .. toctree::
    source/installation
