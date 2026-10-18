@@ -6,41 +6,39 @@ import igraph as ig
 from modularitypruning.leiden_utilities import repeated_leiden_from_gammas_omegas
 from modularitypruning.parameter_estimation import iterative_multilayer_resolution_parameter_estimation
 from modularitypruning.parameter_estimation_utilities import gamma_omega_estimate
-from modularitypruning.partition_utilities import num_communities, all_degrees
+from modularitypruning.partition_utilities import num_communities, all_strengths, in_strengths, out_strengths
 from numpy import mean
 
 from .shared_testing_functions import assert_almost_equal_or_both_none_or_nan, generate_random_partition, \
-    generate_connected_multilayer_intralayer_SBM
+    generate_multiplex_SBM
 
 
 class TestMultiplexParameterEstimation(unittest.TestCase):
-    def generate_multiplex_SBM(self, copying_probability, p_in, p_out, first_layer_membership, num_layers,
-                               weighted=False):
-        G_intralayer, layer_membership = generate_connected_multilayer_intralayer_SBM(
-            copying_probability, p_in, p_out, first_layer_membership, num_layers, weighted=weighted
-        )
-
-        # connect each node to itself in all other layers
-        num_nodes_per_layer = len(first_layer_membership)
-        interlayer_edges = [(num_nodes_per_layer * layer_start + v, num_nodes_per_layer * layer_end + v)
-                            for layer_start in range(num_layers) for layer_end in range(num_layers)
-                            if layer_start != layer_end
-                            for v in range(num_nodes_per_layer)]
-        G_interlayer = ig.Graph(interlayer_edges, directed=True)
-
-        return G_intralayer, G_interlayer, layer_membership
-
     def assert_multiplex_SBM_correct_convergence(self, first_layer_membership, copying_probability=0.75, num_layers=10,
-                                                 p_in=0.25, p_out=0.05, weighted=False):
+                                                 p_in=0.25, p_out=0.05, weighted=False, directed=False):
         K = num_communities(first_layer_membership)
-        G_intralayer, G_interlayer, layer_membership = self.generate_multiplex_SBM(copying_probability, p_in, p_out,
-                                                                                   first_layer_membership,
-                                                                                   num_layers, weighted=weighted)
+        G_intralayer, G_interlayer, layer_membership = generate_multiplex_SBM(copying_probability, p_in, p_out,
+                                                                              first_layer_membership,
+                                                                              num_layers, weighted=weighted,
+                                                                              directed=directed)
 
-        # compute ground truth gamma
-        k = mean(all_degrees(G_intralayer))
-        true_theta_in = p_in * (2 * G_intralayer.ecount()) / (k * k) / num_layers
-        true_theta_out = p_out * (2 * G_intralayer.ecount()) / (k * k) / num_layers
+        # compute "ground truth" gamma estimate
+        # note that strengths are just degrees in unweighted graphs
+        if weighted:
+            total_weight = sum(G_intralayer.es['weight'])
+            mean_weight = total_weight / G_intralayer.ecount()
+        else:
+            total_weight = G_intralayer.ecount()
+            mean_weight = 1.0
+        twom = total_weight if directed else 2 * total_weight
+
+        if directed:
+            k_in = mean(in_strengths(G_intralayer))
+            k_out = mean(out_strengths(G_intralayer))
+        else:
+            k_in = k_out = mean(all_strengths(G_intralayer))
+        true_theta_in = mean_weight * p_in * twom / (k_in * k_out) / num_layers
+        true_theta_out = mean_weight * p_out * twom / (k_in * k_out) / num_layers
         true_gamma = (true_theta_in - true_theta_out) / (log(true_theta_in) - log(true_theta_out))
 
         # compute ground truth omega
@@ -100,19 +98,51 @@ class TestMultiplexParameterEstimation(unittest.TestCase):
                     self.assert_multiplex_SBM_correct_convergence(first_layer_membership=membership,
                                                                   num_layers=num_layers, weighted=weighted)
 
+    def test_directed_multiplex_SBM_correct_convergence(self):
+        """Directed analogue of the multiplex convergence tests."""
+        for weighted in [False, True]:
+            with self.subTest(weighted=weighted):
+                membership = generate_random_partition(num_nodes=300, K=3)
+                self.assert_multiplex_SBM_correct_convergence(copying_probability=0.75, num_layers=8,
+                                                              first_layer_membership=membership, weighted=weighted,
+                                                              directed=True)
+
+    def test_directed_asymmetry_multiplex(self):
+        """Simple test to confirm multilayer parameter estimates depend on edge direction.
+
+        The intralayer graph has all edges pointing from the first community to the second."""
+        one_way_edges = [(0, 1), (2, 3), (0, 2), (0, 3), (1, 2), (1, 3)]
+        edge_list = one_way_edges + [(u + 4, v + 4) for (u, v) in one_way_edges]
+        weights = [1.0, 2.0, 3.0, 3.0, 3.0, 3.0, 1.0, 2.0, 3.0, 3.0, 3.0, 3.0]
+        membership = [0, 0, 1, 1, 0, 0, 1, 1]
+        layer_membership = [0, 0, 0, 0, 1, 1, 1, 1]
+        G_interlayer = ig.Graph([(0, 4), (4, 0), (1, 5), (5, 1), (2, 6), (6, 2), (3, 7), (7, 3)], directed=True)
+
+        with self.subTest(model='multiplex'):
+            G = ig.Graph(8, edge_list, directed=True)
+            G.es['weight'] = weights
+            gamma_directed, _ = gamma_omega_estimate(G, G_interlayer, layer_membership, membership, model='multiplex')
+
+            # undirected version for comparison
+            G_undirected = ig.Graph(8, edge_list, directed=False)
+            G_undirected.es['weight'] = weights
+            gamma_undirected_treatment, _ = gamma_omega_estimate(G_undirected, G_interlayer, layer_membership,
+                                                                 membership, model='multiplex')
+            self.assertGreater(abs(gamma_directed - gamma_undirected_treatment), 1e-2)
+
     def test_directed_consistency_multiplex_SBM_leiden(self):
         """Test parameter estimate consistency on a multiplex SBM when the intralayer edges are directed."""
         membership = [0] * 25 + [1] * 25 + [2] * 25
-        G_intralayer, G_interlayer, layer_membership = self.generate_multiplex_SBM(copying_probability=0.9,
-                                                                                   p_in=0.25, p_out=0.05,
-                                                                                   first_layer_membership=membership,
-                                                                                   num_layers=25)
+        G_intralayer, G_interlayer, layer_membership = generate_multiplex_SBM(copying_probability=0.9,
+                                                                              p_in=0.25, p_out=0.05,
+                                                                              first_layer_membership=membership,
+                                                                              num_layers=25)
 
         partitions = repeated_leiden_from_gammas_omegas(G_intralayer, G_interlayer, layer_membership,
                                                         gammas=[0.5, 1.0, 1.5], omegas=[0.5, 1.0, 1.5])
 
-        for partition in partitions:
-            with self.subTest(partition=partition):
+        for i, partition in enumerate(partitions):
+            with self.subTest(partition=i):
                 # here, undirected/directed refers to the intralayer edges only
                 # in Pamfil et al.'s multiplex networks, interlayer edges are taken to be directed
                 gamma_undirected, omega_undirected = gamma_omega_estimate(G_intralayer, G_interlayer, layer_membership,

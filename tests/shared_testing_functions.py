@@ -63,7 +63,7 @@ def generate_igraph_famous():
 
 
 def generate_connected_multilayer_intralayer_SBM(copying_probability, p_in, p_out, first_layer_membership, num_layers,
-                                                 weighted=False, low=0.5, high=5.0):
+                                                 weighted=False, low=0.5, high=5.0, directed=False):
     num_nodes_per_layer = len(first_layer_membership)
     community_labels_per_layer = [[0] * num_nodes_per_layer for _ in range(num_layers)]
     community_labels_per_layer[0] = list(first_layer_membership)
@@ -82,15 +82,22 @@ def generate_connected_multilayer_intralayer_SBM(copying_probability, p_in, p_ou
     combined_community_labels = sum(community_labels_per_layer, [])
     layer_membership = [i for i in range(num_layers) for _ in range(num_nodes_per_layer)]
 
-    for v in range(len(combined_community_labels)):
-        for u in range(v + 1, len(combined_community_labels)):
-            if layer_membership[v] == layer_membership[u]:
-                if combined_community_labels[v] == combined_community_labels[u]:
-                    if random() < p_in:
-                        intralayer_edges.append((u, v))
-                else:
-                    if random() < p_out:
-                        intralayer_edges.append((u, v))
+    if directed:
+        edges_per_layer = [(v, u) for v in range(len(combined_community_labels))
+                           for u in range(len(combined_community_labels))
+                           if layer_membership[v] == layer_membership[u] and v != u]
+    else:
+        edges_per_layer = [(v, u) for v in range(len(combined_community_labels))
+                           for u in range(v + 1, len(combined_community_labels))
+                           if layer_membership[v] == layer_membership[u]]
+
+    for v, u in edges_per_layer:
+        if combined_community_labels[v] == combined_community_labels[u]:
+            if random() < p_in:
+                intralayer_edges.append((v, u))
+        else:
+            if random() < p_out:
+                intralayer_edges.append((v, u))
 
     # force disconnected intralayer nodes to have at least one edge
     intralayer_degrees = [0] * len(combined_community_labels)
@@ -103,12 +110,70 @@ def generate_connected_multilayer_intralayer_SBM(copying_probability, p_in, p_ou
                           if layer_membership[u] == layer_membership[v] and u != v]
             intralayer_edges.append((v, same_layer[randint(0, len(same_layer) - 1)]))
 
-    G_intralayer = ig.Graph(n=len(combined_community_labels), edges=intralayer_edges, directed=False)
+    G_intralayer = ig.Graph(n=len(combined_community_labels), edges=intralayer_edges, directed=directed)
 
     if weighted:
         G_intralayer.es['weight'] = generate_random_values(G_intralayer.ecount(), low, high)
 
     return G_intralayer, layer_membership
+
+
+def generate_temporal_interlayer_edges(num_nodes_per_layer, num_layers):
+    """Directed interlayer temporal edges (each node connects to itself in the next layer)."""
+    return [(num_nodes_per_layer * layer + v, num_nodes_per_layer * (layer + 1) + v)
+            for layer in range(num_layers - 1) for v in range(num_nodes_per_layer)]
+
+
+def generate_multiplex_interlayer_edges(num_nodes_per_layer, num_layers):
+    """Directed interlayer multiplex edges (each node connects to itself in all other layers)."""
+    return [(num_nodes_per_layer * layer_start + v, num_nodes_per_layer * layer_end + v)
+            for layer_start in range(num_layers) for layer_end in range(num_layers) if layer_start != layer_end
+            for v in range(num_nodes_per_layer)]
+
+
+def generate_temporal_SBM(copying_probability, p_in, p_out, first_layer_membership, num_layers,
+                          weighted=False, directed=False):
+    """Generate an intralayer SBM with temporal interlayer edges.
+
+    As in Pamfil et al., the interlayer edges are directed in one direction."""
+    G_intralayer, layer_membership = generate_connected_multilayer_intralayer_SBM(
+        copying_probability, p_in, p_out, first_layer_membership, num_layers, weighted=weighted,
+        directed=directed)
+    G_interlayer = ig.Graph(generate_temporal_interlayer_edges(len(first_layer_membership), num_layers),
+                            directed=True)
+    return G_intralayer, G_interlayer, layer_membership
+
+
+def generate_multiplex_SBM(copying_probability, p_in, p_out, first_layer_membership, num_layers,
+                           weighted=False, directed=False):
+    """Generate an intralayer SBM with multiplex interlayer edges.
+
+    As in Pamfil et al., the interlayer edges are directed in both directions."""
+    G_intralayer, layer_membership = generate_connected_multilayer_intralayer_SBM(
+        copying_probability, p_in, p_out, first_layer_membership, num_layers, weighted=weighted,
+        directed=directed)
+    G_interlayer = ig.Graph(generate_multiplex_interlayer_edges(len(first_layer_membership), num_layers),
+                            directed=True)
+    return G_intralayer, G_interlayer, layer_membership
+
+
+def generate_SBM(q, directed=False, weighted=False, low=0.5, high=5.0):
+    """Generate a planted-partition SBM, optionally directed and/or weighted.
+
+    This is a setup analogous to FIG 1 of Newman's 'Equivalence between modularity optimization and maximum likelihood
+    methods for community detection'.
+    """
+    community_sizes = [250] * q
+    n = sum(community_sizes)
+    p_in = 16 * n / (q * 250 * 249)  # ~16 in-edges per node
+    p_out = 8 * n / (q * (q - 1) * 250 * 250)  # ~8 out-edges per node, spread over the other communities
+    pref_matrix = [[p_in if i == j else p_out for j in range(q)] for i in range(q)]
+    G = ig.Graph.SBM(pref_matrix, community_sizes, directed=directed)
+
+    if weighted:
+        G.es['weight'] = generate_random_values(G.ecount(), low, high)
+
+    return G, p_in, p_out
 
 
 def assert_almost_equal_or_both_none_or_nan(self, first, second, places=10):

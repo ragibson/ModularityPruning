@@ -107,6 +107,8 @@ def CHAMP_2D(
 
     See https://doi.org/10.3390/a10030093 for more details.
 
+    Directed, undirected, weighted, and unweighted graphs are supported.
+
     :param G: graph of interest
     :type G: igraph.Graph
     :param all_parts: partitions to prune
@@ -175,6 +177,8 @@ def CHAMP_3D(
     ``omega_0`` :math:`\leq \omega \leq` ``omega_f``.
 
     See https://doi.org/10.3390/a10030093 for more details.
+
+    Both the intralayer and interlayer graphs may be directed or undirected, weighted or unweighted.
 
     :param G_intralayer: intralayer graph of interest
     :type G_intralayer: igraph.Graph

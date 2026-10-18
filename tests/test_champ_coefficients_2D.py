@@ -4,7 +4,7 @@ from random import seed
 from modularitypruning.champ_utilities import partition_coefficients_2D
 from modularitypruning.leiden_utilities import leiden_part_with_membership, repeated_leiden_from_gammas
 
-from .shared_testing_functions import generate_connected_ER, \
+from .shared_testing_functions import generate_connected_ER, generate_SBM, \
     generate_random_values, generate_random_partitions, generate_igraph_famous
 
 
@@ -86,6 +86,16 @@ class TestCHAMPCoefficients2D(unittest.TestCase):
                 with self.subTest(K_max=K_max, weighted=weighted):
                     self.assert_partition_coefficient_correctness_ER(directed=True, num_partitions=100, K_max=K_max,
                                                                      weighted=weighted)
+
+    def test_partition_coefficient_correctness_directed_SBM(self):
+        """Test on asymmetric directed SBMs, unweighted and weighted."""
+        for q in [2, 3, 5]:
+            for weighted in [False, True]:
+                with self.subTest(q=q, weighted=weighted):
+                    G, _, _ = generate_SBM(q, directed=True, weighted=weighted)
+                    partitions = generate_random_partitions(num_nodes=G.vcount(), num_partitions=100, K_max=q)
+                    coefficients = partition_coefficients_2D(G, partitions)
+                    self.assert_partition_coefficient_correctness(G, partitions, coefficients)
 
     def test_partition_coefficient_correctness_igraph_famous_leiden(self):
         """Test partition coefficient correctness on various famous graphs while obtaining partitions via Leiden.

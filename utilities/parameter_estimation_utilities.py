@@ -24,6 +24,9 @@ def estimate_singlelayer_SBM_parameters(
 
     See https://doi.org/10.1103/PhysRevE.94.052315 for more details.
 
+    For directed graphs, the convention of Leicht and Newman is used: each directed edge is counted once, and the total
+    edge weight is :math:`M = \sum_i k_i^{in}`. Self-loops count as internal edges.
+
     :param G: graph of interest
     :type G: igraph.Graph
     :param partition: partition of interest
@@ -44,15 +47,34 @@ def estimate_singlelayer_SBM_parameters(
     community: list[int] = partition.membership
 
     m_in: float = sum(e['weight'] * (community[e.source] == community[e.target]) for e in G.es)
-    kappa_r_list: list[float] = [0] * len(partition)
-    for e in G.es:
-        kappa_r_list[community[e.source]] += e['weight']
-        kappa_r_list[community[e.target]] += e['weight']
-    sum_kappa_sqr: float = sum(x ** 2 for x in kappa_r_list)
 
-    omega_in: float = (2 * m_in) / (sum_kappa_sqr / (2 * m))
-    # guard for div by zero with single community partition
-    omega_out: float = (2 * m - 2 * m_in) / (2 * m - sum_kappa_sqr / (2 * m)) if len(partition) > 1 else 0
+    if G.is_directed():
+        # directed modularity of Leicht and Newman
+        #   null model term sum_c k_c^{in} * k_c^{out} / M
+        #   internal edge weights are counted once per directed edge
+        kappa_in_list: list[float] = [0] * len(partition)
+        kappa_out_list: list[float] = [0] * len(partition)
+        for e in G.es:
+            kappa_out_list[community[e.source]] += e['weight']
+            kappa_in_list[community[e.target]] += e['weight']
+        sum_kappa_in_kappa_out: float = sum(k_in * k_out for k_in, k_out in zip(kappa_in_list, kappa_out_list))
+        denominator: float = sum_kappa_in_kappa_out / m
+
+        # guard for div by zero with degenerate partitions (e.g., a single community, communities with only incoming
+        # or only outgoing edges)
+        omega_in: float = m_in / denominator if denominator > 0 else 0
+        omega_out: float = (m - m_in) / (m - denominator) if denominator < m else 0
+    else:
+        kappa_r_list: list[float] = [0] * len(partition)
+        for e in G.es:
+            kappa_r_list[community[e.source]] += e['weight']
+            kappa_r_list[community[e.target]] += e['weight']
+        sum_kappa_sqr: float = sum(x ** 2 for x in kappa_r_list)
+        denominator = sum_kappa_sqr / (2 * m)
+
+        # guard for div by zero with a degenerate partition (e.g., a single community)
+        omega_in = (2 * m_in) / denominator if denominator > 0 else 0
+        omega_out = (2 * m - 2 * m_in) / (2 * m - denominator) if denominator < 2 * m else 0
 
     # return estimates for omega_in, omega_out
     return omega_in, omega_out
@@ -65,6 +87,9 @@ def estimate_multilayer_SBM_parameters(
     Nt: list[int] | None = None, m_t: list[float] | None = None
 ) -> MultilayerSBMParameters:
     """Estimates multilayer SBM parameters from a graph and a partition
+
+    For directed intralayer graphs, the convention of Leicht and Newman is used per layer (as in
+    :meth:`~modularitypruning.parameter_estimation_utilities.estimate_singlelayer_SBM_parameters`).
 
     :param G_intralayer: intralayer graph of interest
     :type G_intralayer: igraph.Graph
@@ -116,18 +141,39 @@ def estimate_multilayer_SBM_parameters(
         if community[e.source] == community[e.target] and layer_vec[e.source] == layer_vec[e.target]:
             m_t_in[layer_vec[e.source]] += e['weight']
 
-    kappa_t_r_list: list[list[int]] = [[0] * K for _ in range(T)]
-    for e in G_intralayer.es:
-        layer = layer_vec[e.source]
-        kappa_t_r_list[layer][community[e.source]] += e['weight']
-        kappa_t_r_list[layer][community[e.target]] += e['weight']
-    sum_kappa_t_sqr: list[float] = [sum(x ** 2 for x in kappa_t_r_list[t]) for t in range(T)]
+    if G_intralayer.is_directed():
+        # directed modularity per layer as in estimate_singlelayer_SBM_parameters
+        kappa_t_in_list: list[list[float]] = [[0] * K for _ in range(T)]
+        kappa_t_out_list: list[list[float]] = [[0] * K for _ in range(T)]
+        for e in G_intralayer.es:
+            layer = layer_vec[e.source]
+            kappa_t_out_list[layer][community[e.source]] += e['weight']
+            kappa_t_in_list[layer][community[e.target]] += e['weight']
+        sum_kappa_in_kappa_out_t: list[float] = [
+            sum(k_in * k_out for k_in, k_out in zip(kappa_t_in_list[t], kappa_t_out_list[t]))
+            for t in range(T)]
 
-    theta_in: float = sum(2 * m_t_in[t] for t in range(T)) / sum(sum_kappa_t_sqr[t] / (2 * m_t[t]) for t in range(T))
+        # guard for div by zero with degenerate partitions (e.g., communities with only incoming
+        # or only outgoing edges)
+        theta_in_denominator: float = sum(sum_kappa_in_kappa_out_t[t] / m_t[t] for t in range(T))
+        theta_in: float = sum(m_t_in[t] for t in range(T)) / theta_in_denominator if theta_in_denominator > 0 else 0
 
-    # guard for div by zero with e.g. a single community partition
-    theta_out_numerator: float = sum(2 * m_t[t] - 2 * m_t_in[t] for t in range(T))
-    theta_out_denominator: float = sum(2 * m_t[t] - sum_kappa_t_sqr[t] / (2 * m_t[t]) for t in range(T))
+        theta_out_numerator: float = sum(m_t[t] - m_t_in[t] for t in range(T))
+        theta_out_denominator: float = sum(m_t[t] - sum_kappa_in_kappa_out_t[t] / m_t[t] for t in range(T))
+    else:
+        kappa_t_r_list: list[list[int]] = [[0] * K for _ in range(T)]
+        for e in G_intralayer.es:
+            layer = layer_vec[e.source]
+            kappa_t_r_list[layer][community[e.source]] += e['weight']
+            kappa_t_r_list[layer][community[e.target]] += e['weight']
+        sum_kappa_t_sqr: list[float] = [sum(x ** 2 for x in kappa_t_r_list[t]) for t in range(T)]
+        theta_in_denominator = sum(sum_kappa_t_sqr[t] / (2 * m_t[t]) for t in range(T))
+        theta_in = sum(2 * m_t_in[t] for t in range(T)) / theta_in_denominator if theta_in_denominator > 0 else 0
+
+        theta_out_numerator = sum(2 * m_t[t] - 2 * m_t_in[t] for t in range(T))
+        theta_out_denominator = sum(2 * m_t[t] - sum_kappa_t_sqr[t] / (2 * m_t[t]) for t in range(T))
+
+    # guard for div by zero with a degenerate partition (e.g., a single community)
     if theta_out_denominator == 0:
         theta_out: float = 0
     else:
@@ -161,6 +207,9 @@ def gamma_estimate(G: ig.Graph, partition: LeidenPartition | Membership) -> Gamm
     methods on a degree-corrected, planted partition stochastic block model.
 
     See https://doi.org/10.1103/PhysRevE.94.052315 for more details.
+
+    For directed graphs, the convention of Leicht and Newman is used (see
+    :meth:`~modularitypruning.parameter_estimation_utilities.estimate_singlelayer_SBM_parameters`).
 
     :param G: graph of interest
     :type G: igraph.Graph
@@ -224,6 +273,10 @@ def multiplex_omega_estimate_from_parameters(
     if p == 0:
         return 0
 
+    # guard for degenerate partition with no within-community edges
+    if theta_in == 0:
+        return 0
+
     # if p is 1, the optimal omega is infinite (here, omega_max)
     if p >= 1.0 or theta_in == 1.0:
         return omega_max
@@ -254,6 +307,10 @@ def temporal_multilevel_omega_estimate_from_parameters(
     """
 
     if p == 0:
+        return 0
+
+    # guard for degenerate partition with no within-community edges
+    if theta_in == 0:
         return 0
 
     if theta_out == 0:
@@ -556,7 +613,7 @@ def prune_to_stable_partitions(
     Runs our full pruning pipeline on a singlelayer network. Returns the pruned list of stable partitions whose
     parameter estimates are within the provided ``gamma_start`` and ``gamma_end`` bounds.
 
-    Weighted graphs are supported via the ``weight`` edge attribute. Edge weights must be non-negative.
+    Directed, undirected, weighted, and unweighted graphs are supported. Edge weights must be non-negative.
 
     See https://doi.org/10.1038/s41598-022-20142-6 for more details.
 
@@ -620,7 +677,8 @@ def prune_to_multilayer_stable_partitions(
     parameter estimates are within the provided ``gamma_start``, ``gamma_end``, ``omega_start``, and ``omega_end``
     bounds.
 
-    Weighted graphs are supported via the ``weight`` edge attribute. Edge weights must be non-negative.
+    Directed, undirected, weighted, and unweighted graphs are supported. Interlayer graphs must be directed. Edge
+    weights must be non-negative.
 
     Interlayer weights are not fully supported by the underlying multilayer SBM theory (uniform interlayer coupling).
     As such, they are used in the CHAMP step, but parameter estimation treats interlayer edges as unweighted. The code
@@ -691,7 +749,7 @@ def prune_to_multilayer_stable_partitions(
 
     if G_interlayer.is_weighted() and any(x != 1.0 for x in G_interlayer.es['weight']):
         warnings.warn("Parameter estimation treats interlayer edges as unweighted and will proceed as though all "
-                      "interlayer weights are 1.0.")
+                      "interlayer weights are 1.0, but CHAMP will still use the actual interlayer weights!")
 
     if isinstance(parts, leidenalg.RBConfigurationVertexPartition):
         # convert to (canonically represented) membership vectors if necessary
