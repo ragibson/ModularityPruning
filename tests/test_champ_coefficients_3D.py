@@ -4,7 +4,8 @@ from random import seed
 from modularitypruning.champ_utilities import partition_coefficients_3D
 from modularitypruning.leiden_utilities import multilayer_leiden_part_with_membership, leiden_part_with_membership
 
-from .shared_testing_functions import generate_connected_multilayer_ER, generate_random_partitions
+from .shared_testing_functions import generate_connected_multilayer_ER, generate_random_partitions, \
+    generate_temporal_SBM
 
 
 class TestCHAMPCoefficients3D(unittest.TestCase):
@@ -125,6 +126,27 @@ class TestCHAMPCoefficients3D(unittest.TestCase):
             for weighted in [False, True]:
                 with self.subTest(K_max=K_max, weighted=weighted):
                     self.assert_partition_coefficient_correctness_ER(directed=True, K_max=K_max, weighted=weighted)
+
+    def assert_partition_coefficient_correctness_SBM(self, num_layers, weighted):
+        num_nodes_per_layer = 100
+        first_layer_membership = [i // (num_nodes_per_layer // 3) for i in range(num_nodes_per_layer)]
+
+        G_intralayer, G_interlayer, layer_membership = generate_temporal_SBM(
+            copying_probability=0.9, p_in=0.25, p_out=0.05, first_layer_membership=first_layer_membership,
+            num_layers=num_layers, weighted=weighted, directed=True)
+
+        partitions = generate_random_partitions(num_nodes=G_intralayer.vcount(), num_partitions=100, K_max=3)
+        coefficients = partition_coefficients_3D(G_intralayer, G_interlayer, layer_membership, partitions)
+
+        self.assert_partition_coefficient_correctness(G_intralayer, G_interlayer, layer_membership, partitions,
+                                                      coefficients)
+
+    def test_partition_coefficient_correctness_directed_SBM(self):
+        """Test on asymmetric directed SBMs, unweighted and weighted."""
+        for num_layers in [4, 5]:
+            for weighted in [False, True]:
+                with self.subTest(num_layers=num_layers, weighted=weighted):
+                    self.assert_partition_coefficient_correctness_SBM(num_layers=num_layers, weighted=weighted)
 
     def test_partition_coefficient_correctness_interleaved_directedness(self):
         """Test partition coefficient correctness when directedness of interlayer and intralayer edges do not match."""
