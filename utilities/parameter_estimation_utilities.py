@@ -739,7 +739,7 @@ def prune_to_multilayer_stable_partitions(
 
     if G_interlayer.is_weighted() and any(x != 1.0 for x in G_interlayer.es['weight']):
         warnings.warn("Parameter estimation treats interlayer edges as unweighted and will proceed as though all "
-                      "interlayer weights are 1.0.")
+                      "interlayer weights are 1.0, but CHAMP will still use the actual interlayer weights!")
 
     if isinstance(parts, leidenalg.RBConfigurationVertexPartition):
         # convert to (canonically represented) membership vectors if necessary
