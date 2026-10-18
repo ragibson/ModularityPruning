@@ -6,39 +6,34 @@ import igraph as ig
 from modularitypruning.leiden_utilities import repeated_leiden_from_gammas_omegas
 from modularitypruning.parameter_estimation import iterative_multilayer_resolution_parameter_estimation
 from modularitypruning.parameter_estimation_utilities import gamma_omega_estimate
-from modularitypruning.partition_utilities import num_communities, all_degrees
+from modularitypruning.partition_utilities import num_communities, all_degrees, in_degrees, out_degrees
 from numpy import mean
 
 from .shared_testing_functions import assert_almost_equal_or_both_none_or_nan, generate_random_partition, \
-    generate_connected_multilayer_intralayer_SBM
+    generate_temporal_SBM
 
 
 class TestTemporalAndMultilevelParameterEstimation(unittest.TestCase):
-    def generate_temporal_SBM(self, copying_probability, p_in, p_out, first_layer_membership, num_layers,
-                              weighted=False):
-        G_intralayer, layer_membership = generate_connected_multilayer_intralayer_SBM(
-            copying_probability, p_in, p_out, first_layer_membership, num_layers, weighted=weighted
-        )
-
-        # connect each node to itself in the next layer
-        num_nodes_per_layer = len(first_layer_membership)
-        interlayer_edges = [(num_nodes_per_layer * layer + v, num_nodes_per_layer * layer + v + num_nodes_per_layer)
-                            for layer in range(num_layers - 1) for v in range(num_nodes_per_layer)]
-        G_interlayer = ig.Graph(interlayer_edges, directed=True)
-
-        return G_intralayer, G_interlayer, layer_membership
-
     def assert_temporal_SBM_correct_convergence(self, first_layer_membership, copying_probability=0.75, num_layers=12,
-                                                p_in=0.25, p_out=0.05, tolerance=0.1, weighted=False):
+                                                p_in=0.25, p_out=0.05, tolerance=0.1, weighted=False,
+                                                directed=False):
         K = num_communities(first_layer_membership)
-        G_intralayer, G_interlayer, layer_membership = self.generate_temporal_SBM(copying_probability, p_in, p_out,
-                                                                                  first_layer_membership,
-                                                                                  num_layers, weighted=weighted)
+        G_intralayer, G_interlayer, layer_membership = generate_temporal_SBM(copying_probability, p_in, p_out,
+                                                                             first_layer_membership,
+                                                                             num_layers, weighted=weighted,
+                                                                             directed=directed)
 
         # compute ground truth gamma
-        k = mean(all_degrees(G_intralayer))
-        true_theta_in = p_in * (2 * G_intralayer.ecount()) / (k * k) / num_layers
-        true_theta_out = p_out * (2 * G_intralayer.ecount()) / (k * k) / num_layers
+        # TODO: Why not strengths for weighted graphs? Confirm this.
+        if directed:
+            k_in = mean(in_degrees(G_intralayer))
+            k_out = mean(out_degrees(G_intralayer))
+            true_theta_in = p_in * G_intralayer.ecount() / (k_in * k_out) / num_layers
+            true_theta_out = p_out * G_intralayer.ecount() / (k_in * k_out) / num_layers
+        else:
+            k = mean(all_degrees(G_intralayer))
+            true_theta_in = p_in * (2 * G_intralayer.ecount()) / (k * k) / num_layers
+            true_theta_out = p_out * (2 * G_intralayer.ecount()) / (k * k) / num_layers
         true_gamma = (true_theta_in - true_theta_out) / (log(true_theta_in) - log(true_theta_out))
 
         # compute ground truth omega. For some reason, Pamfil et al. scale this by 1/2 (perhaps due to the directedness
@@ -140,13 +135,48 @@ class TestTemporalAndMultilevelParameterEstimation(unittest.TestCase):
                         )
                     )
 
+    def test_directed_temporal_SBM_correct_convergence(self):
+        """Directed analogue of the temporal/multilevel convergence tests."""
+        for weighted in [False, True]:
+            with self.subTest(weighted=weighted):
+                self.retry_test_across_graph_sizes(
+                    test_fn=lambda n, w=weighted: self.assert_temporal_SBM_correct_convergence(
+                        copying_probability=0.75, num_layers=8,
+                        first_layer_membership=generate_random_partition(num_nodes=n, K=3), weighted=w,
+                        directed=True)
+                )
+
+    def test_directed_asymmetry_temporal(self):
+        """Simple test to confirm multilayer parameter estimates depend on edge direction.
+
+        The intralayer graph has all edges pointing from the first community to the second."""
+        one_way_edges = [(0, 1), (2, 3), (0, 2), (0, 3), (1, 2), (1, 3)]
+        edge_list = one_way_edges + [(u + 4, v + 4) for (u, v) in one_way_edges]
+        weights = [1.0, 2.0, 3.0, 3.0, 3.0, 3.0, 1.0, 2.0, 3.0, 3.0, 3.0, 3.0]
+        membership = [0, 0, 1, 1, 0, 0, 1, 1]
+        layer_membership = [0, 0, 0, 0, 1, 1, 1, 1]
+        G_interlayer = ig.Graph([(0, 4), (1, 5), (2, 6), (3, 7)], directed=True)
+
+        for model in ['temporal', 'multilevel']:
+            with self.subTest(model=model):
+                G = ig.Graph(8, edge_list, directed=True)
+                G.es['weight'] = weights
+                gamma_directed, _ = gamma_omega_estimate(G, G_interlayer, layer_membership, membership, model=model)
+
+                # undirected version for comparison
+                G_undirected = ig.Graph(8, edge_list, directed=False)
+                G_undirected.es['weight'] = weights
+                gamma_undirected_treatment, _ = gamma_omega_estimate(G_undirected, G_interlayer, layer_membership,
+                                                                     membership, model=model)
+                self.assertGreater(abs(gamma_directed - gamma_undirected_treatment), 1e-2)
+
     def test_directed_consistency_temporal_SBM_leiden(self):
         """Test parameter estimate consistency on a temporal SBM when the intralayer edges are directed."""
         membership = [0] * 25 + [1] * 25 + [2] * 25
-        G_intralayer, G_interlayer, layer_membership = self.generate_temporal_SBM(copying_probability=0.9,
-                                                                                  p_in=0.25, p_out=0.05,
-                                                                                  first_layer_membership=membership,
-                                                                                  num_layers=25)
+        G_intralayer, G_interlayer, layer_membership = generate_temporal_SBM(copying_probability=0.9,
+                                                                             p_in=0.25, p_out=0.05,
+                                                                             first_layer_membership=membership,
+                                                                             num_layers=25)
 
         partitions = repeated_leiden_from_gammas_omegas(G_intralayer, G_interlayer, layer_membership,
                                                         gammas=[0.5, 1.0, 1.5], omegas=[0.5, 1.0, 1.5])

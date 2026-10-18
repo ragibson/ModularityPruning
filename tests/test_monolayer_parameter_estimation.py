@@ -28,6 +28,7 @@ class TestMonolayerParameterEstimation(unittest.TestCase):
         G, p_in, p_out = generate_SBM(q, weighted=weighted)
 
         # compute "ground truth" gamma estimate
+        # TODO: Why mean weight scaling for weighted graphs? Confirm this.
         if weighted:
             k = mean(all_strengths(G))
             m = sum(G.es['weight'])
