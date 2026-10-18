@@ -58,20 +58,23 @@ def estimate_singlelayer_SBM_parameters(
             kappa_out_list[community[e.source]] += e['weight']
             kappa_in_list[community[e.target]] += e['weight']
         sum_kappa_in_kappa_out: float = sum(k_in * k_out for k_in, k_out in zip(kappa_in_list, kappa_out_list))
+        denominator: float = sum_kappa_in_kappa_out / m
 
-        omega_in: float = m_in / (sum_kappa_in_kappa_out / m)
-        # guard for div by zero with single community partition
-        omega_out: float = (m - m_in) / (m - sum_kappa_in_kappa_out / m) if len(partition) > 1 else 0
+        # guard for div by zero with degenerate partitions (e.g., a single community, communities with only incoming
+        # or only outgoing edges)
+        omega_in: float = m_in / denominator if denominator > 0 else 0
+        omega_out: float = (m - m_in) / (m - denominator) if denominator < m else 0
     else:
         kappa_r_list: list[float] = [0] * len(partition)
         for e in G.es:
             kappa_r_list[community[e.source]] += e['weight']
             kappa_r_list[community[e.target]] += e['weight']
         sum_kappa_sqr: float = sum(x ** 2 for x in kappa_r_list)
+        denominator = sum_kappa_sqr / (2 * m)
 
-        omega_in = (2 * m_in) / (sum_kappa_sqr / (2 * m))
-        # guard for div by zero with single community partition
-        omega_out = (2 * m - 2 * m_in) / (2 * m - sum_kappa_sqr / (2 * m)) if len(partition) > 1 else 0
+        # guard for div by zero with a degenerate partition (e.g., a single community)
+        omega_in = (2 * m_in) / denominator if denominator > 0 else 0
+        omega_out = (2 * m - 2 * m_in) / (2 * m - denominator) if denominator < 2 * m else 0
 
     # return estimates for omega_in, omega_out
     return omega_in, omega_out
@@ -138,8 +141,6 @@ def estimate_multilayer_SBM_parameters(
         if community[e.source] == community[e.target] and layer_vec[e.source] == layer_vec[e.target]:
             m_t_in[layer_vec[e.source]] += e['weight']
 
-    kappa_t_r_list: list[list[int]] = [[0] * K for _ in range(T)]
-
     if G_intralayer.is_directed():
         # directed modularity per layer as in estimate_singlelayer_SBM_parameters
         kappa_t_in_list: list[list[float]] = [[0] * K for _ in range(T)]
@@ -152,26 +153,27 @@ def estimate_multilayer_SBM_parameters(
             sum(k_in * k_out for k_in, k_out in zip(kappa_t_in_list[t], kappa_t_out_list[t]))
             for t in range(T)]
 
-        theta_in: float = sum(m_t_in[t] for t in range(T)) / sum(sum_kappa_in_kappa_out_t[t] / m_t[t]
-                                                                 for t in range(T))
+        # guard for div by zero with degenerate partitions (e.g., communities with only incoming
+        # or only outgoing edges)
+        theta_in_denominator: float = sum(sum_kappa_in_kappa_out_t[t] / m_t[t] for t in range(T))
+        theta_in: float = sum(m_t_in[t] for t in range(T)) / theta_in_denominator if theta_in_denominator > 0 else 0
 
-        # guard for div by zero with e.g. a single community partition
         theta_out_numerator: float = sum(m_t[t] - m_t_in[t] for t in range(T))
         theta_out_denominator: float = sum(m_t[t] - sum_kappa_in_kappa_out_t[t] / m_t[t] for t in range(T))
     else:
+        kappa_t_r_list: list[list[int]] = [[0] * K for _ in range(T)]
         for e in G_intralayer.es:
             layer = layer_vec[e.source]
             kappa_t_r_list[layer][community[e.source]] += e['weight']
             kappa_t_r_list[layer][community[e.target]] += e['weight']
         sum_kappa_t_sqr: list[float] = [sum(x ** 2 for x in kappa_t_r_list[t]) for t in range(T)]
+        theta_in_denominator = sum(sum_kappa_t_sqr[t] / (2 * m_t[t]) for t in range(T))
+        theta_in = sum(2 * m_t_in[t] for t in range(T)) / theta_in_denominator if theta_in_denominator > 0 else 0
 
-        theta_in = sum(2 * m_t_in[t] for t in range(T)) / sum(sum_kappa_t_sqr[t] / (2 * m_t[t])
-                                                              for t in range(T))
-
-        # guard for div by zero with e.g. a single community partition
         theta_out_numerator = sum(2 * m_t[t] - 2 * m_t_in[t] for t in range(T))
         theta_out_denominator = sum(2 * m_t[t] - sum_kappa_t_sqr[t] / (2 * m_t[t]) for t in range(T))
 
+    # guard for div by zero with a degenerate partition (e.g., a single community)
     if theta_out_denominator == 0:
         theta_out: float = 0
     else:
@@ -271,6 +273,10 @@ def multiplex_omega_estimate_from_parameters(
     if p == 0:
         return 0
 
+    # guard for degenerate partition with no within-community edges
+    if theta_in == 0:
+        return 0
+
     # if p is 1, the optimal omega is infinite (here, omega_max)
     if p >= 1.0 or theta_in == 1.0:
         return omega_max
@@ -301,6 +307,10 @@ def temporal_multilevel_omega_estimate_from_parameters(
     """
 
     if p == 0:
+        return 0
+
+    # guard for degenerate partition with no within-community edges
+    if theta_in == 0:
         return 0
 
     if theta_out == 0:
