@@ -13,7 +13,8 @@ from modularitypruning.leiden_utilities import (repeated_leiden_from_gammas, rep
                                                 repeated_leiden_from_gammas_omegas,
                                                 repeated_parallel_leiden_from_gammas_omegas)
 
-from .shared_testing_functions import generate_connected_ER, generate_connected_multilayer_intralayer_SBM
+from .shared_testing_functions import generate_connected_ER, generate_connected_multilayer_intralayer_SBM, \
+    generate_temporal_interlayer_edges
 
 # this set of tests ensures that we achieve >= 75% parallel performance compared to perfect scaling of
 # single-threaded jobs to multiple cores (with no memory contention). This threshold will be decreased in
@@ -118,9 +119,8 @@ class TestParallelLeidenPerformance(unittest.TestCase):
         G_intralayer, layer_membership = generate_connected_multilayer_intralayer_SBM(
             copying_probability=0.9, p_in=0.8, p_out=0.2, first_layer_membership=[0] * 5 + [1] * 5, num_layers=5
         )
-        interlayer_edges = [(10 * layer + v, 10 * layer + v + 10)
-                            for layer in range(5 - 1) for v in range(10)]
-        G_interlayer = ig.Graph(interlayer_edges, directed=True)
+        G_interlayer = ig.Graph(generate_temporal_interlayer_edges(num_nodes_per_layer=10, num_layers=5),
+                                directed=True)
 
         gammas = np.linspace(0.0, 2.0, 100)
         omegas = np.linspace(0.0, 2.0, 100)
@@ -133,9 +133,8 @@ class TestParallelLeidenPerformance(unittest.TestCase):
         G_intralayer, layer_membership = generate_connected_multilayer_intralayer_SBM(
             copying_probability=0.9, p_in=0.15, p_out=0.05, first_layer_membership=[0] * 50 + [1] * 50, num_layers=25
         )
-        interlayer_edges = [(100 * layer + v, 100 * layer + v + 100)
-                            for layer in range(25 - 1) for v in range(100)]
-        G_interlayer = ig.Graph(interlayer_edges, directed=True)
+        G_interlayer = ig.Graph(generate_temporal_interlayer_edges(num_nodes_per_layer=100, num_layers=25),
+                                directed=True)
 
         gammas = np.linspace(0.0, 2.0, 7)
         omegas = np.linspace(0.0, 2.0, 7)
