@@ -5,7 +5,7 @@ from random import seed
 import igraph as ig
 from modularitypruning.parameter_estimation import iterative_monolayer_resolution_parameter_estimation
 from modularitypruning.parameter_estimation_utilities import gamma_estimate
-from modularitypruning.partition_utilities import all_degrees, all_strengths, in_strengths, out_strengths
+from modularitypruning.partition_utilities import (all_strengths, in_strengths, out_strengths)
 from numpy import mean
 
 from .shared_testing_functions import assert_almost_equal_or_both_none_or_nan, generate_SBM, \
@@ -28,17 +28,12 @@ class TestMonolayerParameterEstimation(unittest.TestCase):
         G, p_in, p_out = generate_SBM(q, weighted=weighted)
 
         # compute "ground truth" gamma estimate
-        # TODO: Why mean weight scaling for weighted graphs? Confirm this.
-        if weighted:
-            k = mean(all_strengths(G))
-            m = sum(G.es['weight'])
-            mean_weight = m / G.ecount()
-            true_omega_in = mean_weight * p_in * (2 * m) / (k * k)
-            true_omega_out = mean_weight * p_out * (2 * m) / (k * k)
-        else:
-            k = mean(all_degrees(G))
-            true_omega_in = p_in * (2 * G.ecount()) / (k * k)
-            true_omega_out = p_out * (2 * G.ecount()) / (k * k)
+        # note that strengths are just degrees in unweighted graphs
+        m = sum(G.es['weight']) if weighted else G.ecount()
+        mean_weight = m / G.ecount() if weighted else 1.0
+        k = mean(all_strengths(G))
+        true_omega_in = mean_weight * p_in * (2 * m) / (k * k)
+        true_omega_out = mean_weight * p_out * (2 * m) / (k * k)
         true_gamma = (true_omega_in - true_omega_out) / (log(true_omega_in) - log(true_omega_out))
 
         gamma, _ = iterative_monolayer_resolution_parameter_estimation(G, gamma=1.0)

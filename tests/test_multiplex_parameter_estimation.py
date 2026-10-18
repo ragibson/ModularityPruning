@@ -6,7 +6,7 @@ import igraph as ig
 from modularitypruning.leiden_utilities import repeated_leiden_from_gammas_omegas
 from modularitypruning.parameter_estimation import iterative_multilayer_resolution_parameter_estimation
 from modularitypruning.parameter_estimation_utilities import gamma_omega_estimate
-from modularitypruning.partition_utilities import num_communities, all_degrees, in_degrees, out_degrees
+from modularitypruning.partition_utilities import num_communities, all_strengths, in_strengths, out_strengths
 from numpy import mean
 
 from .shared_testing_functions import assert_almost_equal_or_both_none_or_nan, generate_random_partition, \
@@ -22,16 +22,23 @@ class TestMultiplexParameterEstimation(unittest.TestCase):
                                                                               num_layers, weighted=weighted,
                                                                               directed=directed)
 
-        # compute ground truth gamma
-        if directed:
-            k_in = mean(in_degrees(G_intralayer))
-            k_out = mean(out_degrees(G_intralayer))
-            true_theta_in = p_in * G_intralayer.ecount() / (k_in * k_out) / num_layers
-            true_theta_out = p_out * G_intralayer.ecount() / (k_in * k_out) / num_layers
+        # compute "ground truth" gamma estimate
+        # note that strengths are just degrees in unweighted graphs
+        if weighted:
+            total_weight = sum(G_intralayer.es['weight'])
+            mean_weight = total_weight / G_intralayer.ecount()
         else:
-            k = mean(all_degrees(G_intralayer))
-            true_theta_in = p_in * (2 * G_intralayer.ecount()) / (k * k) / num_layers
-            true_theta_out = p_out * (2 * G_intralayer.ecount()) / (k * k) / num_layers
+            total_weight = G_intralayer.ecount()
+            mean_weight = 1.0
+        twom = total_weight if directed else 2 * total_weight
+
+        if directed:
+            k_in = mean(in_strengths(G_intralayer))
+            k_out = mean(out_strengths(G_intralayer))
+        else:
+            k_in = k_out = mean(all_strengths(G_intralayer))
+        true_theta_in = mean_weight * p_in * twom / (k_in * k_out) / num_layers
+        true_theta_out = mean_weight * p_out * twom / (k_in * k_out) / num_layers
         true_gamma = (true_theta_in - true_theta_out) / (log(true_theta_in) - log(true_theta_out))
 
         # compute ground truth omega
