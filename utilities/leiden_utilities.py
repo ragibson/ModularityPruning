@@ -51,6 +51,8 @@ def singlelayer_leiden(
 ) -> SingleLayerLeidenResult:
     r"""Run the Leiden modularity maximization algorithm at a single :math:`\gamma` value.
 
+    Directed, undirected, weighted, and unweighted graphs are supported.
+
     :param G: graph of interest
     :type G: igraph.Graph
     :param gamma: gamma (resolution parameter) to run Leiden at
@@ -156,6 +158,8 @@ def multilayer_leiden(
     omega: float, optimiser: leidenalg.Optimiser | None = None, return_partition: bool = False,
 ) -> MultilayerLeidenResult:
     r"""Run the Leiden modularity maximization algorithm at a single (:math:`\gamma, \omega`) value.
+
+    Both the intralayer and interlayer graphs may be directed or undirected, weighted or unweighted.
 
     WARNING: Optimization can be EXTREMELY slow for large numbers of layers! Leidenalg does not properly implement
     multilayer optimization.

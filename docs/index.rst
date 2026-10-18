@@ -13,6 +13,7 @@ partitions that are significant from the perspective of stochastic block model
 inference. It:
 
 - Works for single-layer and multi-layer networks
+- Supports both directed and undirected networks
 - Supports weighted networks via the `weight` edge attribute
 - Restricts focus to a fixed number of communities when desired
 - Contains a faster and more robust implementation of the CHAMP (Convex Hull of
@@ -22,6 +23,8 @@ Additional information can be found in the journal article at https://doi.org/10
 article's significantly more detailed `Supplementary Information`_.
 
 .. _Supplementary Information: https://static-content.springer.com/esm/art%3A10.1038%2Fs41598-022-20142-6/MediaObjects/41598_2022_20142_MOESM1_ESM.pdf
+
+Note: support for weighted and directed networks is an extension beyond the original publication.
 
 Prior to version v1.3.0, we used the Louvain algorithm for modularity maximization instead of Leiden. The deprecated
 module ``modularitypruning.louvain_utilities`` now shims single-layer functions to their corresponding Leiden versions
