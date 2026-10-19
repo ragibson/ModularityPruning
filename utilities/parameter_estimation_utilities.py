@@ -353,7 +353,7 @@ def omega_function_from_model(
     :type model: str
     :param omega_max: maximum allowed value for omega
     :type omega_max: float
-    :param T: number of layers in input graph (automatically computed if None)
+    :param T: number of layers in input graph
     :type T: int
     :return: an "update_omega" function
     :rtype: function

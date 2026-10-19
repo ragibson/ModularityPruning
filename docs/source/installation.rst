@@ -16,4 +16,4 @@ You can also install it directly from the source by cloning the GitHub repositor
 
    $ git clone https://github.com/ragibson/ModularityPruning
    $ cd ModularityPruning
-   $ python3 setup.py install  # might require the --user flag
+   $ pip install .  # might require the --user flag

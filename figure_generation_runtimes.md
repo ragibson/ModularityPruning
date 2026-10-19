@@ -25,4 +25,4 @@ Note that these reflect runtimes for a much older version of the codebase.
 | [bistable_SBM_test_constant_probs](experiments/bistable_SBM/bistable_SBM_test_constant_probs.py)                      | ~2 d    | Yes                     |
 | [lfr_benchmark_test](experiments/lfr_benchmark_test/lfr_benchmark_test.py)                                            | ~3.0 h  | Yes                     |
 | [hierarchical_SBM_test](experiments/hierarchical_SBM_test/hierarchical_SBM_test.py)                                   | ~1.5 h  | Yes                     |
-| [runtime_comparison_with_louvain](experiments/miscellaneous_tests/runetime_comparison_with_louvain.py)                | ~25 m   | Yes                     |
+| [runtime_comparison_with_louvain](experiments/miscellaneous_tests/runtime_comparison_with_louvain.py)                    | ~25 m   | Yes                     |

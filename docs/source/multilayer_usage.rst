@@ -5,9 +5,6 @@ Note that this documentation page only includes the functions intended for multi
 
 For single-layer usage, see :doc:`usage`.
 
-.. _modularitypruning:
-  :noindex:
-
 modularitypruning
 -----------------
 

@@ -89,7 +89,7 @@ def plot_2d_domains(
 ) -> None:
     """Plot partition dominance ranges in the (gamma, omega) plane, using the domains from CHAMP_3D.
 
-    Limits output to xlim and ylim dimensions. Note that the plotting here has x=gamma and y=omega.
+    Limits output to xlim and ylim dimensions. Note that the plotting here has x=omega and y=gamma by default.
 
     :param domains: CHAMP domains as returned from :meth:`~modularitypruning.champ_utilities.CHAMP_3D`.
     :param xlim: plotting x limits
