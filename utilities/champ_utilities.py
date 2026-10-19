@@ -35,68 +35,69 @@ def get_interior_point(
     # We suppress these two warnings to avoid cluttering output, some of these warnings are expected as the result is
     # converged to and we've checked the consistency of results in our own tests. Moreover, we explicitly check the
     # interior point's validity prior to returning.
-    warnings.filterwarnings("ignore", category=LinAlgWarning)
-    warnings.filterwarnings("ignore", category=OptimizeWarning)
+    with warnings.catch_warnings():  # revert our filters once we're done
+        warnings.filterwarnings("ignore", category=LinAlgWarning)
+        warnings.filterwarnings("ignore", category=OptimizeWarning)
 
-    normals, offsets = np.split(halfspaces, [-1], axis=1)
+        normals, offsets = np.split(halfspaces, [-1], axis=1)
 
-    # in our singlelayer case, the last four halfspaces are boundary halfspaces (a square)
-    # for multilayer, the last six are boundaries (a cube)
-    if normals.shape[1] == 2:
-        interior_hs, boundaries = np.split(halfspaces, [-4], axis=0)
-    elif normals.shape[1] == 3:
-        interior_hs, boundaries = np.split(halfspaces, [-6], axis=0)
-    else:
-        raise ValueError(f"get_interior_point received unhandled dimension {normals.shape[1]}!")
-
-    num_retries: int = 0
-
-    while True:  # retry until success
-        # randomly sample some of the halfspaces
-        sample_len: int = min(initial_num_sampled, len(interior_hs))  # len(interior_hs)
-        sampled_hs: FloatArray = np.vstack((
-            interior_hs[choice(interior_hs.shape[0], sample_len, replace=False)], boundaries))
-
-        # compute the Chebyshev center of the sampled halfspaces' intersection
-        norm_vector: FloatArray = np.reshape(
-            np.linalg.norm(sampled_hs[:, :-1], axis=1), (sampled_hs.shape[0], 1))
-        c: FloatArray = np.zeros((sampled_hs.shape[1],))
-        c[-1] = -1
-        A: FloatArray = np.hstack((sampled_hs[:, :-1], norm_vector))
-        b: FloatArray = -sampled_hs[:, -1:]
-
-        res = linprog(c, A_ub=A, b_ub=b, bounds=(-np.inf, np.inf), method='highs-ipm')
-
-        # check solution if optimization succeeded, even with difficulties
-        #     res.status codes
-        #     0 : Optimization terminated successfully.
-        #     1 : Iteration limit reached.
-        #     2 : Problem appears to be infeasible.
-        #     3 : Problem appears to be unbounded.
-        #     4 : Numerical difficulties encountered.
-        if res.success or res.status in {0, 1, 4}:
-            if res.x is None:
-                # satisfying mypy, this should never occur
-                raise ValueError(f"Scipy's linprog claimed success but returned no solution! {res}")
-            intpt: FloatArray = res.x[:-1]  # res.x contains [interior_point, distance to enclosing polyhedron]
-
-            # ensure that the computed point is actually interior to all halfspaces
-            if (np.dot(normals, intpt) + np.transpose(offsets) < 0).all():
-                break
-        elif res.status in {2, 3}:
-            # if we ever fail, the linear program seems impossible
-            raise ValueError("get_interior_point problem is impossible or degenerate!")
-
-        if num_retries > full_retry_limit:
-            raise ValueError("get_interior_point is unable to find a well-conditioned solution, "
-                             "but the problem does not appear impossible or degenerate?")
-
-        if initial_num_sampled >= len(interior_hs):
-            num_retries += 1
+        # in our singlelayer case, the last four halfspaces are boundary halfspaces (a square)
+        # for multilayer, the last six are boundaries (a cube)
+        if normals.shape[1] == 2:
+            interior_hs, boundaries = np.split(halfspaces, [-4], axis=0)
+        elif normals.shape[1] == 3:
+            interior_hs, boundaries = np.split(halfspaces, [-6], axis=0)
         else:
-            initial_num_sampled *= 2  # try again and sample more halfspaces this time
+            raise ValueError(f"get_interior_point received unhandled dimension {normals.shape[1]}!")
 
-    return intpt
+        num_retries: int = 0
+
+        while True:  # retry until success
+            # randomly sample some of the halfspaces
+            sample_len: int = min(initial_num_sampled, len(interior_hs))  # len(interior_hs)
+            sampled_hs: FloatArray = np.vstack((
+                interior_hs[choice(interior_hs.shape[0], sample_len, replace=False)], boundaries))
+
+            # compute the Chebyshev center of the sampled halfspaces' intersection
+            norm_vector: FloatArray = np.reshape(
+                np.linalg.norm(sampled_hs[:, :-1], axis=1), (sampled_hs.shape[0], 1))
+            c: FloatArray = np.zeros((sampled_hs.shape[1],))
+            c[-1] = -1
+            A: FloatArray = np.hstack((sampled_hs[:, :-1], norm_vector))
+            b: FloatArray = -sampled_hs[:, -1:]
+
+            res = linprog(c, A_ub=A, b_ub=b, bounds=(-np.inf, np.inf), method='highs-ipm')
+
+            # check solution if optimization succeeded, even with difficulties
+            #     res.status codes
+            #     0 : Optimization terminated successfully.
+            #     1 : Iteration limit reached.
+            #     2 : Problem appears to be infeasible.
+            #     3 : Problem appears to be unbounded.
+            #     4 : Numerical difficulties encountered.
+            if res.success or res.status in {0, 1, 4}:
+                if res.x is None:
+                    # satisfying mypy, this should never occur
+                    raise ValueError(f"Scipy's linprog claimed success but returned no solution! {res}")
+                intpt: FloatArray = res.x[:-1]  # res.x contains [interior_point, distance to enclosing polyhedron]
+
+                # ensure that the computed point is actually interior to all halfspaces
+                if (np.dot(normals, intpt) + np.transpose(offsets) < 0).all():
+                    break
+            elif res.status in {2, 3}:
+                # if we ever fail, the linear program seems impossible
+                raise ValueError("get_interior_point problem is impossible or degenerate!")
+
+            if num_retries > full_retry_limit:
+                raise ValueError("get_interior_point is unable to find a well-conditioned solution, "
+                                 "but the problem does not appear impossible or degenerate?")
+
+            if initial_num_sampled >= len(interior_hs):
+                num_retries += 1
+            else:
+                initial_num_sampled *= 2  # try again and sample more halfspaces this time
+
+        return intpt
 
 
 def CHAMP_2D(

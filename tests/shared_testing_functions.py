@@ -11,7 +11,7 @@ def generate_random_values(num_values, start_value, end_value):
 
 def generate_connected_ER(n, m, directed, weighted=False, low=0.1, high=10.0):
     G = ig.Graph.Erdos_Renyi(n=n, m=m, directed=directed)
-    while not G.is_connected():
+    while not G.is_connected(mode='weak'):
         G = ig.Graph.Erdos_Renyi(n=n, m=m, directed=directed)
     if weighted:
         G.es['weight'] = generate_random_values(G.ecount(), low, high)

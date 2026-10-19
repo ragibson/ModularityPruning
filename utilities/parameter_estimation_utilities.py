@@ -575,7 +575,6 @@ def gamma_omega_estimates_to_stable_partitions(
 
     for polyverts, membership, gamma_est, omega_est in domains_with_estimates:
         if gamma_est is None or omega_est is None:
-            print(gamma_est, omega_est)
             continue
 
         centroid_x: float = np.mean([x[0] for x in polyverts])
@@ -633,7 +632,7 @@ def prune_to_stable_partitions(
     :rtype: list[tuple[int, ...]]
     """
 
-    if not G.is_connected():
+    if not G.is_connected(mode='weak'):
         warnings.warn("The pruning pipeline has not been thoroughly tested on disconnected graphs. If you run into "
                       "problems, consider using the largest connected component of your graph.")
 
@@ -643,12 +642,15 @@ def prune_to_stable_partitions(
         if sum(G.es['weight']) <= 0:
             raise ValueError("Total edge weight must be positive.")
 
-    if isinstance(parts, leidenalg.RBConfigurationVertexPartition):
-        # convert to (canonically represented) membership vectors if necessary
-        parts = {sorted_tuple(part.membership) for part in parts}
-    else:
-        # assume parts contains membership vectors
-        parts = {sorted_tuple(part) for part in parts}
+    canonical_parts: set[Membership] = set()
+    for part in parts:
+        if isinstance(part, leidenalg.RBConfigurationVertexPartition):
+            # convert to (canonically represented) membership vectors if necessary
+            canonical_parts.add(sorted_tuple(tuple(part.membership)))
+        else:
+            # assume parts contains membership vectors
+            canonical_parts.add(sorted_tuple(part))
+    parts = canonical_parts
 
     if restrict_num_communities is not None:
         parts = {part for part in parts if num_communities(part) == restrict_num_communities}
@@ -736,7 +738,7 @@ def prune_to_multilayer_stable_partitions(
     # check graph is connected (cannot just check intra/interlayer graphs since they will both be disconnected)
     G_combined: ig.Graph = ig.Graph(edges=[(e.source, e.target) for e in G_intralayer.es] +
                                     [(e.source, e.target) for e in G_interlayer.es])
-    if not G_combined.is_connected() or G_combined.vcount() != G_interlayer.vcount():
+    if not G_combined.is_connected(mode='weak') or G_combined.vcount() != G_interlayer.vcount():
         warnings.warn("The pruning pipeline has not been thoroughly tested on disconnected graphs. If you run into "
                       "problems, consider using the largest connected component of your graph.")
 
@@ -751,12 +753,15 @@ def prune_to_multilayer_stable_partitions(
         warnings.warn("Parameter estimation treats interlayer edges as unweighted and will proceed as though all "
                       "interlayer weights are 1.0, but CHAMP will still use the actual interlayer weights!")
 
-    if isinstance(parts, leidenalg.RBConfigurationVertexPartition):
-        # convert to (canonically represented) membership vectors if necessary
-        parts = {sorted_tuple(part.membership) for part in parts}
-    else:
-        # assume parts contains membership vectors
-        parts = {sorted_tuple(part) for part in parts}
+    canonical_parts: set[Membership] = set()
+    for part in parts:
+        if isinstance(part, leidenalg.RBConfigurationVertexPartition):
+            # convert to (canonically represented) membership vectors if necessary
+            canonical_parts.add(sorted_tuple(tuple(part.membership)))
+        else:
+            # assume parts contains membership vectors
+            canonical_parts.add(sorted_tuple(part))
+    parts = canonical_parts
 
     if restrict_num_communities is not None:
         parts = {part for part in parts if num_communities(part) == restrict_num_communities}
