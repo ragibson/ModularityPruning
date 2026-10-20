@@ -13,7 +13,7 @@ from .partition_utilities import num_communities
 from .types import (Domain, DomainWithEstimates, FloatArray, GammaEstimate,
                     GammaEstimateValue, GammaOmegaEstimate, GammaRange, GammaUpdateFunc, LayerVector,
                     LeidenPartition, Membership, MultilayerSBMParameters, OmegaUpdateFunc,
-                    PersistenceFunc, SinglelayerSBMParameters)
+                    PersistenceFunc, PrunablePartitions, SinglelayerSBMParameters)
 
 
 def estimate_singlelayer_SBM_parameters(
@@ -603,7 +603,7 @@ def gamma_omega_estimates_to_stable_partitions(
 
 
 def prune_to_stable_partitions(
-    G: ig.Graph, parts: set[Membership],
+    G: ig.Graph, parts: PrunablePartitions,
     gamma_start: float, gamma_end: float,
     restrict_num_communities: int | None = None,
     single_threaded: bool = False
@@ -619,7 +619,7 @@ def prune_to_stable_partitions(
     :param G: graph of interest
     :type G: igraph.Graph
     :param parts: partitions to prune
-    :type parts: set[tuple[int, ...]]
+    :type parts: list or set of membership tuples or leidenalg.RBConfigurationVertexPartitions
     :param gamma_start: starting gamma value for CHAMP
     :type gamma_start: float
     :param gamma_end: ending gamma value for CHAMP
@@ -670,7 +670,7 @@ def prune_to_stable_partitions(
 def prune_to_multilayer_stable_partitions(
     G_intralayer: ig.Graph, G_interlayer: ig.Graph,
     layer_vec: LayerVector, model: str,
-    parts: set[Membership], gamma_start: float, gamma_end: float,
+    parts: PrunablePartitions, gamma_start: float, gamma_end: float,
     omega_start: float, omega_end: float,
     restrict_num_communities: int | None = None, single_threaded: bool = False
 ) -> list[Membership]:
@@ -715,7 +715,7 @@ def prune_to_multilayer_stable_partitions(
     :param model: network layer topology (temporal, multilevel, multiplex)
     :type model: str
     :param parts: partitions to prune
-    :type parts: set[tuple[int, ...]]
+    :type parts: list or set of membership tuples or leidenalg.RBConfigurationVertexPartitions
     :param gamma_start: starting gamma value for CHAMP
     :type gamma_start: float
     :param gamma_end: ending gamma value for CHAMP

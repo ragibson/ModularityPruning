@@ -29,6 +29,9 @@ MultilayerLeidenParts: TypeAlias = tuple[list[LeidenPartition], leidenalg.CPMVer
 SingleLayerLeidenResult: TypeAlias = LeidenPartition | Membership
 MultilayerLeidenResult: TypeAlias = list[LeidenPartition] | Membership
 
+# collections of partitions for pruning (membership vectors or leiden partitions)
+PrunablePartitions = Sequence[LeidenPartition | Membership] | set[LeidenPartition | Membership]
+
 # CHAMP 2D domains and parameter estimates
 GammaEstimateValue = np.float64 | None
 GammaEstimate = tuple[np.float64, np.float64, Membership, GammaEstimateValue]
