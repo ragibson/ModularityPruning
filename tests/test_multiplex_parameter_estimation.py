@@ -114,7 +114,7 @@ class TestMultiplexParameterEstimation(unittest.TestCase):
         one_way_edges = [(0, 1), (2, 3), (0, 2), (0, 3), (1, 2), (1, 3)]
         edge_list = one_way_edges + [(u + 4, v + 4) for (u, v) in one_way_edges]
         weights = [1.0, 2.0, 3.0, 3.0, 3.0, 3.0, 1.0, 2.0, 3.0, 3.0, 3.0, 3.0]
-        membership = [0, 0, 1, 1, 0, 0, 1, 1]
+        membership = (0, 0, 1, 1, 0, 0, 1, 1)
         layer_membership = [0, 0, 0, 0, 1, 1, 1, 1]
         G_interlayer = ig.Graph([(0, 4), (4, 0), (1, 5), (5, 1), (2, 6), (6, 2), (3, 7), (7, 3)], directed=True)
 
@@ -128,6 +128,8 @@ class TestMultiplexParameterEstimation(unittest.TestCase):
             G_undirected.es['weight'] = weights
             gamma_undirected_treatment, _ = gamma_omega_estimate(G_undirected, G_interlayer, layer_membership,
                                                                  membership, model='multiplex')
+            assert gamma_directed is not None
+            assert gamma_undirected_treatment is not None
             self.assertGreater(abs(gamma_directed - gamma_undirected_treatment), 1e-2)
 
     def test_directed_consistency_multiplex_SBM_leiden(self):

@@ -16,6 +16,7 @@ IntSequence = Sequence[int] | IntArray
 FloatSequence = Sequence[float] | FloatArray
 
 # community membership vector and layer membership vector
+# note: some parts of the code do actually support list[int] for membership, but this is simpler and more consistent
 Membership = tuple[int, ...]
 LayerVector = list[int]
 LayerTuple = tuple[int, ...]  # needed for hashing

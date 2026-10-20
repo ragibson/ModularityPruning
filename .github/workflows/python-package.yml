@@ -44,7 +44,7 @@ jobs:
         run: |
           source env/bin/activate
           python -m pip install mypy
-          python -m mypy utilities/ --install-types --non-interactive
+          python -m mypy --install-types --non-interactive
       - name: Test with pytest
         timeout-minutes: 45
         run: |

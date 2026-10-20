@@ -98,6 +98,8 @@ class TestMonolayerParameterEstimation(unittest.TestCase):
                 G_undirected.es['weight'] = weights
                 gamma_undirected_treatment = gamma_estimate(G_undirected, membership)
 
+                assert gamma_directed is not None
+                assert gamma_undirected_treatment is not None
                 self.assertGreater(abs(gamma_directed - gamma_undirected_treatment), 1e-2)
 
 
