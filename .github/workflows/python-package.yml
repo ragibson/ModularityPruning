@@ -30,7 +30,7 @@ jobs:
 
           pip install .
 
-          pip install cython flake8 pytest pytest-xdist
+          pip install cython flake8 pytest pytest-cov pytest-xdist
       - name: Lint with flake8
         run: |
           source env/bin/activate
@@ -45,8 +45,8 @@ jobs:
           source env/bin/activate
           python -m pip install mypy
           python -m mypy --install-types --non-interactive
-      - name: Test with pytest
+      - name: Test with pytest and code coverage
         timeout-minutes: 45
         run: |
           source env/bin/activate
-          pytest -v -n auto -m "not serial" tests/ && pytest -v -m "serial" tests/
+          pytest -v -n auto -m "not serial" tests/ --cov --cov-fail-under=0 && pytest -v -m "serial" --cov --cov-append tests/

@@ -49,3 +49,12 @@ modularitypruning = ["py.typed"]
 
 [tool.autopep8]
 max_line_length = 120
+
+[tool.coverage.run]
+# a bit strange to include tests, but this is recommended by coverage.py
+source = ["modularitypruning", "tests"]
+branch = true
+
+[tool.coverage.report]
+fail_under = 90
+show_missing = true
