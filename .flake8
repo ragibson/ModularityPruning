@@ -1,0 +1,4 @@
+[flake8]
+max-line-length = 120
+# quite high, so we may want to improve this
+max-complexity = 20
